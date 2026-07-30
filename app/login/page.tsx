@@ -43,9 +43,9 @@ function GitHubMark() {
 function LoginCard() {
   const params = useSearchParams();
   const [busy, setBusy] = useState<Provider | null>(null);
-  const [error, setError] = useState<string | null>(
-    params.get("error") ? "Sign-in failed. Please try again." : null,
-  );
+  // Show what actually went wrong. A generic "try again" hides the one piece
+  // of information needed to fix a misconfigured redirect or provider.
+  const [error, setError] = useState<string | null>(params.get("error"));
 
   async function signIn(provider: Provider) {
     setBusy(provider);
