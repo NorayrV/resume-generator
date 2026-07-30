@@ -1,0 +1,177 @@
+"use client";
+
+import { Suspense, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Check, Loader2, Sparkles } from "lucide-react";
+import { AppHeader } from "@/components/AppHeader";
+import { Button } from "@/components/ui/button";
+import { Alert } from "@/components/ui/alert";
+
+interface AccountData {
+  user: { email: string | null; name: string | null; avatar_url: string | null };
+  usage: {
+    used: number;
+    limit: number;
+    unlimited: boolean;
+    remaining: number | null;
+  };
+  billing_enabled: boolean;
+}
+
+function AccountBody() {
+  const params = useSearchParams();
+  const [data, setData] = useState<AccountData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [upgrading, setUpgrading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const justUpgraded = params.get("upgraded") === "1";
+
+  useEffect(() => {
+    fetch("/api/account")
+      .then((r) => r.json())
+      .then((d) => (d.error ? setError(d.error) : setData(d)))
+      .catch(() => setError("Could not load your account."))
+      .finally(() => setLoading(false));
+  }, []);
+
+  async function upgrade() {
+    setUpgrading(true);
+    setError(null);
+
+    try {
+      const response = await fetch("/api/stripe/checkout", { method: "POST" });
+      const body = await response.json();
+
+      if (!response.ok || !body.url) {
+        setError(body.error ?? "Could not start checkout.");
+        return;
+      }
+
+      window.location.href = body.url;
+    } catch {
+      setError("Could not reach the server.");
+    } finally {
+      setUpgrading(false);
+    }
+  }
+
+  if (loading) return <div className="card h-56 animate-pulse" />;
+  if (!data) return <Alert tone="error">{error ?? "Could not load your account."}</Alert>;
+
+  const { usage } = data;
+  const pct = usage.unlimited
+    ? 100
+    : Math.min(100, Math.round((usage.used / usage.limit) * 100));
+
+  return (
+    <div className="space-y-4">
+      {justUpgraded && (
+        <Alert tone="info">
+          Payment received. If your plan still shows as free, give it a few
+          seconds and reload — Stripe confirms in the background.
+        </Alert>
+      )}
+
+      {/* ---- Who you are ---- */}
+      <section className="card p-5 sm:p-6">
+        <h2 className="text-body font-semibold tracking-[-0.01em]">Account</h2>
+        <p className="hint mt-1">{data.user.email ?? "Signed in"}</p>
+      </section>
+
+      {/* ---- Usage ---- */}
+      <section className="card p-5 sm:p-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-body font-semibold tracking-[-0.01em]">Usage</h2>
+          <span
+            className={`rounded-full px-2.5 py-0.5 text-[0.75rem] font-medium ${
+              usage.unlimited
+                ? "bg-accent-soft text-accent"
+                : "border border-line text-muted"
+            }`}
+          >
+            {usage.unlimited ? "Unlimited" : "Free plan"}
+          </span>
+        </div>
+
+        {usage.unlimited ? (
+          <p className="hint mt-3">
+            You are on the paid plan. Generate as many resumes as you need.
+          </p>
+        ) : (
+          <>
+            <p className="mt-3 text-body tnum">
+              <span className="font-semibold">{usage.used}</span>
+              <span className="text-muted"> of {usage.limit} generations used</span>
+            </p>
+
+            <div className="mt-3 h-2 overflow-hidden rounded-full bg-surface">
+              <div
+                className={`h-full rounded-full transition-all ${
+                  usage.remaining === 0 ? "bg-flag" : "bg-accent"
+                }`}
+                style={{ width: `${pct}%` }}
+              />
+            </div>
+
+            <p className="hint mt-2">
+              {usage.remaining === 0
+                ? "You have used your free generations for this month."
+                : `${usage.remaining} left. Resets 30 days after each generation.`}
+            </p>
+          </>
+        )}
+      </section>
+
+      {/* ---- Upgrade ---- */}
+      {!usage.unlimited && data.billing_enabled && (
+        <section className="card p-5 sm:p-6">
+          <h2 className="text-body font-semibold tracking-[-0.01em]">
+            Upgrade to unlimited
+          </h2>
+          <ul className="mt-3 space-y-1.5">
+            {[
+              "Unlimited resumes and cover letters",
+              "Every language version, every time",
+              "Cancel whenever you like",
+            ].map((line) => (
+              <li key={line} className="flex items-center gap-2 text-small">
+                <Check className="h-4 w-4 shrink-0 text-accent" aria-hidden />
+                {line}
+              </li>
+            ))}
+          </ul>
+
+          <Button size="lg" className="mt-5" onClick={upgrade} disabled={upgrading}>
+            {upgrading ? (
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+            ) : (
+              <Sparkles className="h-4 w-4" aria-hidden />
+            )}
+            Upgrade
+          </Button>
+        </section>
+      )}
+
+      {error && <Alert tone="error">{error}</Alert>}
+    </div>
+  );
+}
+
+export default function AccountPage() {
+  return (
+    <>
+      <AppHeader />
+      <main className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-10">
+        <h1 className="text-lg font-semibold tracking-[-0.01em]">Your account</h1>
+        <p className="hint mt-1">Usage and billing.</p>
+
+        <div className="mt-6">
+          <Suspense fallback={<div className="card h-56 animate-pulse" />}>
+            <AccountBody />
+          </Suspense>
+        </div>
+      </main>
+    </>
+  );
+}
