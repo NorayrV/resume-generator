@@ -10,6 +10,7 @@ import { CoverLetter } from "@/components/CoverLetter";
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
 import { sanitiseLangs, type Lang } from "@/lib/coverLetter";
+import { PLAN_PERIOD_DISPLAY, PLAN_PRICE_DISPLAY } from "@/lib/plan";
 import type {
   CoverLetterVersions,
   PersonalInformation,
@@ -182,7 +183,8 @@ export default function GeneratePage() {
                   <div>
                     <p className="text-body font-medium">{error}</p>
                     <p className="hint mt-0.5">
-                      Upgrade for unlimited resumes and cover letters.
+                      Unlimited resumes and cover letters for{" "}
+                      {PLAN_PRICE_DISPLAY}/{PLAN_PERIOD_DISPLAY}.
                     </p>
                   </div>
                   <Link

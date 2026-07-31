@@ -6,6 +6,7 @@ import { Check, Loader2, Sparkles } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
+import { PLAN_PERIOD_DISPLAY, PLAN_PRICE_DISPLAY } from "@/lib/plan";
 
 interface AccountData {
   user: { email: string | null; name: string | null; avatar_url: string | null };
@@ -129,7 +130,18 @@ function AccountBody() {
           <h2 className="text-body font-semibold tracking-[-0.01em]">
             Upgrade to unlimited
           </h2>
-          <ul className="mt-3 space-y-1.5">
+
+          {/* Never show an unpriced buy button. */}
+          <p className="mt-2 flex items-baseline gap-1.5">
+            <span className="text-2xl font-semibold tracking-[-0.02em]">
+              {PLAN_PRICE_DISPLAY}
+            </span>
+            <span className="text-small text-muted">
+              per {PLAN_PERIOD_DISPLAY}
+            </span>
+          </p>
+
+          <ul className="mt-4 space-y-1.5">
             {[
               "Unlimited resumes and cover letters",
               "Every language version, every time",
@@ -148,8 +160,13 @@ function AccountBody() {
             ) : (
               <Sparkles className="h-4 w-4" aria-hidden />
             )}
-            Upgrade
+            Upgrade for {PLAN_PRICE_DISPLAY}/{PLAN_PERIOD_DISPLAY}
           </Button>
+
+          <p className="mt-3 text-[0.75rem] text-faint">
+            Secure payment through Stripe. You will see the exact amount and
+            currency before confirming.
+          </p>
         </section>
       )}
 
