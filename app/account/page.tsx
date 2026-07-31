@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Check, Loader2, Sparkles } from "lucide-react";
+import { Check, CreditCard, Loader2, Sparkles } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
@@ -24,6 +24,7 @@ function AccountBody() {
   const [data, setData] = useState<AccountData | null>(null);
   const [loading, setLoading] = useState(true);
   const [upgrading, setUpgrading] = useState(false);
+  const [managing, setManaging] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const justUpgraded = params.get("upgraded") === "1";
@@ -54,6 +55,28 @@ function AccountBody() {
       setError("Could not reach the server.");
     } finally {
       setUpgrading(false);
+    }
+  }
+
+  /** Hand the user over to Stripe to cancel, change card or fetch invoices. */
+  async function manageBilling() {
+    setManaging(true);
+    setError(null);
+
+    try {
+      const response = await fetch("/api/stripe/portal", { method: "POST" });
+      const body = await response.json();
+
+      if (!response.ok || !body.url) {
+        setError(body.error ?? "Could not open the billing portal.");
+        return;
+      }
+
+      window.location.href = body.url;
+    } catch {
+      setError("Could not reach the server.");
+    } finally {
+      setManaging(false);
     }
   }
 
@@ -96,9 +119,32 @@ function AccountBody() {
         </div>
 
         {usage.unlimited ? (
-          <p className="hint mt-3">
-            You are on the paid plan. Generate as many resumes as you need.
-          </p>
+          <>
+            <p className="hint mt-3">
+              You are on the paid plan. Generate as many resumes as you need.
+            </p>
+
+            {data.billing_enabled && (
+              <>
+                <Button
+                  variant="secondary"
+                  className="mt-4"
+                  onClick={manageBilling}
+                  disabled={managing}
+                >
+                  {managing ? (
+                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                  ) : (
+                    <CreditCard className="h-4 w-4" aria-hidden />
+                  )}
+                  Manage subscription
+                </Button>
+                <p className="mt-2 text-[0.75rem] text-faint">
+                  Cancel, update your card or download invoices on Stripe.
+                </p>
+              </>
+            )}
+          </>
         ) : (
           <>
             <p className="mt-3 text-body tnum">
