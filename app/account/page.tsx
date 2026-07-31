@@ -124,8 +124,12 @@ function AccountBody() {
         )}
       </section>
 
-      {/* ---- Upgrade ---- */}
-      {!usage.unlimited && data.billing_enabled && (
+      {/*
+        Always rendered when the user is not already unlimited. Hiding it when
+        billing is unconfigured left a dead end: the generator tells you to
+        upgrade, and the page it sends you to shows nothing at all.
+      */}
+      {!usage.unlimited && (
         <section className="card p-5 sm:p-6">
           <h2 className="text-body font-semibold tracking-[-0.01em]">
             Upgrade to unlimited
@@ -154,19 +158,41 @@ function AccountBody() {
             ))}
           </ul>
 
-          <Button size="lg" className="mt-5" onClick={upgrade} disabled={upgrading}>
-            {upgrading ? (
-              <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-            ) : (
-              <Sparkles className="h-4 w-4" aria-hidden />
-            )}
-            Upgrade for {PLAN_PRICE_DISPLAY}/{PLAN_PERIOD_DISPLAY}
-          </Button>
+          {data.billing_enabled ? (
+            <>
+              <Button
+                size="lg"
+                className="mt-5"
+                onClick={upgrade}
+                disabled={upgrading}
+              >
+                {upgrading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                ) : (
+                  <Sparkles className="h-4 w-4" aria-hidden />
+                )}
+                Upgrade for {PLAN_PRICE_DISPLAY}/{PLAN_PERIOD_DISPLAY}
+              </Button>
 
-          <p className="mt-3 text-[0.75rem] text-faint">
-            Secure payment through Stripe. You will see the exact amount and
-            currency before confirming.
-          </p>
+              <p className="mt-3 text-[0.75rem] text-faint">
+                Secure payment through Stripe. You will see the exact amount and
+                currency before confirming.
+              </p>
+            </>
+          ) : (
+            /* Billing not configured on this deployment — say so plainly
+               rather than showing a button that cannot work. */
+            <div className="mt-5">
+              <Button size="lg" disabled>
+                <Sparkles className="h-4 w-4" aria-hidden />
+                Upgrade for {PLAN_PRICE_DISPLAY}/{PLAN_PERIOD_DISPLAY}
+              </Button>
+              <Alert tone="info" className="mt-3">
+                Payments are not switched on yet. Your free generations still
+                work, and upgrading will be available shortly.
+              </Alert>
+            </div>
+          )}
         </section>
       )}
 
