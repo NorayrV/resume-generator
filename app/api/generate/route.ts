@@ -14,6 +14,7 @@ import {
   sanitiseLangs,
 } from "@/lib/coverLetter";
 import { currentUser } from "@/lib/supabase/server";
+import { getPlanPricing } from "@/lib/stripe";
 import { getUsage, recordGeneration } from "@/lib/usage";
 import type { GenerationResult, TailoredResume } from "@/lib/types";
 
@@ -41,11 +42,16 @@ export async function POST(request: Request) {
     const usage = await getUsage(user.id);
 
     if (!usage.allowed) {
+      // Send the live price with the refusal, so the upgrade prompt can quote
+      // it without a second round trip.
+      const plan = await getPlanPricing();
+
       return NextResponse.json(
         {
           error: `You have used all ${usage.limit} free generations this month. Upgrade for unlimited.`,
           code: "quota_exceeded",
           usage: { used: usage.used, limit: usage.limit },
+          plan,
         },
         { status: 402 },
       );

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { currentUser } from "@/lib/supabase/server";
 import { getUsage } from "@/lib/usage";
-import { billingEnabled } from "@/lib/stripe";
+import { billingEnabled, getPlanPricing } from "@/lib/stripe";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -14,7 +14,7 @@ export async function GET() {
     return NextResponse.json({ error: "Not signed in." }, { status: 401 });
   }
 
-  const usage = await getUsage(user.id);
+  const [usage, plan] = await Promise.all([getUsage(user.id), getPlanPricing()]);
 
   return NextResponse.json({
     user: {
@@ -32,5 +32,7 @@ export async function GET() {
       remaining: usage.unlimited ? null : usage.remaining,
     },
     billing_enabled: billingEnabled(),
+    /** Read from Stripe, so the page can never quote a stale figure. */
+    plan,
   });
 }

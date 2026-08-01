@@ -1,14 +1,8 @@
-"use client";
-
 import { Suspense } from "react";
-import { useSearchParams } from "next/navigation";
 import { Check, FileText, ListChecks, Sparkles } from "lucide-react";
-import { SignInButtons } from "@/components/SignInButtons";
-import {
-  FREE_GENERATIONS_PER_MONTH,
-  PLAN_PERIOD_DISPLAY,
-  PLAN_PRICE_DISPLAY,
-} from "@/lib/plan";
+import { SignInCard } from "@/components/SignInCard";
+import { FREE_GENERATIONS_PER_MONTH } from "@/lib/plan";
+import { getPlanPricing } from "@/lib/stripe";
 
 /**
  * The front door.
@@ -16,7 +10,13 @@ import {
  * Every visitor lands here, signed out, so it has two jobs at once: explain
  * what the product does, and let someone sign in without hunting for it. The
  * sign-in card therefore sits in the hero rather than below the pitch.
+ *
+ * A server component, so the price comes from Stripe already rendered — no
+ * loading flash, and no figure typed into the source that could go stale.
  */
+
+/** Price changes are rare; serve this from cache and refresh hourly. */
+export const revalidate = 3600;
 
 const STEPS = [
   {
@@ -43,33 +43,9 @@ const INCLUDED = [
   "An honest list of requirements your profile does not cover",
 ];
 
-function SignInCard() {
-  const params = useSearchParams();
-  const next = params.get("next") ?? "/";
-  const failed = params.get("error");
+export default async function LoginPage() {
+  const plan = await getPlanPricing();
 
-  return (
-    <div className="card p-6 shadow-sm">
-      <h2 className="text-body font-semibold tracking-[-0.01em]">
-        Start for free
-      </h2>
-      <p className="hint mt-1">
-        {FREE_GENERATIONS_PER_MONTH} generations a month, no card needed.
-      </p>
-
-      <div className="mt-5">
-        <SignInButtons next={next} initialError={failed} />
-      </div>
-
-      <p className="mt-5 text-[0.75rem] leading-relaxed text-faint">
-        Your profile is private to your account, and is only ever sent to the AI
-        to write your own documents.
-      </p>
-    </div>
-  );
-}
-
-export default function LoginPage() {
   return (
     <div className="min-h-screen bg-surface">
       {/* ---- Header ---- */}
@@ -82,7 +58,6 @@ export default function LoginPage() {
       </header>
 
       <main className="mx-auto max-w-5xl px-4 sm:px-6">
-        {/* ---- Hero: the pitch and the sign-in, side by side ---- */}
         {/*
           Explicit grid placement so the reading order differs by width. On a
           phone the sign-in card comes straight after the headline, ahead of
@@ -133,7 +108,10 @@ export default function LoginPage() {
             {STEPS.map(({ icon: Icon, title, body }, i) => (
               <li key={title} className="card p-5">
                 <div className="flex h-9 w-9 items-center justify-center rounded-md bg-accent-soft">
-                  <Icon className="h-[1.125rem] w-[1.125rem] text-accent" aria-hidden />
+                  <Icon
+                    className="h-[1.125rem] w-[1.125rem] text-accent"
+                    aria-hidden
+                  />
                 </div>
                 <p className="mt-3.5 text-small font-medium text-faint tnum">
                   Step {i + 1}
@@ -185,11 +163,9 @@ export default function LoginPage() {
               <p className="text-small font-medium text-accent">Unlimited</p>
               <p className="mt-1.5 flex items-baseline gap-1.5">
                 <span className="text-2xl font-semibold tracking-[-0.02em]">
-                  {PLAN_PRICE_DISPLAY}
+                  {plan.price}
                 </span>
-                <span className="text-small text-muted">
-                  per {PLAN_PERIOD_DISPLAY}
-                </span>
+                <span className="text-small text-muted">per {plan.period}</span>
               </p>
               <p className="hint mt-2">
                 As many resumes and cover letters as you need. Cancel whenever

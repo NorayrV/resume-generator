@@ -10,7 +10,7 @@ import { CoverLetter } from "@/components/CoverLetter";
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
 import { sanitiseLangs, type Lang } from "@/lib/coverLetter";
-import { PLAN_PERIOD_DISPLAY, PLAN_PRICE_DISPLAY } from "@/lib/plan";
+import type { PlanPricing } from "@/lib/plan";
 import type {
   CoverLetterVersions,
   PersonalInformation,
@@ -45,6 +45,7 @@ export default function GeneratePage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [quotaExceeded, setQuotaExceeded] = useState(false);
+  const [plan, setPlan] = useState<PlanPricing | null>(null);
   const [result, setResult] = useState<Generation | null>(null);
 
   useEffect(() => {
@@ -99,6 +100,7 @@ export default function GeneratePage() {
         // 402 means the free tier is spent — point at the upgrade rather than
         // leaving a dead-end error message.
         setQuotaExceeded(data.code === "quota_exceeded");
+        setPlan(data.plan ?? null);
         setError(data.error ?? "Generation failed.");
         return;
       }
@@ -183,8 +185,8 @@ export default function GeneratePage() {
                   <div>
                     <p className="text-body font-medium">{error}</p>
                     <p className="hint mt-0.5">
-                      Unlimited resumes and cover letters for{" "}
-                      {PLAN_PRICE_DISPLAY}/{PLAN_PERIOD_DISPLAY}.
+                      Unlimited resumes and cover letters
+                      {plan ? ` for ${plan.price}/${plan.period}` : ""}.
                     </p>
                   </div>
                   <Link

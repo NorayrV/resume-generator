@@ -6,7 +6,7 @@ import { Check, CreditCard, Loader2, Sparkles } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
-import { PLAN_PERIOD_DISPLAY, PLAN_PRICE_DISPLAY } from "@/lib/plan";
+import type { PlanPricing } from "@/lib/plan";
 
 interface AccountData {
   user: { email: string | null; name: string | null; avatar_url: string | null };
@@ -17,6 +17,7 @@ interface AccountData {
     remaining: number | null;
   };
   billing_enabled: boolean;
+  plan: PlanPricing;
 }
 
 function AccountBody() {
@@ -83,7 +84,7 @@ function AccountBody() {
   if (loading) return <div className="card h-56 animate-pulse" />;
   if (!data) return <Alert tone="error">{error ?? "Could not load your account."}</Alert>;
 
-  const { usage } = data;
+  const { usage, plan } = data;
   const pct = usage.unlimited
     ? 100
     : Math.min(100, Math.round((usage.used / usage.limit) * 100));
@@ -184,10 +185,10 @@ function AccountBody() {
           {/* Never show an unpriced buy button. */}
           <p className="mt-2 flex items-baseline gap-1.5">
             <span className="text-2xl font-semibold tracking-[-0.02em]">
-              {PLAN_PRICE_DISPLAY}
+              {plan.price}
             </span>
             <span className="text-small text-muted">
-              per {PLAN_PERIOD_DISPLAY}
+              per {plan.period}
             </span>
           </p>
 
@@ -217,7 +218,7 @@ function AccountBody() {
                 ) : (
                   <Sparkles className="h-4 w-4" aria-hidden />
                 )}
-                Upgrade for {PLAN_PRICE_DISPLAY}/{PLAN_PERIOD_DISPLAY}
+                Upgrade for {plan.price}/{plan.period}
               </Button>
 
               <p className="mt-3 text-[0.75rem] text-faint">
@@ -231,7 +232,7 @@ function AccountBody() {
             <div className="mt-5">
               <Button size="lg" disabled>
                 <Sparkles className="h-4 w-4" aria-hidden />
-                Upgrade for {PLAN_PRICE_DISPLAY}/{PLAN_PERIOD_DISPLAY}
+                Upgrade for {plan.price}/{plan.period}
               </Button>
               <Alert tone="info" className="mt-3">
                 Payments are not switched on yet. Your free generations still
