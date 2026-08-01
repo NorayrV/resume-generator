@@ -2,11 +2,13 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Check, CreditCard, Loader2, Sparkles } from "lucide-react";
+import { Bitcoin, Check, CreditCard, Loader2 } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
 import type { PlanPricing } from "@/lib/plan";
+
+type Method = "card" | "crypto";
 
 interface AccountData {
   user: { email: string | null; name: string | null; avatar_url: string | null };
@@ -16,19 +18,34 @@ interface AccountData {
     unlimited: boolean;
     remaining: number | null;
   };
-  billing_enabled: boolean;
+  billing: { card: boolean; crypto: boolean };
   plan: PlanPricing;
+  access: { provider: "polar" | "cryptomus"; until: string | null } | null;
+}
+
+/** Endpoint that starts each kind of payment. */
+const CHECKOUT: Record<Method, string> = {
+  card: "/api/polar/checkout",
+  crypto: "/api/crypto/checkout",
+};
+
+function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString(undefined, {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
 }
 
 function AccountBody() {
   const params = useSearchParams();
   const [data, setData] = useState<AccountData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [upgrading, setUpgrading] = useState(false);
+  const [starting, setStarting] = useState<Method | null>(null);
   const [managing, setManaging] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const justUpgraded = params.get("upgraded") === "1";
+  const justPaid = params.get("paid");
 
   useEffect(() => {
     fetch("/api/account")
@@ -38,16 +55,16 @@ function AccountBody() {
       .finally(() => setLoading(false));
   }, []);
 
-  async function upgrade() {
-    setUpgrading(true);
+  async function startCheckout(method: Method) {
+    setStarting(method);
     setError(null);
 
     try {
-      const response = await fetch("/api/stripe/checkout", { method: "POST" });
+      const response = await fetch(CHECKOUT[method], { method: "POST" });
       const body = await response.json();
 
       if (!response.ok || !body.url) {
-        setError(body.error ?? "Could not start checkout.");
+        setError(body.error ?? "Could not start the payment.");
         return;
       }
 
@@ -55,17 +72,17 @@ function AccountBody() {
     } catch {
       setError("Could not reach the server.");
     } finally {
-      setUpgrading(false);
+      setStarting(null);
     }
   }
 
-  /** Hand the user over to Stripe to cancel, change card or fetch invoices. */
+  /** Hand a card subscriber over to Polar to cancel or update their card. */
   async function manageBilling() {
     setManaging(true);
     setError(null);
 
     try {
-      const response = await fetch("/api/stripe/portal", { method: "POST" });
+      const response = await fetch("/api/polar/portal", { method: "POST" });
       const body = await response.json();
 
       if (!response.ok || !body.url) {
@@ -82,19 +99,24 @@ function AccountBody() {
   }
 
   if (loading) return <div className="card h-56 animate-pulse" />;
-  if (!data) return <Alert tone="error">{error ?? "Could not load your account."}</Alert>;
+  if (!data) {
+    return <Alert tone="error">{error ?? "Could not load your account."}</Alert>;
+  }
 
-  const { usage, plan } = data;
+  const { usage, plan, billing, access } = data;
   const pct = usage.unlimited
     ? 100
     : Math.min(100, Math.round((usage.used / usage.limit) * 100));
 
+  const anyMethod = billing.card || billing.crypto;
+
   return (
     <div className="space-y-4">
-      {justUpgraded && (
+      {justPaid && (
         <Alert tone="info">
-          Payment received. If your plan still shows as free, give it a few
-          seconds and reload — Stripe confirms in the background.
+          {justPaid === "crypto"
+            ? "Payment received. Crypto can take a few minutes to confirm on the network — reload this page once it does."
+            : "Payment received. If your plan still shows as free, give it a few seconds and reload."}
         </Alert>
       )}
 
@@ -123,9 +145,18 @@ function AccountBody() {
           <>
             <p className="hint mt-3">
               You are on the paid plan. Generate as many resumes as you need.
+              {access?.until && (
+                <>
+                  {" "}
+                  {access.provider === "cryptomus"
+                    ? `Access runs until ${formatDate(access.until)}.`
+                    : `Renews on ${formatDate(access.until)}.`}
+                </>
+              )}
             </p>
 
-            {data.billing_enabled && (
+            {/* Only card subscriptions have a portal to manage. */}
+            {access?.provider === "polar" && billing.card && (
               <>
                 <Button
                   variant="secondary"
@@ -141,7 +172,30 @@ function AccountBody() {
                   Manage subscription
                 </Button>
                 <p className="mt-2 text-[0.75rem] text-faint">
-                  Cancel, update your card or download invoices on Stripe.
+                  Cancel, update your card or download invoices.
+                </p>
+              </>
+            )}
+
+            {/* Crypto does not renew itself, so say so plainly. */}
+            {access?.provider === "cryptomus" && billing.crypto && (
+              <>
+                <Button
+                  variant="secondary"
+                  className="mt-4"
+                  onClick={() => startCheckout("crypto")}
+                  disabled={starting !== null}
+                >
+                  {starting === "crypto" ? (
+                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                  ) : (
+                    <Bitcoin className="h-4 w-4" aria-hidden />
+                  )}
+                  Add another 30 days
+                </Button>
+                <p className="mt-2 text-[0.75rem] text-faint">
+                  Crypto payments do not renew automatically. Paying again adds
+                  to the time you have left.
                 </p>
               </>
             )}
@@ -172,9 +226,9 @@ function AccountBody() {
       </section>
 
       {/*
-        Always rendered when the user is not already unlimited. Hiding it when
-        billing is unconfigured left a dead end: the generator tells you to
-        upgrade, and the page it sends you to shows nothing at all.
+        Always rendered when the user is not already on the paid plan. Hiding
+        it when payments are unconfigured left a dead end: the generator tells
+        you to upgrade, and the page it sends you to shows nothing at all.
       */}
       {!usage.unlimited && (
         <section className="card p-5 sm:p-6">
@@ -187,9 +241,7 @@ function AccountBody() {
             <span className="text-2xl font-semibold tracking-[-0.02em]">
               {plan.price}
             </span>
-            <span className="text-small text-muted">
-              per {plan.period}
-            </span>
+            <span className="text-small text-muted">per {plan.period}</span>
           </p>
 
           <ul className="mt-4 space-y-1.5">
@@ -205,34 +257,54 @@ function AccountBody() {
             ))}
           </ul>
 
-          {data.billing_enabled ? (
+          {anyMethod ? (
             <>
-              <Button
-                size="lg"
-                className="mt-5"
-                onClick={upgrade}
-                disabled={upgrading}
-              >
-                {upgrading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-                ) : (
-                  <Sparkles className="h-4 w-4" aria-hidden />
+              <div className="mt-5 flex flex-wrap gap-2.5">
+                {billing.card && (
+                  <Button
+                    size="lg"
+                    onClick={() => startCheckout("card")}
+                    disabled={starting !== null}
+                  >
+                    {starting === "card" ? (
+                      <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                    ) : (
+                      <CreditCard className="h-4 w-4" aria-hidden />
+                    )}
+                    Pay by card
+                  </Button>
                 )}
-                Upgrade for {plan.price}/{plan.period}
-              </Button>
 
-              <p className="mt-3 text-[0.75rem] text-faint">
-                Secure payment through Stripe. You will see the exact amount and
-                currency before confirming.
+                {billing.crypto && (
+                  <Button
+                    size="lg"
+                    variant="secondary"
+                    onClick={() => startCheckout("crypto")}
+                    disabled={starting !== null}
+                  >
+                    {starting === "crypto" ? (
+                      <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                    ) : (
+                      <Bitcoin className="h-4 w-4" aria-hidden />
+                    )}
+                    Pay with crypto
+                  </Button>
+                )}
+              </div>
+
+              <p className="mt-3 text-[0.75rem] leading-relaxed text-faint">
+                {billing.card && billing.crypto
+                  ? "Card payments renew monthly and can be cancelled any time. Crypto buys 30 days of access and does not renew itself."
+                  : billing.card
+                    ? "Renews monthly. Cancel any time."
+                    : "Buys 30 days of access. Crypto payments do not renew automatically."}
               </p>
             </>
           ) : (
-            /* Billing not configured on this deployment — say so plainly
-               rather than showing a button that cannot work. */
             <div className="mt-5">
               <Button size="lg" disabled>
-                <Sparkles className="h-4 w-4" aria-hidden />
-                Upgrade for {plan.price}/{plan.period}
+                <CreditCard className="h-4 w-4" aria-hidden />
+                Upgrade
               </Button>
               <Alert tone="info" className="mt-3">
                 Payments are not switched on yet. Your free generations still

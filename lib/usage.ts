@@ -1,3 +1,4 @@
+import { hasPaidAccess } from "./billing";
 import { FREE_GENERATIONS_PER_MONTH, USAGE_WINDOW_DAYS } from "./plan";
 import { supabaseAdmin } from "./supabase/server";
 
@@ -15,44 +16,18 @@ import { supabaseAdmin } from "./supabase/server";
 
 export { FREE_GENERATIONS_PER_MONTH } from "./plan";
 
-/** Stripe statuses that should unlock unlimited generations. */
-const ACTIVE_STATUSES = new Set(["active", "trialing"]);
-
 export interface UsageStatus {
   used: number;
   limit: number;
-  /** Unlimited when the user is on a paid plan. */
+  /** Unlimited while the user has paid access. */
   unlimited: boolean;
   remaining: number;
   allowed: boolean;
 }
 
-/** True when the user has a live Stripe subscription. */
-export async function hasActiveSubscription(userId: string): Promise<boolean> {
-  const { data, error } = await supabaseAdmin()
-    .from("subscriptions")
-    .select("status, current_period_end")
-    .eq("user_id", userId)
-    .maybeSingle();
-
-  if (error || !data?.status) return false;
-  if (!ACTIVE_STATUSES.has(data.status)) return false;
-
-  // Guard against a webhook we never received: an elapsed period is not active.
-  if (data.current_period_end) {
-    const endsAt = new Date(data.current_period_end).getTime();
-    // Small grace window so a renewal in flight does not lock the user out.
-    if (Number.isFinite(endsAt) && endsAt + 24 * 60 * 60 * 1000 < Date.now()) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
 /** How much of the free tier this user has left. */
 export async function getUsage(userId: string): Promise<UsageStatus> {
-  if (await hasActiveSubscription(userId)) {
+  if (await hasPaidAccess(userId)) {
     return {
       used: 0,
       limit: FREE_GENERATIONS_PER_MONTH,

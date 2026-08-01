@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { currentUser } from "@/lib/supabase/server";
 import { getUsage } from "@/lib/usage";
-import { billingEnabled, getPlanPricing } from "@/lib/stripe";
+import { getPlanPricing, polarEnabled } from "@/lib/polar";
+import { cryptomusEnabled } from "@/lib/cryptomus";
+import { getEntitlement } from "@/lib/billing";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -14,7 +16,11 @@ export async function GET() {
     return NextResponse.json({ error: "Not signed in." }, { status: 401 });
   }
 
-  const [usage, plan] = await Promise.all([getUsage(user.id), getPlanPricing()]);
+  const [usage, plan, entitlement] = await Promise.all([
+    getUsage(user.id),
+    getPlanPricing(),
+    getEntitlement(user.id),
+  ]);
 
   return NextResponse.json({
     user: {
@@ -31,8 +37,18 @@ export async function GET() {
       unlimited: usage.unlimited,
       remaining: usage.unlimited ? null : usage.remaining,
     },
-    billing_enabled: billingEnabled(),
-    /** Read from Stripe, so the page can never quote a stale figure. */
+    /** Which payment methods this deployment can actually take. */
+    billing: {
+      card: polarEnabled(),
+      crypto: cryptomusEnabled(),
+    },
+    /** Read from Polar, so the page can never quote a stale figure. */
     plan,
+    access: entitlement
+      ? {
+          provider: entitlement.provider,
+          until: entitlement.accessUntil?.toISOString() ?? null,
+        }
+      : null,
   });
 }

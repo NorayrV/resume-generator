@@ -18,9 +18,10 @@ import { NextResponse, type NextRequest } from "next/server";
 const PUBLIC_PATHS = [
   "/login",
   "/auth/callback",
-  // Stripe calls this server-to-server with its own signature check, so it
-  // must not sit behind a user session.
-  "/api/stripe/webhook",
+  // Payment providers call these server-to-server with no session. Each
+  // verifies its own signature, which is what makes them safe to expose.
+  "/api/polar/webhook",
+  "/api/crypto/webhook",
 ];
 
 function isPublic(pathname: string): boolean {

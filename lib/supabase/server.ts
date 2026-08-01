@@ -15,7 +15,7 @@ import { cookies } from "next/headers";
  *
  *   supabaseAdmin()   uses the service-role key and bypasses RLS entirely.
  *                     Use it only for things the user must not be able to
- *                     forge — writing the usage meter, and the Stripe webhook.
+ *                     forge — the usage meter, and the payment webhooks.
  *                     Never import this into a client component.
  */
 

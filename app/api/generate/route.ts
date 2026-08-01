@@ -14,7 +14,7 @@ import {
   sanitiseLangs,
 } from "@/lib/coverLetter";
 import { currentUser } from "@/lib/supabase/server";
-import { getPlanPricing } from "@/lib/stripe";
+import { getPlanPricing } from "@/lib/polar";
 import { getUsage, recordGeneration } from "@/lib/usage";
 import type { GenerationResult, TailoredResume } from "@/lib/types";
 

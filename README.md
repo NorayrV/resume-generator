@@ -76,13 +76,19 @@ Full walkthrough in [SETUP.md](SETUP.md). The short version:
 `lib/plan.ts` holds the limit — 5 generations per rolling 30 days.
 
 Every completed generation writes a row to `generations`. Users have no insert
-or delete permission on that table, so nobody can reset their own meter. A live
-Stripe subscription makes it unlimited. The check runs in
-`app/api/generate/route.ts` before any AI call, so hiding the button is a
-courtesy, not the control.
+or delete permission on that table, so nobody can reset their own meter. Paid
+access makes it unlimited. The check runs in `app/api/generate/route.ts` before
+any AI call, so hiding the button is a courtesy, not the control.
 
-Billing is optional: leave the Stripe variables blank and the app runs
-free-tier only with the upgrade button hidden.
+Payments are optional: leave the provider variables blank and the app runs
+free-tier only, saying so plainly rather than showing a dead upgrade button.
+
+Two ways to pay, both writing the same `access_until` date:
+
+- **Polar** — card subscription, renews monthly, cancel from the customer
+  portal. Polar is the merchant of record, so it handles sales tax and VAT.
+- **Cryptomus** — one crypto payment buys 30 days. Crypto cannot auto-renew,
+  so paying again simply extends the time remaining.
 
 **Every generation is billed to your DeepSeek key, including free ones.** Five
 per user per month is your exposure per signup.
@@ -117,19 +123,23 @@ app/
     ├── generate/route.ts        quota check, then the two AI calls
     ├── download/route.ts        builds the Word or PDF file
     ├── account/route.ts         usage readout
-    └── stripe/                  checkout and webhook
+    ├── polar/                   card checkout, webhook, portal
+    └── crypto/                  crypto invoice and webhook
 
 lib/
 ├── supabase/                    server, browser and admin clients
 ├── resumeStore.ts               per-user profile storage
 ├── usage.ts                     the free-tier meter
 ├── plan.ts                      the limits
+├── billing.ts                   paid access, provider-agnostic
+├── polar.ts                     card payments
+├── cryptomus.ts                 crypto payments
 ├── deepseek.ts                  the AI client
 ├── coverLetter.ts               language selection and parsing
 ├── docxGenerator.ts             the Word file
 └── pdfGenerator.ts              the PDF
 
-supabase/schema.sql              tables, Row Level Security, signup trigger
+supabase/                        schema and migrations, with RLS
 assets/fonts/                    DejaVu Sans, embedded in generated PDFs
 ```
 

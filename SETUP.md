@@ -9,9 +9,13 @@ Work top to bottom: each section produces values the next one needs.
 ## 1. Supabase — accounts and database
 
 1. Create a project at [supabase.com](https://supabase.com) (free tier is fine).
-2. **SQL Editor → New query** → paste the whole of [`supabase/schema.sql`](supabase/schema.sql) → **Run**.
-   It creates three tables with Row Level Security and a trigger that gives every
-   new signup an empty profile. It is safe to run more than once.
+2. **SQL Editor → New query** → run these two files in order:
+   - [`supabase/schema.sql`](supabase/schema.sql) — profiles, usage, and the
+     signup trigger
+   - [`supabase/002_entitlements.sql`](supabase/002_entitlements.sql) — paid
+     access and crypto invoices
+
+   Both are safe to run more than once.
 3. **Project Settings → API** and copy three values into `.env.local`:
 
    | Dashboard label | Variable |
@@ -57,30 +61,51 @@ Sign-in fails with a redirect error if these are missing.
 
 ---
 
-## 3. Stripe — billing
+## 3. Payments
 
-You can skip this entirely at first. Leave the Stripe variables blank and the app
-runs on the free tier with the upgrade button hidden.
+Both are optional. Leave the variables blank and the app runs free-tier only,
+with a clear "payments are not switched on yet" message instead of a dead
+upgrade button.
 
-1. [dashboard.stripe.com](https://dashboard.stripe.com) → stay in **Test mode** until it works.
-2. **Products → Add product** → add a **recurring** price (e.g. monthly).
-   Copy the **price ID** — it starts with `price_`, not `prod_` — into `STRIPE_PRICE_ID`.
-3. **Developers → API keys** → copy the **Secret key** into `STRIPE_SECRET_KEY`.
-4. **Developers → Webhooks → Add endpoint**:
-   - URL: `https://your-domain.com/api/stripe/webhook`
-   - Events: `checkout.session.completed`, `customer.subscription.created`,
-     `customer.subscription.updated`, `customer.subscription.deleted`
-   - Copy the **Signing secret** into `STRIPE_WEBHOOK_SECRET`.
+### Polar — card payments
 
-To test webhooks locally:
+Polar is the merchant of record, so it handles sales tax and VAT rather than
+leaving that to you.
 
-```bash
-stripe listen --forward-to localhost:3000/api/stripe/webhook
-```
+1. Sign up at [polar.sh](https://polar.sh). Start in the **sandbox**
+   organisation at [sandbox.polar.sh](https://sandbox.polar.sh).
+2. **Products → New product** → recurring, monthly, your price → copy the
+   **product ID** into `POLAR_PRODUCT_ID`.
+3. **Settings → Developers → New Token** → copy into `POLAR_ACCESS_TOKEN`.
+4. **Settings → Webhooks → Add endpoint**:
+   - URL: `https://your-domain.com/api/polar/webhook`
+   - Format: **Raw**
+   - Events: `subscription.created`, `subscription.active`,
+     `subscription.updated`, `subscription.canceled`, `subscription.revoked`
+   - Copy the signing secret into `POLAR_WEBHOOK_SECRET`.
+5. Leave `POLAR_SERVER=sandbox` while testing. Set it to `production` only
+   when the token comes from your production Polar organisation — the two are
+   entirely separate accounts.
 
-That prints a signing secret to use in `.env.local` while it runs.
+### Cryptomus — crypto payments
+
+One payment buys 30 days of access. Crypto cannot auto-renew, so there is no
+subscription to cancel; the user simply pays again when it runs out.
+
+1. Sign up at [cryptomus.com](https://cryptomus.com) and create a merchant.
+2. **API keys** → copy the **merchant ID** into `CRYPTOMUS_MERCHANT_ID` and
+   the **payment API key** into `CRYPTOMUS_PAYMENT_KEY`.
+   Use the *payment* key, not the payout key — the payment key is what signs
+   invoices and verifies callbacks.
+3. Callbacks are passed per-invoice by the app, so there is no webhook URL to
+   configure in their dashboard.
 
 ---
+
+> Cryptomus signs callbacks with `md5(base64(json) + api_key)`, computed over
+> the JSON *PHP* produced — which escapes forward slashes. `lib/cryptomus.ts`
+> checks both serialisations, so a payload containing a URL or a transaction
+> hash still verifies.
 
 ## 4. Run it locally
 
@@ -110,7 +135,7 @@ git init && git add -A && git commit -m "Multi-user resume generator"
    **Settings → Environment Variables**.
 4. Deploy, then go back and update:
    - Supabase **Site URL** and **Redirect URLs** with the real domain
-   - The Stripe webhook endpoint URL with the real domain
+   - The Polar webhook endpoint URL with the real domain
 
 ---
 
@@ -120,7 +145,9 @@ git init && git add -A && git commit -m "Multi-user resume generator"
 - Every successful generation writes a row to `generations`.
 - Users have **no insert or delete permission** on that table; only the server
   writes it, so nobody can reset their own meter.
-- A live Stripe subscription (`active` or `trialing`) makes it unlimited.
+- Paid access makes it unlimited, whether it came from Polar or Cryptomus.
+  Both write a single `access_until` date, and access is live while that date
+  is in the future.
 - The limit is enforced in `app/api/generate/route.ts` before any AI call, so
   hiding the button is a courtesy, not the control.
 

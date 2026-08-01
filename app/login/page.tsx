@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { Check, FileText, ListChecks, Sparkles } from "lucide-react";
 import { SignInCard } from "@/components/SignInCard";
 import { FREE_GENERATIONS_PER_MONTH } from "@/lib/plan";
-import { getPlanPricing } from "@/lib/stripe";
+import { getPlanPricing } from "@/lib/polar";
 
 /**
  * The front door.
@@ -11,7 +11,7 @@ import { getPlanPricing } from "@/lib/stripe";
  * what the product does, and let someone sign in without hunting for it. The
  * sign-in card therefore sits in the hero rather than below the pitch.
  *
- * A server component, so the price comes from Stripe already rendered — no
+ * A server component, so the price comes from Polar already rendered — no
  * loading flash, and no figure typed into the source that could go stale.
  */
 
