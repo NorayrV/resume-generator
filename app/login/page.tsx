@@ -1,116 +1,69 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { Loader2 } from "lucide-react";
-import { Alert } from "@/components/ui/alert";
-import { supabaseBrowser } from "@/lib/supabase/client";
-import { FREE_GENERATIONS_PER_MONTH } from "@/lib/plan";
+import { Check, FileText, ListChecks, Sparkles } from "lucide-react";
+import { SignInButtons } from "@/components/SignInButtons";
+import {
+  FREE_GENERATIONS_PER_MONTH,
+  PLAN_PERIOD_DISPLAY,
+  PLAN_PRICE_DISPLAY,
+} from "@/lib/plan";
 
-type Provider = "google" | "github";
+/**
+ * The front door.
+ *
+ * Every visitor lands here, signed out, so it has two jobs at once: explain
+ * what the product does, and let someone sign in without hunting for it. The
+ * sign-in card therefore sits in the hero rather than below the pitch.
+ */
 
-function GoogleMark() {
-  return (
-    <svg className="h-4 w-4" viewBox="0 0 24 24" aria-hidden>
-      <path
-        fill="#4285F4"
-        d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5a5.6 5.6 0 0 1-2.4 3.6v3h3.9c2.3-2.1 3.5-5.2 3.5-8.8Z"
-      />
-      <path
-        fill="#34A853"
-        d="M12 24c3.2 0 5.9-1.1 7.9-2.9l-3.9-3a7.2 7.2 0 0 1-10.7-3.8h-4v3.1A12 12 0 0 0 12 24Z"
-      />
-      <path
-        fill="#FBBC05"
-        d="M5.3 14.3a7.1 7.1 0 0 1 0-4.6V6.6h-4a12 12 0 0 0 0 10.8l4-3.1Z"
-      />
-      <path
-        fill="#EA4335"
-        d="M12 4.8c1.8 0 3.4.6 4.6 1.8l3.4-3.4A12 12 0 0 0 1.3 6.6l4 3.1A7.2 7.2 0 0 1 12 4.8Z"
-      />
-    </svg>
-  );
-}
+const STEPS = [
+  {
+    icon: ListChecks,
+    title: "Fill in your profile once",
+    body: "Contact details, every role, skills, education. Entered once and reused for every application.",
+  },
+  {
+    icon: FileText,
+    title: "Paste a job posting",
+    body: "The whole thing — responsibilities, requirements, the company name. Everything is tailored against that text.",
+  },
+  {
+    icon: Sparkles,
+    title: "Get a resume and cover letter",
+    body: "Rewritten for that specific job, ready to download as Word or PDF and send.",
+  },
+];
 
-function GitHubMark() {
-  return (
-    <svg className="h-4 w-4" viewBox="0 0 16 16" fill="currentColor" aria-hidden>
-      <path d="M8 0C3.58 0 0 3.58 0 8a8 8 0 0 0 5.47 7.59c.4.07.55-.17.55-.38l-.01-1.49c-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.4 7.4 0 0 1 4 0c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48l-.01 2.19c0 .21.15.46.55.38A8 8 0 0 0 16 8c0-4.42-3.58-8-8-8Z" />
-    </svg>
-  );
-}
+const INCLUDED = [
+  "Resume tailored to each posting, as Word or PDF",
+  "Cover letter in English, Russian or Spanish",
+  "Keywords matched from the posting, so it reads well to an ATS",
+  "An honest list of requirements your profile does not cover",
+];
 
-function LoginCard() {
+function SignInCard() {
   const params = useSearchParams();
-  const [busy, setBusy] = useState<Provider | null>(null);
-  // Show what actually went wrong. A generic "try again" hides the one piece
-  // of information needed to fix a misconfigured redirect or provider.
-  const [error, setError] = useState<string | null>(params.get("error"));
-
-  async function signIn(provider: Provider) {
-    setBusy(provider);
-    setError(null);
-
-    const next = params.get("next") ?? "/";
-    const supabase = supabaseBrowser();
-
-    const { error: authError } = await supabase.auth.signInWithOAuth({
-      provider,
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
-      },
-    });
-
-    if (authError) {
-      setError(authError.message);
-      setBusy(null);
-    }
-    // On success the browser is redirected away, so there is nothing to reset.
-  }
+  const next = params.get("next") ?? "/";
+  const failed = params.get("error");
 
   return (
-    <div className="card w-full max-w-sm p-7">
-      <h1 className="text-lg font-semibold tracking-[-0.01em]">
-        Resume Generator
-      </h1>
+    <div className="card p-6 shadow-sm">
+      <h2 className="text-body font-semibold tracking-[-0.01em]">
+        Start for free
+      </h2>
       <p className="hint mt-1">
-        Tailor your resume and cover letter to any job posting. Sign in to get
-        started — the first {FREE_GENERATIONS_PER_MONTH} generations are free.
+        {FREE_GENERATIONS_PER_MONTH} generations a month, no card needed.
       </p>
 
-      <div className="mt-6 space-y-3">
-        <button
-          onClick={() => signIn("google")}
-          disabled={busy !== null}
-          className="flex h-11 w-full items-center justify-center gap-2.5 rounded-md border border-line bg-paper text-body font-medium text-ink transition-colors hover:bg-surface disabled:pointer-events-none disabled:opacity-50"
-        >
-          {busy === "google" ? (
-            <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-          ) : (
-            <GoogleMark />
-          )}
-          Continue with Google
-        </button>
-
-        <button
-          onClick={() => signIn("github")}
-          disabled={busy !== null}
-          className="flex h-11 w-full items-center justify-center gap-2.5 rounded-md border border-line bg-paper text-body font-medium text-ink transition-colors hover:bg-surface disabled:pointer-events-none disabled:opacity-50"
-        >
-          {busy === "github" ? (
-            <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-          ) : (
-            <GitHubMark />
-          )}
-          Continue with GitHub
-        </button>
-
-        {error && <Alert tone="error">{error}</Alert>}
+      <div className="mt-5">
+        <SignInButtons next={next} initialError={failed} />
       </div>
 
-      <p className="mt-6 text-[0.75rem] leading-relaxed text-faint">
-        Your profile is private to your account and is only ever sent to the AI
-        to write your own resume.
+      <p className="mt-5 text-[0.75rem] leading-relaxed text-faint">
+        Your profile is private to your account, and is only ever sent to the AI
+        to write your own documents.
       </p>
     </div>
   );
@@ -118,10 +71,140 @@ function LoginCard() {
 
 export default function LoginPage() {
   return (
-    <main className="flex min-h-screen items-center justify-center px-5">
-      <Suspense fallback={<div className="card h-72 w-full max-w-sm animate-pulse" />}>
-        <LoginCard />
-      </Suspense>
-    </main>
+    <div className="min-h-screen bg-surface">
+      {/* ---- Header ---- */}
+      <header className="border-b border-line bg-paper">
+        <div className="mx-auto flex h-14 max-w-5xl items-center px-4 sm:px-6">
+          <span className="text-[0.9375rem] font-semibold tracking-[-0.01em]">
+            Resume Generator
+          </span>
+        </div>
+      </header>
+
+      <main className="mx-auto max-w-5xl px-4 sm:px-6">
+        {/* ---- Hero: the pitch and the sign-in, side by side ---- */}
+        {/*
+          Explicit grid placement so the reading order differs by width. On a
+          phone the sign-in card comes straight after the headline, ahead of
+          the feature list — otherwise the buttons sit below four bullets and
+          a whole screen of scrolling.
+        */}
+        <section className="grid gap-x-14 gap-y-8 py-12 sm:py-16 lg:grid-cols-[1.15fr_1fr]">
+          <div className="max-w-xl lg:col-start-1 lg:row-start-1">
+            <h1 className="text-[2rem] font-semibold leading-[1.15] tracking-[-0.02em] sm:text-[2.5rem]">
+              A resume written for the job you are actually applying to
+            </h1>
+
+            <p className="mt-4 text-[1.0625rem] leading-relaxed text-muted">
+              Paste a job posting. Get back a resume and cover letter rewritten
+              around it, using your own experience — never invented.
+            </p>
+          </div>
+
+          {/* Sticky on desktop so signing in is always one click away. */}
+          <div className="lg:sticky lg:top-8 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:self-start">
+            <Suspense
+              fallback={<div className="card h-72 animate-pulse shadow-sm" />}
+            >
+              <SignInCard />
+            </Suspense>
+          </div>
+
+          <ul className="max-w-xl space-y-2.5 lg:col-start-1 lg:row-start-2 lg:-mt-1">
+            {INCLUDED.map((line) => (
+              <li key={line} className="flex gap-2.5 text-body">
+                <Check
+                  className="mt-[0.3rem] h-4 w-4 shrink-0 text-accent"
+                  aria-hidden
+                />
+                <span>{line}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        {/* ---- How it works ---- */}
+        <section className="border-t border-line py-12 sm:py-14">
+          <h2 className="text-lg font-semibold tracking-[-0.01em]">
+            How it works
+          </h2>
+
+          <ol className="mt-6 grid gap-4 sm:grid-cols-3">
+            {STEPS.map(({ icon: Icon, title, body }, i) => (
+              <li key={title} className="card p-5">
+                <div className="flex h-9 w-9 items-center justify-center rounded-md bg-accent-soft">
+                  <Icon className="h-[1.125rem] w-[1.125rem] text-accent" aria-hidden />
+                </div>
+                <p className="mt-3.5 text-small font-medium text-faint tnum">
+                  Step {i + 1}
+                </p>
+                <h3 className="mt-0.5 text-body font-semibold tracking-[-0.01em]">
+                  {title}
+                </h3>
+                <p className="hint mt-1.5">{body}</p>
+              </li>
+            ))}
+          </ol>
+        </section>
+
+        {/* ---- What it will not do ---- */}
+        <section className="border-t border-line py-12 sm:py-14">
+          <div className="card max-w-2xl p-6">
+            <h2 className="text-body font-semibold tracking-[-0.01em]">
+              It will not invent experience
+            </h2>
+            <p className="hint mt-2">
+              Employers, job titles, dates and education are copied straight from
+              your profile — the AI is never asked to write them, so it cannot
+              quietly change a date or add a degree. It rewrites how your real
+              experience is presented, and tells you plainly which requirements
+              you do not meet.
+            </p>
+          </div>
+        </section>
+
+        {/* ---- Pricing ---- */}
+        <section className="border-t border-line py-12 sm:py-14">
+          <h2 className="text-lg font-semibold tracking-[-0.01em]">Pricing</h2>
+
+          <div className="mt-6 grid gap-4 sm:grid-cols-2">
+            <div className="card p-6">
+              <p className="text-small font-medium text-muted">Free</p>
+              <p className="mt-1.5 flex items-baseline gap-1.5">
+                <span className="text-2xl font-semibold tracking-[-0.02em]">
+                  $0
+                </span>
+              </p>
+              <p className="hint mt-2">
+                {FREE_GENERATIONS_PER_MONTH} generations every 30 days. No card
+                required.
+              </p>
+            </div>
+
+            <div className="card border-accent/30 p-6">
+              <p className="text-small font-medium text-accent">Unlimited</p>
+              <p className="mt-1.5 flex items-baseline gap-1.5">
+                <span className="text-2xl font-semibold tracking-[-0.02em]">
+                  {PLAN_PRICE_DISPLAY}
+                </span>
+                <span className="text-small text-muted">
+                  per {PLAN_PERIOD_DISPLAY}
+                </span>
+              </p>
+              <p className="hint mt-2">
+                As many resumes and cover letters as you need. Cancel whenever
+                you like.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <footer className="border-t border-line py-8">
+          <p className="text-[0.75rem] text-faint">
+            Resume Generator — tailor your resume to one job at a time.
+          </p>
+        </footer>
+      </main>
+    </div>
   );
 }
