@@ -72,14 +72,25 @@ export async function POST(request: Request) {
       .eq("order_id", orderId);
 
     return NextResponse.json({ url: invoice.url });
-  } catch {
+  } catch (err) {
     await supabaseAdmin()
       .from("crypto_invoices")
       .update({ status: "failed" })
       .eq("order_id", orderId);
 
+    const detail =
+      err && typeof err === "object" && "message" in err
+        ? String((err as { message: unknown }).message).slice(0, 300)
+        : "";
+
+    console.error("[crypto/checkout]", err);
+
     return NextResponse.json(
-      { error: "Could not create a crypto invoice. Please try again." },
+      {
+        error: detail
+          ? `Cryptomus rejected the invoice: ${detail}`
+          : "Could not create a crypto invoice. Please try again.",
+      },
       { status: 502 },
     );
   }

@@ -44,9 +44,26 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ url: checkout.url });
-  } catch {
+  } catch (err) {
+    /*
+     * Surface what Polar actually said. A generic "try again" hides the one
+     * piece of information needed to fix a wrong product id, an expired
+     * token, or a sandbox/production mismatch — and the caller is the site
+     * owner far more often than a customer.
+     */
+    const detail =
+      err && typeof err === "object" && "message" in err
+        ? String((err as { message: unknown }).message).slice(0, 300)
+        : "";
+
+    console.error("[polar/checkout]", err);
+
     return NextResponse.json(
-      { error: "Could not start checkout. Please try again." },
+      {
+        error: detail
+          ? `Polar rejected the checkout: ${detail}`
+          : "Could not start checkout. Please try again.",
+      },
       { status: 502 },
     );
   }

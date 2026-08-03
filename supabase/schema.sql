@@ -5,13 +5,15 @@
 -- Run this once in the Supabase SQL editor (Dashboard → SQL Editor → New query).
 -- It is safe to re-run: every statement is guarded.
 --
--- Three tables, all keyed to auth.users:
+-- Two tables, both keyed to auth.users:
 --
---   profiles       one resume profile per user (the old data/resume.json)
+--   profiles       one resume profile per user
 --   generations    one row per resume generated, used to count the free tier
---   subscriptions  Stripe state, so we know who is on the paid plan
 --
--- Row Level Security is on for all three. Every policy checks auth.uid(), so
+-- Paid access lives in 002_entitlements.sql, which is provider-agnostic.
+-- Run this file first, then 002.
+--
+-- Row Level Security is on for both. Every policy checks auth.uid(), so
 -- a user can only ever read or write their own rows — even if application
 -- code has a bug, the database refuses to leak someone else's data.
 -- ===========================================================================
@@ -69,31 +71,6 @@ create policy "own generations: select" on public.generations
 -- Deliberately no insert policy for users. Rows are written only by the
 -- server using the service-role key, so nobody can wipe or forge their own
 -- meter to get past the free-tier limit.
-
-
--- ---------------------------------------------------------------------------
--- subscriptions — mirrors Stripe, written only by the webhook
--- ---------------------------------------------------------------------------
-create table if not exists public.subscriptions (
-  user_id                uuid primary key references auth.users (id) on delete cascade,
-  stripe_customer_id     text unique,
-  stripe_subscription_id text unique,
-  -- Stripe's own status string: active, trialing, past_due, canceled, ...
-  status                 text,
-  price_id               text,
-  current_period_end     timestamptz,
-  updated_at             timestamptz not null default now()
-);
-
-create index if not exists subscriptions_customer_idx
-  on public.subscriptions (stripe_customer_id);
-
-alter table public.subscriptions enable row level security;
-
--- Read-only to the user; only the Stripe webhook (service role) writes here.
-drop policy if exists "own subscription: select" on public.subscriptions;
-create policy "own subscription: select" on public.subscriptions
-  for select using (auth.uid() = user_id);
 
 
 -- ---------------------------------------------------------------------------
