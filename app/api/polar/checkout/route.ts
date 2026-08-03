@@ -28,11 +28,16 @@ export async function POST(request: Request) {
   const origin = new URL(request.url).origin;
 
   try {
+    /*
+     * No customerEmail here on purpose. Polar rejects it on this product
+     * shape with a validation error, and it buys nothing: Polar collects the
+     * email at checkout anyway, and externalCustomerId is what actually links
+     * the payment back to our user.
+     */
     const checkout = await polar().checkouts.create({
       products: [process.env.POLAR_PRODUCT_ID!],
       successUrl: `${origin}/account?paid=card`,
       externalCustomerId: user.id,
-      customerEmail: user.email ?? undefined,
       metadata: { user_id: user.id },
     });
 

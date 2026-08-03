@@ -9,6 +9,10 @@ build
 .env
 .env.local
 .env*.local
+# Backups and copies of env files — these hold live keys
+.env*.bak
+*.env.bak
+.env.local.*
 
 .vercel
 next-env.d.ts
