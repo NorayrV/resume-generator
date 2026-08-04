@@ -9,13 +9,15 @@ Work top to bottom: each section produces values the next one needs.
 ## 1. Supabase — accounts and database
 
 1. Create a project at [supabase.com](https://supabase.com) (free tier is fine).
-2. **SQL Editor → New query** → run these two files in order:
+2. **SQL Editor → New query** → run these three files in order:
    - [`supabase/schema.sql`](supabase/schema.sql) — profiles, usage, and the
      signup trigger
    - [`supabase/002_entitlements.sql`](supabase/002_entitlements.sql) — paid
      access and crypto invoices
+   - [`supabase/003_resume_imports.sql`](supabase/003_resume_imports.sql) —
+     the resume-upload rate limit
 
-   Both are safe to run more than once.
+   All three are safe to run more than once.
 3. **Project Settings → API** and copy three values into `.env.local`:
 
    | Dashboard label | Variable |

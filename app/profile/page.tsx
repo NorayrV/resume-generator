@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, Check } from "lucide-react";
+import { ChevronDown, Check, Sparkles } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
 import { ProfileEditor } from "@/components/ProfileEditor";
 import { ProfileInput } from "@/components/ProfileInput";
+import { ResumeUpload } from "@/components/ResumeUpload";
+import { Alert } from "@/components/ui/alert";
 import type { MasterProfile, ProfileSummary } from "@/lib/types";
 
 export default function ProfilePage() {
@@ -14,6 +16,18 @@ export default function ProfilePage() {
   const [summary, setSummary] = useState<ProfileSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [justSaved, setJustSaved] = useState(false);
+
+  /*
+   * ProfileEditor copies `initial` into its own state on mount, so handing it
+   * a new profile does nothing on its own — it has to be remounted. Bumping
+   * this key is what makes an imported resume actually appear in the fields.
+   */
+  const [editorKey, setEditorKey] = useState(0);
+
+  /** Set after an import, until the user saves. Null the rest of the time. */
+  const [review, setReview] = useState<{ warnings: string[] } | null>(null);
+
+  const editorRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetch("/api/profile")
@@ -28,8 +42,22 @@ export default function ProfilePage() {
 
   function onSaved(next: ProfileSummary) {
     setSummary(next);
+    setReview(null);
     setJustSaved(true);
     setTimeout(() => setJustSaved(false), 3000);
+  }
+
+  /** Replace the form contents with a parsed resume. Nothing is saved yet. */
+  function applyImport(profile: MasterProfile, warnings: string[]) {
+    setDraft(profile);
+    setEditorKey((k) => k + 1);
+    setReview({ warnings });
+
+    // The fields are below the fold on most screens; without this the upload
+    // looks like it did nothing.
+    requestAnimationFrame(() =>
+      editorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }),
+    );
   }
 
   const hasProfile = Boolean(summary?.exists);
@@ -64,21 +92,77 @@ export default function ProfilePage() {
         ) : (
           draft && (
             <div className="mt-6 space-y-4">
-              <ProfileEditor
-                initial={draft}
-                onSaved={onSaved}
-                onDone={hasProfile ? () => router.push("/") : undefined}
-              />
+              {/*
+                First thing on the page for someone with nothing entered yet:
+                filling this form by hand is the reason people give up.
+              */}
+              <section className="card p-5 sm:p-6">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-accent-soft">
+                    <Sparkles
+                      className="h-[1.125rem] w-[1.125rem] text-accent"
+                      aria-hidden
+                    />
+                  </div>
+                  <div>
+                    <h2 className="text-body font-semibold tracking-[-0.01em]">
+                      {hasProfile
+                        ? "Replace this from a resume file"
+                        : "Already have a resume? Upload it"}
+                    </h2>
+                    <p className="hint mt-1">
+                      {hasProfile
+                        ? "Reads the file and puts it in the fields below, replacing what is there. Nothing is saved until you press Save profile."
+                        : "We read the file and fill in everything below. You check it and press Save — no typing."}
+                    </p>
+                  </div>
+                </div>
 
-              {/* The bulk shortcut, out of the way until wanted. */}
+                <div className="mt-5">
+                  <ResumeUpload onImported={applyImport} />
+                </div>
+              </section>
+
+              {review && (
+                <Alert tone={review.warnings.length ? "error" : "info"}>
+                  {review.warnings.length ? (
+                    <>
+                      <strong className="font-medium">
+                        Check the fields below before saving.
+                      </strong>{" "}
+                      We could not find {formatList(review.warnings)} — add that
+                      by hand. Nothing has been saved yet.
+                    </>
+                  ) : (
+                    <>
+                      <strong className="font-medium">
+                        Resume read. Check the fields below.
+                      </strong>{" "}
+                      Dates and job titles are worth a second look. Nothing has
+                      been saved until you press Save profile.
+                    </>
+                  )}
+                </Alert>
+              )}
+
+              <div ref={editorRef}>
+                <ProfileEditor
+                  key={editorKey}
+                  initial={draft}
+                  onSaved={onSaved}
+                  onDone={hasProfile ? () => router.push("/") : undefined}
+                />
+              </div>
+
+              {/* The text shortcut, out of the way until wanted. */}
               <details className="card group p-5 sm:p-6">
                 <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
                   <span>
                     <span className="text-small font-medium text-ink">
-                      Paste a whole resume instead
+                      Paste resume text instead
                     </span>
                     <span className="hint mt-0.5 block">
-                      Fills the fields above in one go. Check them afterwards.
+                      For when you have the text but not the file.
                     </span>
                   </span>
                   <ChevronDown
@@ -91,8 +175,10 @@ export default function ProfilePage() {
                   <ProfileInput
                     initialText={draft.raw_text ?? ""}
                     onSaved={(next, saved) => {
-                      setSummary(next);
                       setDraft(saved);
+                      // Same remount as an import — otherwise the fields above
+                      // keep showing the profile from before the paste.
+                      setEditorKey((k) => k + 1);
                       onSaved(next);
                     }}
                   />
@@ -104,4 +190,10 @@ export default function ProfilePage() {
       </main>
     </>
   );
+}
+
+/** "your name, your skills and the end of the document" */
+function formatList(items: string[]): string {
+  if (items.length <= 1) return items[0] ?? "";
+  return `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}`;
 }

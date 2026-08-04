@@ -10,8 +10,12 @@ profile, and the first few generations are free.
 
 ## How it works
 
-You fill in a profile once — contact details, roles, skills, education. For each
-application you paste the job posting and press Generate. Two AI calls run:
+You fill in a profile once — contact details, roles, skills, education. Either
+upload an existing resume and have the fields filled in for you, or type them
+yourself; see [Auto-fill from a resume](#auto-fill-from-a-resume) below.
+
+For each application you paste the job posting and press Generate. Two AI calls
+run:
 
 1. **The resume.** Five sections are rewritten for that posting: headline,
    summary, technical skills, experience bullets, interests. Everything else —
@@ -71,6 +75,58 @@ Full walkthrough in [SETUP.md](SETUP.md). The short version:
 
 ---
 
+## Auto-fill from a resume
+
+Typing a whole career into a form is where people give up, so the profile page
+leads with an upload instead. Drop in a PDF or a Word `.docx` and the fields
+below fill themselves in.
+
+Three steps, and the middle one is the only new idea:
+
+1. `lib/resumeFile.ts` turns the file into plain text — `unpdf` for PDFs,
+   `mammoth` for `.docx`.
+2. That text goes through `prompts/extractPrompt.ts`, the same parser the paste
+   box has always used. An upload and a paste therefore produce identical
+   profiles, and there is one prompt to maintain rather than two.
+3. `POST /api/profile/import` returns the result **without saving it**. The
+   editor shows it for checking and nothing is written until the user presses
+   Save.
+
+That last point is deliberate. Extraction is a guess: a two-column PDF can
+interleave lines, and dates and job titles are exactly the fields nobody wants
+quietly wrong. Anything the parser could not find is reported above the form
+rather than treated as a failure — the rest of the resume still gets through.
+
+The file itself is never stored. Only the extracted text is, in `raw_text`,
+the same as with a paste.
+
+**Limits**, all enforced server-side in `lib/resumeFile.ts`:
+
+| | |
+|---|---|
+| File size | 5 MB |
+| Text sent to the model | 20,000 characters |
+| Accepted | PDF, `.docx` |
+| Uploads per user | 10 per rolling 24 hours |
+
+Format is decided by the file's leading bytes, not its name or MIME type —
+browsers report `.docx` inconsistently, and a filename is only a suggestion.
+Legacy `.doc` and text-free scans are refused with a message saying what to do
+instead.
+
+**This call is billed to your DeepSeek key and is not covered by the free-tier
+meter**, which counts generations only. `lib/importLimit.ts` caps it instead:
+10 uploads per user per rolling 24 hours, counted in `resume_imports` by the
+service-role key, so nobody can clear their own limit. Rejected files never
+reach the AI call and so never burn an attempt.
+
+If `supabase/003_resume_imports.sql` has not been run, the limiter logs a
+warning and lets uploads through rather than blocking them — a missing table
+should not take the feature down. Run the migration and the cap starts working
+with no redeploy.
+
+---
+
 ## The free tier
 
 `lib/plan.ts` holds the limit — 5 generations per rolling 30 days.
@@ -120,6 +176,7 @@ app/
 ├── auth/callback/route.ts       completes the OAuth handshake
 └── api/
     ├── profile/route.ts         read and write the signed-in user's profile
+    ├── profile/import/route.ts  read an uploaded resume, without saving it
     ├── generate/route.ts        quota check, then the two AI calls
     ├── download/route.ts        builds the Word or PDF file
     ├── account/route.ts         usage readout
@@ -129,6 +186,8 @@ app/
 lib/
 ├── supabase/                    server, browser and admin clients
 ├── resumeStore.ts               per-user profile storage
+├── resumeFile.ts                uploaded PDF/DOCX to plain text
+├── importLimit.ts               caps how often resumes can be uploaded
 ├── usage.ts                     the free-tier meter
 ├── plan.ts                      the limits
 ├── billing.ts                   paid access, provider-agnostic
@@ -170,6 +229,10 @@ cache is corrupt, usually from running `build` while `dev` was running.
 ```bash
 rm -rf .next && npm run dev
 ```
+
+**"No text could be read from that PDF"** — the PDF is a scan: a photo of a
+resume with no text layer, so there is nothing to extract. Export a text PDF
+from Word or Google Docs, or paste the text instead. There is no OCR.
 
 **`provider is not enabled`** — the Google or GitHub provider is off in
 Supabase → Authentication → Providers.
