@@ -20,7 +20,10 @@ interface AccountData {
   };
   billing: { card: boolean; crypto: boolean };
   plan: PlanPricing;
-  access: { provider: "polar" | "cryptomus"; until: string | null } | null;
+  access: {
+    provider: "polar" | "cryptomus" | "comp";
+    until: string | null;
+  } | null;
 }
 
 /** Endpoint that starts each kind of payment. */
@@ -143,17 +146,29 @@ function AccountBody() {
 
         {usage.unlimited ? (
           <>
-            <p className="hint mt-3">
-              You are on the paid plan. Generate as many resumes as you need.
-              {access?.until && (
-                <>
-                  {" "}
-                  {access.provider === "cryptomus"
-                    ? `Access runs until ${formatDate(access.until)}.`
-                    : `Renews on ${formatDate(access.until)}.`}
-                </>
-              )}
-            </p>
+            {/*
+              Comped access has no billing date worth showing — the stored one
+              is a placeholder decades out, and printing "Renews on 31 December
+              2099" would just look broken.
+            */}
+            {access?.provider === "comp" ? (
+              <p className="hint mt-3">
+                You have unlimited access. Generate as many resumes as you need
+                — there is nothing to pay and nothing to renew.
+              </p>
+            ) : (
+              <p className="hint mt-3">
+                You are on the paid plan. Generate as many resumes as you need.
+                {access?.until && (
+                  <>
+                    {" "}
+                    {access.provider === "cryptomus"
+                      ? `Access runs until ${formatDate(access.until)}.`
+                      : `Renews on ${formatDate(access.until)}.`}
+                  </>
+                )}
+              </p>
+            )}
 
             {/* Only card subscriptions have a portal to manage. */}
             {access?.provider === "polar" && billing.card && (

@@ -149,6 +149,40 @@ Two ways to pay, both writing the same `access_until` date:
 **Every generation is billed to your DeepSeek key, including free ones.** Five
 per user per month is your exposure per signup.
 
+### Giving someone unlimited access for free
+
+For yourself, friends, or testers. Run
+[`supabase/004_comp_access.sql`](supabase/004_comp_access.sql) once, then from
+the Supabase SQL editor:
+
+```sql
+select admin.grant_unlimited('friend@example.com');
+select admin.revoke_unlimited('friend@example.com');
+select * from admin.list_unlimited();
+```
+
+They must have signed in at least once first, so there is an account to attach
+it to — the function says so if not.
+
+This is a third `provider` on the existing entitlement, `comp`, with
+`access_until` set to 2099. Nothing above `lib/billing.ts` needs to know: the
+paid checks already ask only "is this in date". The account page is the one
+exception, since telling someone their free access "renews on 31 December 2099"
+would look broken.
+
+Two things the SQL takes care of:
+
+- The functions live in an `admin` schema, **not** `public`. Supabase publishes
+  every `public` function as a REST endpoint, so a `grant_unlimited()` there
+  could be called by any signed-in user against their own account. `EXECUTE` is
+  also revoked from `PUBLIC` — revoking from `anon` and `authenticated` alone
+  leaves Postgres's default grant in place, and `create or replace` re-issues it
+  on every re-run.
+- `revoke_unlimited` only ever deletes a `comp` row, so it cannot cut off
+  someone who actually paid. Granting *over* a live Polar subscription is
+  allowed but says so in the result, since you would still need to cancel it
+  with the provider.
+
 ---
 
 ## Changing how the AI writes

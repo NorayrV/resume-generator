@@ -16,8 +16,10 @@ Work top to bottom: each section produces values the next one needs.
      access and crypto invoices
    - [`supabase/003_resume_imports.sql`](supabase/003_resume_imports.sql) —
      the resume-upload rate limit
+   - [`supabase/004_comp_access.sql`](supabase/004_comp_access.sql) — helpers
+     for granting free unlimited access
 
-   All three are safe to run more than once.
+   All four are safe to run more than once.
 3. **Project Settings → API** and copy three values into `.env.local`:
 
    | Dashboard label | Variable |

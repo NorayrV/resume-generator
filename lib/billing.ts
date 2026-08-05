@@ -10,7 +10,16 @@ import { supabaseAdmin } from "./supabase/server";
  * so everything above this layer asks that and nothing else.
  */
 
-export type Provider = "polar" | "cryptomus";
+/**
+ * Who granted the access.
+ *
+ * "comp" is not a payment method — it is access handed out by the owner to
+ * themselves, friends or testers, via admin.grant_unlimited() in
+ * supabase/004_comp_access.sql. It behaves like any other entitlement so that
+ * nothing above this file has to know the difference; only the account page
+ * treats it differently, to avoid telling someone their free access "renews".
+ */
+export type Provider = "polar" | "cryptomus" | "comp";
 
 export interface Entitlement {
   provider: Provider;
