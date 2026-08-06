@@ -63,9 +63,13 @@ declare
   v_user_id  uuid;
   v_existing text;
 begin
+  -- Strip every kind of whitespace, not just spaces: trim() leaves newlines
+  -- and tabs in place, and a list pasted across several lines would then fail
+  -- to match with a confusing "no account for" against a valid address.
+  -- No legal email address contains whitespace, so removing all of it is safe.
   select id into v_user_id
     from auth.users
-   where lower(email) = lower(trim(p_email))
+   where lower(email) = lower(regexp_replace(coalesce(p_email, ''), '\s', '', 'g'))
    limit 1;
 
   if v_user_id is null then
@@ -123,9 +127,13 @@ declare
   v_user_id uuid;
   v_rows    integer;
 begin
+  -- Strip every kind of whitespace, not just spaces: trim() leaves newlines
+  -- and tabs in place, and a list pasted across several lines would then fail
+  -- to match with a confusing "no account for" against a valid address.
+  -- No legal email address contains whitespace, so removing all of it is safe.
   select id into v_user_id
     from auth.users
-   where lower(email) = lower(trim(p_email))
+   where lower(email) = lower(regexp_replace(coalesce(p_email, ''), '\s', '', 'g'))
    limit 1;
 
   if v_user_id is null then
