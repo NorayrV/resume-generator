@@ -13,6 +13,7 @@ import {
   parseCoverLetter,
   sanitiseLangs,
 } from "@/lib/coverLetter";
+import { anchorExperience } from "@/lib/anchorExperience";
 import { currentUser } from "@/lib/supabase/server";
 import { getPlanPricing } from "@/lib/polar";
 import { getUsage, recordGeneration } from "@/lib/usage";
@@ -122,29 +123,21 @@ export async function POST(request: Request) {
      * back on from the stored profile here, so a hallucinated degree or a
      * quietly re-worded date can never reach the document.
      *
-     * Job titles, companies and dates are re-anchored the same way: we match
-     * each returned role back to the profile and overwrite its metadata with
-     * the stored values, keeping only the bullets the AI wrote.
+     * Job titles, companies and dates are re-anchored the same way — see
+     * lib/anchorExperience.ts, which also guarantees that two roles at the
+     * same employer stay two distinct roles.
      */
-    const anchored = result.resume.experience.map((role) => {
-      const source =
-        profile.experience.find(
-          (r) =>
-            r.company.toLowerCase().trim() === role.company?.toLowerCase().trim(),
-        ) ??
-        profile.experience.find(
-          (r) => r.title.toLowerCase().trim() === role.title?.toLowerCase().trim(),
-        );
+    const { experience: anchored, dropped } = anchorExperience(
+      result.resume.experience,
+      profile.experience,
+    );
 
-      return {
-        company: source?.company ?? role.company,
-        title: source?.title ?? role.title,
-        location: source?.location ?? role.location,
-        start_date: source?.start_date ?? role.start_date,
-        end_date: source?.end_date ?? role.end_date,
-        bullets: role.bullets ?? [],
-      };
-    });
+    if (dropped.length) {
+      console.warn(
+        "[generate] dropped unanchored roles",
+        dropped.map((d) => `${d.title ?? "?"} @ ${d.company ?? "?"}`),
+      );
+    }
 
     const resume: TailoredResume = {
       headline: result.resume.headline ?? profile.personal_information.headline ?? "",
