@@ -116,36 +116,117 @@ function isEmpty(profile: Partial<MasterProfile> | null): boolean {
   );
 }
 
-/** Drop blank rows and fill missing arrays, so nothing downstream null-checks. */
+/**
+ * Ceilings on a stored profile.
+ *
+ * Nothing bounded this before, and the profile is not just a row in a table:
+ * every generation flattens the whole thing into the prompt, so an oversized
+ * profile is re-sent to DeepSeek on every run, for as long as it exists. A
+ * single bad write therefore became a recurring bill and a permanently slow
+ * account.
+ *
+ * These are far above any real career — the longest genuine profile in the
+ * database uses a small fraction of them — so trimming here is silent by
+ * design. It bounds abuse, it does not shape ordinary use.
+ */
+const CAP = {
+  field: 300,
+  bullet: 1_000,
+  bulletsPerRole: 60,
+  roles: 50,
+  skills: 300,
+  education: 30,
+  languages: 40,
+  certifications: 60,
+  interests: 60,
+  contacts: 20,
+  rawText: 20_000,
+} as const;
+
+const cut = (value: string | undefined | null, max: number): string =>
+  (value ?? "").trim().slice(0, max);
+
+/** Trimmed, capped, and dropped if empty. */
+const cutOrNone = (value: string | undefined | null, max: number) =>
+  cut(value, max) || undefined;
+
+/** Drop blank rows, fill missing arrays and bound every size. */
 export function normalise(profile: Partial<MasterProfile>): MasterProfile {
   const p = profile.personal_information;
 
   return {
     personal_information: {
-      full_name: p?.full_name?.trim() ?? "",
-      location: p?.location?.trim() || undefined,
-      phone: p?.phone?.trim() || undefined,
-      email: p?.email?.trim() || undefined,
-      linkedin: p?.linkedin?.trim() || undefined,
-      additional_contacts: (p?.additional_contacts ?? []).filter(
-        (c) => c.label?.trim() && c.value?.trim(),
-      ),
-      headline: p?.headline?.trim() || undefined,
+      full_name: cut(p?.full_name, CAP.field),
+      location: cutOrNone(p?.location, CAP.field),
+      phone: cutOrNone(p?.phone, CAP.field),
+      email: cutOrNone(p?.email, CAP.field),
+      linkedin: cutOrNone(p?.linkedin, CAP.field),
+      additional_contacts: (p?.additional_contacts ?? [])
+        .filter((c) => c.label?.trim() && c.value?.trim())
+        .slice(0, CAP.contacts)
+        .map((c) => ({
+          label: cut(c.label, CAP.field),
+          value: cut(c.value, CAP.field),
+        })),
+      headline: cutOrNone(p?.headline, CAP.field),
     },
-    skills: (profile.skills ?? []).map((s) => s.trim()).filter(Boolean),
+    skills: (profile.skills ?? [])
+      .map((s) => cut(s, CAP.field))
+      .filter(Boolean)
+      .slice(0, CAP.skills),
     experience: (profile.experience ?? [])
       .filter((r) => r.company?.trim() || r.title?.trim())
+      .slice(0, CAP.roles)
       .map((r) => ({
         ...r,
-        bullets: (r.bullets ?? []).map((b) => b.trim()).filter(Boolean),
+        company: cut(r.company, CAP.field),
+        title: cut(r.title, CAP.field),
+        location: cutOrNone(r.location, CAP.field),
+        start_date: cut(r.start_date, CAP.field),
+        end_date: cut(r.end_date, CAP.field),
+        bullets: (r.bullets ?? [])
+          .map((b) => cut(b, CAP.bullet))
+          .filter(Boolean)
+          .slice(0, CAP.bulletsPerRole),
       })),
-    education: (profile.education ?? []).filter(
-      (e) => e.institution?.trim() || e.degree?.trim(),
-    ),
-    languages: (profile.languages ?? []).filter((l) => l.language?.trim()),
-    certifications: (profile.certifications ?? []).filter((c) => c.name?.trim()),
-    interests: (profile.interests ?? []).map((i) => i.trim()).filter(Boolean),
-    raw_text: profile.raw_text,
+    education: (profile.education ?? [])
+      .filter((e) => e.institution?.trim() || e.degree?.trim())
+      .slice(0, CAP.education)
+      .map((e) => ({
+        ...e,
+        institution: cut(e.institution, CAP.field),
+        degree: cut(e.degree, CAP.field),
+        field_of_study: cutOrNone(e.field_of_study, CAP.field),
+        location: cutOrNone(e.location, CAP.field),
+        start_date: cutOrNone(e.start_date, CAP.field),
+        end_date: cutOrNone(e.end_date, CAP.field),
+        details: (e.details ?? [])
+          .map((d) => cut(d, CAP.bullet))
+          .filter(Boolean)
+          .slice(0, CAP.bulletsPerRole),
+      })),
+    languages: (profile.languages ?? [])
+      .filter((l) => l.language?.trim())
+      .slice(0, CAP.languages)
+      .map((l) => ({
+        language: cut(l.language, CAP.field),
+        proficiency: cutOrNone(l.proficiency, CAP.field),
+      })),
+    certifications: (profile.certifications ?? [])
+      .filter((c) => c.name?.trim())
+      .slice(0, CAP.certifications)
+      .map((c) => ({
+        name: cut(c.name, CAP.field),
+        issuer: cutOrNone(c.issuer, CAP.field),
+        date: cutOrNone(c.date, CAP.field),
+      })),
+    interests: (profile.interests ?? [])
+      .map((i) => cut(i, CAP.field))
+      .filter(Boolean)
+      .slice(0, CAP.interests),
+    raw_text: profile.raw_text
+      ? profile.raw_text.slice(0, CAP.rawText)
+      : undefined,
     updated_at: profile.updated_at,
   };
 }
