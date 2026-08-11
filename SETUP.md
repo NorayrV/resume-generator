@@ -9,17 +9,19 @@ Work top to bottom: each section produces values the next one needs.
 ## 1. Supabase — accounts and database
 
 1. Create a project at [supabase.com](https://supabase.com) (free tier is fine).
-2. **SQL Editor → New query** → run these three files in order:
+2. **SQL Editor → New query** → run these five files in order:
    - [`supabase/schema.sql`](supabase/schema.sql) — profiles, usage, and the
      signup trigger
    - [`supabase/002_entitlements.sql`](supabase/002_entitlements.sql) — paid
-     access and crypto invoices
+     access
    - [`supabase/003_resume_imports.sql`](supabase/003_resume_imports.sql) —
      the resume-upload rate limit
    - [`supabase/004_comp_access.sql`](supabase/004_comp_access.sql) — helpers
      for granting free unlimited access
+   - [`supabase/005_claim_generation.sql`](supabase/005_claim_generation.sql) —
+     makes the free-tier limit race-proof
 
-   All four are safe to run more than once.
+   All five are safe to run more than once.
 3. **Project Settings → API** and copy three values into `.env.local`:
 
    | Dashboard label | Variable |
@@ -67,9 +69,9 @@ Sign-in fails with a redirect error if these are missing.
 
 ## 3. Payments
 
-Both are optional. Leave the variables blank and the app runs free-tier only,
-with a clear "payments are not switched on yet" message instead of a dead
-upgrade button.
+Optional. Leave the variables blank and the app runs free-tier only, with a
+clear "payments are not switched on yet" message instead of a dead upgrade
+button.
 
 ### Polar — card payments
 
@@ -91,25 +93,9 @@ leaving that to you.
    when the token comes from your production Polar organisation — the two are
    entirely separate accounts.
 
-### Cryptomus — crypto payments
-
-One payment buys 30 days of access. Crypto cannot auto-renew, so there is no
-subscription to cancel; the user simply pays again when it runs out.
-
-1. Sign up at [cryptomus.com](https://cryptomus.com) and create a merchant.
-2. **API keys** → copy the **merchant ID** into `CRYPTOMUS_MERCHANT_ID` and
-   the **payment API key** into `CRYPTOMUS_PAYMENT_KEY`.
-   Use the *payment* key, not the payout key — the payment key is what signs
-   invoices and verifies callbacks.
-3. Callbacks are passed per-invoice by the app, so there is no webhook URL to
-   configure in their dashboard.
-
----
-
-> Cryptomus signs callbacks with `md5(base64(json) + api_key)`, computed over
-> the JSON *PHP* produced — which escapes forward slashes. `lib/cryptomus.ts`
-> checks both serialisations, so a payload containing a URL or a transaction
-> hash still verifies.
+> Crypto payments are not wired up. The entitlement model is
+> provider-agnostic — access is a single `access_until` date, whoever wrote it
+> — so a second provider only needs a webhook that calls `extendAccess()`.
 
 ## 4. Run it locally
 
@@ -149,9 +135,8 @@ git init && git add -A && git commit -m "Multi-user resume generator"
 - Every successful generation writes a row to `generations`.
 - Users have **no insert or delete permission** on that table; only the server
   writes it, so nobody can reset their own meter.
-- Paid access makes it unlimited, whether it came from Polar or Cryptomus.
-  Both write a single `access_until` date, and access is live while that date
-  is in the future.
+- Paid access makes it unlimited. It is a single `access_until` date, and
+  access is live while that date is in the future.
 - The limit is enforced in `app/api/generate/route.ts` before any AI call, so
   hiding the button is a courtesy, not the control.
 

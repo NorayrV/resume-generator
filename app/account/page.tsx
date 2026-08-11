@@ -2,13 +2,14 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Bitcoin, Check, CreditCard, Loader2 } from "lucide-react";
+import { Check, CreditCard, Loader2 } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
 import type { PlanPricing } from "@/lib/plan";
 
-type Method = "card" | "crypto";
+/** A union of one for now; a second payment method slots back in here. */
+type Method = "card";
 
 interface AccountData {
   user: { email: string | null; name: string | null; avatar_url: string | null };
@@ -18,10 +19,10 @@ interface AccountData {
     unlimited: boolean;
     remaining: number | null;
   };
-  billing: { card: boolean; crypto: boolean };
+  billing: { card: boolean };
   plan: PlanPricing;
   access: {
-    provider: "polar" | "cryptomus" | "comp";
+    provider: "polar" | "comp";
     until: string | null;
   } | null;
 }
@@ -29,7 +30,6 @@ interface AccountData {
 /** Endpoint that starts each kind of payment. */
 const CHECKOUT: Record<Method, string> = {
   card: "/api/polar/checkout",
-  crypto: "/api/crypto/checkout",
 };
 
 function formatDate(iso: string): string {
@@ -111,15 +111,14 @@ function AccountBody() {
     ? 100
     : Math.min(100, Math.round((usage.used / usage.limit) * 100));
 
-  const anyMethod = billing.card || billing.crypto;
+  const anyMethod = billing.card;
 
   return (
     <div className="space-y-4">
       {justPaid && (
         <Alert tone="info">
-          {justPaid === "crypto"
-            ? "Payment received. Crypto can take a few minutes to confirm on the network — reload this page once it does."
-            : "Payment received. If your plan still shows as free, give it a few seconds and reload."}
+          Payment received. If your plan still shows as free, give it a few
+          seconds and reload.
         </Alert>
       )}
 
@@ -159,14 +158,7 @@ function AccountBody() {
             ) : (
               <p className="hint mt-3">
                 You are on the paid plan. Generate as many resumes as you need.
-                {access?.until && (
-                  <>
-                    {" "}
-                    {access.provider === "cryptomus"
-                      ? `Access runs until ${formatDate(access.until)}.`
-                      : `Renews on ${formatDate(access.until)}.`}
-                  </>
-                )}
+                {access?.until && ` Renews on ${formatDate(access.until)}.`}
               </p>
             )}
 
@@ -188,29 +180,6 @@ function AccountBody() {
                 </Button>
                 <p className="mt-2 text-[0.75rem] text-faint">
                   Cancel, update your card or download invoices.
-                </p>
-              </>
-            )}
-
-            {/* Crypto does not renew itself, so say so plainly. */}
-            {access?.provider === "cryptomus" && billing.crypto && (
-              <>
-                <Button
-                  variant="secondary"
-                  className="mt-4"
-                  onClick={() => startCheckout("crypto")}
-                  disabled={starting !== null}
-                >
-                  {starting === "crypto" ? (
-                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-                  ) : (
-                    <Bitcoin className="h-4 w-4" aria-hidden />
-                  )}
-                  Add another 30 days
-                </Button>
-                <p className="mt-2 text-[0.75rem] text-faint">
-                  Crypto payments do not renew automatically. Paying again adds
-                  to the time you have left.
                 </p>
               </>
             )}
@@ -289,30 +258,10 @@ function AccountBody() {
                     Pay by card
                   </Button>
                 )}
-
-                {billing.crypto && (
-                  <Button
-                    size="lg"
-                    variant="secondary"
-                    onClick={() => startCheckout("crypto")}
-                    disabled={starting !== null}
-                  >
-                    {starting === "crypto" ? (
-                      <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-                    ) : (
-                      <Bitcoin className="h-4 w-4" aria-hidden />
-                    )}
-                    Pay with crypto
-                  </Button>
-                )}
               </div>
 
               <p className="mt-3 text-[0.75rem] leading-relaxed text-faint">
-                {billing.card && billing.crypto
-                  ? "Card payments renew monthly and can be cancelled any time. Crypto buys 30 days of access and does not renew itself."
-                  : billing.card
-                    ? "Renews monthly. Cancel any time."
-                    : "Buys 30 days of access. Crypto payments do not renew automatically."}
+                Renews monthly. Cancel any time.
               </p>
             </>
           ) : (

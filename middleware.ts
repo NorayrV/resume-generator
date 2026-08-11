@@ -18,10 +18,9 @@ import { NextResponse, type NextRequest } from "next/server";
 const PUBLIC_PATHS = [
   "/login",
   "/auth/callback",
-  // Payment providers call these server-to-server with no session. Each
-  // verifies its own signature, which is what makes them safe to expose.
+  // Polar calls this server-to-server with no session. It verifies its own
+  // signature, which is what makes it safe to expose.
   "/api/polar/webhook",
-  "/api/crypto/webhook",
 ];
 
 function isPublic(pathname: string): boolean {

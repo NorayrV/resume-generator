@@ -139,12 +139,13 @@ any AI call, so hiding the button is a courtesy, not the control.
 Payments are optional: leave the provider variables blank and the app runs
 free-tier only, saying so plainly rather than showing a dead upgrade button.
 
-Two ways to pay, both writing the same `access_until` date:
+Payment is by card through **Polar** — a monthly subscription, cancelled from
+the customer portal. Polar is the merchant of record, so it handles sales tax
+and VAT.
 
-- **Polar** — card subscription, renews monthly, cancel from the customer
-  portal. Polar is the merchant of record, so it handles sales tax and VAT.
-- **Cryptomus** — one crypto payment buys 30 days. Crypto cannot auto-renew,
-  so paying again simply extends the time remaining.
+Access itself is stored as a single `access_until` date with no mention of who
+took the money, so another provider can be added without touching anything
+above `lib/billing.ts`.
 
 **Every generation is billed to your DeepSeek key, including free ones.** Five
 per user per month is your exposure per signup.
@@ -226,7 +227,6 @@ lib/
 ├── plan.ts                      the limits
 ├── billing.ts                   paid access, provider-agnostic
 ├── polar.ts                     card payments
-├── cryptomus.ts                 crypto payments
 ├── deepseek.ts                  the AI client
 ├── coverLetter.ts               language selection and parsing
 ├── docxGenerator.ts             the Word file

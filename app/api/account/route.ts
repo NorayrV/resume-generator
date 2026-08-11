@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { currentUser } from "@/lib/supabase/server";
 import { getUsage } from "@/lib/usage";
 import { getPlanPricing, polarEnabled } from "@/lib/polar";
-import { cryptomusEnabled } from "@/lib/cryptomus";
 import { getEntitlement } from "@/lib/billing";
 
 export const runtime = "nodejs";
@@ -40,7 +39,6 @@ export async function GET() {
     /** Which payment methods this deployment can actually take. */
     billing: {
       card: polarEnabled(),
-      crypto: cryptomusEnabled(),
     },
     /** Read from Polar, so the page can never quote a stale figure. */
     plan,

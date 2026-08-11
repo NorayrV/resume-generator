@@ -5,9 +5,9 @@ import { supabaseAdmin } from "./supabase/server";
 /**
  * Paid access, independent of who took the money.
  *
- * Polar renews a card subscription; Cryptomus sells a fixed window for crypto.
- * Both come down to the same question — is this user's access still in date —
- * so everything above this layer asks that and nothing else.
+ * Polar renews a card subscription. Everything above this layer asks only
+ * whether the user's access is still in date, so a second provider — a crypto
+ * tool, say — plugs in by adding its name below and writing an access_until.
  */
 
 /**
@@ -19,7 +19,7 @@ import { supabaseAdmin } from "./supabase/server";
  * nothing above this file has to know the difference; only the account page
  * treats it differently, to avoid telling someone their free access "renews".
  */
-export type Provider = "polar" | "cryptomus" | "comp";
+export type Provider = "polar" | "comp";
 
 export interface Entitlement {
   provider: Provider;
