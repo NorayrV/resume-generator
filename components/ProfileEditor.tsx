@@ -331,7 +331,7 @@ export function ProfileEditor({ initial, onSaved, onDone }: Props) {
       {/* ---- Experience -------------------------------------------------- */}
       <Card
         title="Work experience"
-        hint="Newest first. Write every bullet you might ever want — the generator picks and rewrites, but never adds anything you did not enter."
+        hint="Newest first. Describing a role is optional — what you write is rewritten for each posting and never replaced, and what you leave blank is written for you."
       >
         <div className="space-y-3">
           {profile.experience.map((role, i) => (
@@ -388,7 +388,7 @@ export function ProfileEditor({ initial, onSaved, onDone }: Props) {
                 </Field>
               </div>
 
-              <Field label="What you did — one bullet per line">
+              <Field label="What you did — one bullet per line (optional)">
                 <Textarea
                   rows={4}
                   value={arrayToLines(role.bullets)}
@@ -399,6 +399,11 @@ export function ProfileEditor({ initial, onSaved, onDone }: Props) {
                     "Built Tableau dashboards tracking operational KPIs for leadership\nOptimised pricing strategy, contributing to an 80% increase in gross revenue"
                   }
                 />
+                <span className="hint mt-1.5 block">
+                  {(role.bullets ?? []).some((b) => b.trim())
+                    ? "Your own words. Rewritten for each posting, never replaced."
+                    : "Left blank, so this role will be written for you from the job title and your skills — general duties only, no numbers. Read it before you send it."}
+                </span>
               </Field>
             </Entry>
           ))}

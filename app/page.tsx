@@ -27,6 +27,8 @@ interface Generation {
   cover_letter_order?: Lang[];
   matched_keywords: string[];
   gaps: string[];
+  /** Roles whose bullets the model wrote, because none were supplied. */
+  drafted_roles?: string[];
   person: PersonalInformation;
 }
 
@@ -263,6 +265,7 @@ export default function GeneratePage() {
                           role={result.resume.experience?.[0]?.title ?? ""}
                           matchedKeywords={result.matched_keywords}
                           gaps={result.gaps}
+                          draftedRoles={result.drafted_roles ?? []}
                         />
                       )}
 

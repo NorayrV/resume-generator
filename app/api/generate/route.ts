@@ -21,6 +21,11 @@ import { getPlanPricing } from "@/lib/polar";
 import { claimGeneration, getUsage, releaseGeneration } from "@/lib/usage";
 import { MAX_JOB_DESCRIPTION_CHARS } from "@/lib/plan";
 import { sanitiseOutputs, type OutputKind } from "@/lib/outputs";
+import {
+  describeRole,
+  draftingInstruction,
+  rolesNeedingDraft,
+} from "@/lib/draftBullets";
 import type {
   GenerationResult,
   MasterProfile,
@@ -183,6 +188,14 @@ async function generateFor({
   let matchedKeywords: string[] = [];
   let gaps: string[] = [];
 
+  /*
+   * Roles the user left blank, so the finished resume can say which bullets
+   * were written for them. They are the ones worth reading twice.
+   */
+  const draftedRoles = wantResume
+    ? rolesNeedingDraft(profile).map(describeRole)
+    : [];
+
   if (wantResume) {
     /**
      * Five sections are rewritten for this posting; everything else is
@@ -198,6 +211,9 @@ async function generateFor({
         "",
         "Job Description:",
         jobDescription,
+        // Empty when every role has bullets, so a filled-in profile sends
+        // exactly what it always did.
+        draftingInstruction(profile),
       ].join("\n"),
       { temperature: 0.4 },
     );
@@ -304,6 +320,8 @@ async function generateFor({
   return NextResponse.json({
     /** Which documents this run actually produced. */
     outputs,
+    /** Roles whose bullets the model wrote, because none were supplied. */
+    drafted_roles: draftedRoles,
     resume,
     cover_letter: letters?.versions ?? null,
     /** Languages in the order asked for: the posting's own language first. */

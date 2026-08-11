@@ -15,6 +15,8 @@ interface Props {
   role: string;
   matchedKeywords: string[];
   gaps: string[];
+  /** Roles the model wrote bullets for, because the profile had none. */
+  draftedRoles: string[];
 }
 
 export function ResumeResult({
@@ -23,6 +25,7 @@ export function ResumeResult({
   role,
   matchedKeywords,
   gaps,
+  draftedRoles,
 }: Props) {
   const [pending, setPending] = useState<Format | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -100,6 +103,22 @@ export function ResumeResult({
 
       <div className="flex-1 space-y-4 p-5">
         {error && <Alert tone="error">{error}</Alert>}
+
+        {/*
+          These bullets came from the job title and the skills list, not from
+          anything the candidate wrote. Worth saying plainly and above the
+          document, rather than leaving it to be discovered in an interview.
+        */}
+        {draftedRoles.length > 0 && (
+          <Alert tone="info">
+            <strong className="font-medium">
+              Written for you, so check {draftedRoles.length === 1 ? "it" : "them"}:
+            </strong>{" "}
+            {draftedRoles.join(", ")}. You left {draftedRoles.length === 1 ? "this role" : "these roles"}{" "}
+            blank, so the bullets describe the usual duties of the job title
+            rather than what you actually did.
+          </Alert>
+        )}
 
         <ResumePreview resume={resume} person={person} />
 
