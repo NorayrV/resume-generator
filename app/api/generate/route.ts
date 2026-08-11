@@ -13,12 +13,14 @@ import {
   parseCoverLetter,
   sanitiseLangs,
   type Lang,
+  type ParsedCoverLetter,
 } from "@/lib/coverLetter";
 import { anchorExperience } from "@/lib/anchorExperience";
 import { currentUser } from "@/lib/supabase/server";
 import { getPlanPricing } from "@/lib/polar";
 import { claimGeneration, getUsage, releaseGeneration } from "@/lib/usage";
 import { MAX_JOB_DESCRIPTION_CHARS } from "@/lib/plan";
+import { sanitiseOutputs, type OutputKind } from "@/lib/outputs";
 import type {
   GenerationResult,
   MasterProfile,
@@ -47,6 +49,10 @@ export async function POST(request: Request) {
     // Which cover letter languages to write. Each extra one is output tokens
     // the user pays for, so we only ask for what was requested.
     const langs = sanitiseLangs(body?.languages);
+
+    // Which documents to produce. Defaults to both, so an older client that
+    // does not send the field keeps behaving exactly as it did.
+    const outputs = sanitiseOutputs(body?.outputs);
 
     if (!jobDescription) {
       return NextResponse.json(
@@ -125,6 +131,7 @@ export async function POST(request: Request) {
         profile,
         jobDescription,
         langs,
+        outputs,
       });
     } catch (error) {
       // The user got nothing, so they keep the generation.
@@ -145,124 +152,164 @@ export async function POST(request: Request) {
 }
 
 /**
- * The two AI calls and everything built from them.
+ * The AI calls and everything built from them.
  *
  * Split out so the caller can wrap the whole thing in one try and hand the
  * claimed generation back on any failure — including the ones that return an
  * error response rather than throwing, which is why the incomplete-resume case
  * below throws instead.
+ *
+ * Either document can be skipped. The resume costs one call and the letter
+ * another, and output tokens are the bulk of what a generation costs, so
+ * asking for one produces one.
  */
 async function generateFor({
   userId,
   profile,
   jobDescription,
   langs,
+  outputs,
 }: {
   userId: string;
   profile: MasterProfile;
   jobDescription: string;
   langs: Lang[];
+  outputs: OutputKind[];
 }): Promise<NextResponse> {
-  /**
-   * Step one: write the resume from the full profile and the posting.
-   *
-   * Both system prompts stay on the server; the browser never sees either.
-   */
-  const result = await completeJSON<GenerationResult>(
-    RESUME_SYSTEM_PROMPT,
-    [
-      "Candidate Information:",
-      profileToPrompt(profile),
-      "",
-      "Job Description:",
-      jobDescription,
-    ].join("\n"),
-    { temperature: 0.4 },
-  );
+  const wantResume = outputs.includes("resume");
+  const wantCoverLetter = outputs.includes("cover_letter");
 
-  /*
-   * Thrown rather than returned, so the caller's catch releases the claimed
-   * generation. Returning an error response here would leave the user charged
-   * for a resume they never got.
-   */
-  if (!result?.resume?.experience) {
-    throw new DeepSeekError(
-      "The model returned an incomplete resume. Try generating again.",
-      502,
+  let resume: TailoredResume | null = null;
+  let matchedKeywords: string[] = [];
+  let gaps: string[] = [];
+
+  if (wantResume) {
+    /**
+     * Five sections are rewritten for this posting; everything else is
+     * restored from the stored profile afterwards.
+     *
+     * Both system prompts stay on the server; the browser never sees either.
+     */
+    const result = await completeJSON<GenerationResult>(
+      RESUME_SYSTEM_PROMPT,
+      [
+        "Candidate Information:",
+        profileToPrompt(profile),
+        "",
+        "Job Description:",
+        jobDescription,
+      ].join("\n"),
+      { temperature: 0.4 },
     );
+
+    /*
+     * Thrown rather than returned, so the caller's catch releases the claimed
+     * generation. Returning an error response here would leave the user
+     * charged for a resume they never got.
+     */
+    if (!result?.resume?.experience) {
+      throw new DeepSeekError(
+        "The model returned an incomplete resume. Try generating again.",
+        502,
+      );
+    }
+
+    /**
+     * The AI only ever writes five slots. Education and languages are grafted
+     * back on from the stored profile here, so a hallucinated degree or a
+     * quietly re-worded date can never reach the document.
+     *
+     * Job titles, companies and dates are re-anchored the same way — see
+     * lib/anchorExperience.ts, which also guarantees that two roles at the
+     * same employer stay two distinct roles.
+     */
+    const { experience: anchored, dropped } = anchorExperience(
+      result.resume.experience,
+      profile.experience,
+    );
+
+    if (dropped.length) {
+      console.warn(
+        "[generate] dropped unanchored roles",
+        dropped.map((d) => `${d.title ?? "?"} @ ${d.company ?? "?"}`),
+      );
+    }
+
+    resume = {
+      headline:
+        result.resume.headline ?? profile.personal_information.headline ?? "",
+      summary: result.resume.summary ?? "",
+      technical_skills: result.resume.technical_skills ?? [],
+      experience: anchored,
+      interests: result.resume.interests ?? [],
+      education: profile.education,
+      languages: profile.languages,
+      certifications: profile.certifications,
+    };
+
+    // Both readouts describe the resume, so they only exist when one was made.
+    matchedKeywords = result.matched_keywords ?? [];
+    gaps = result.gaps ?? [];
   }
 
-  /**
-   * The AI only ever writes five slots. Education and languages are grafted
-   * back on from the stored profile here, so a hallucinated degree or a
-   * quietly re-worded date can never reach the document.
-   *
-   * Job titles, companies and dates are re-anchored the same way — see
-   * lib/anchorExperience.ts, which also guarantees that two roles at the
-   * same employer stay two distinct roles.
-   */
-  const { experience: anchored, dropped } = anchorExperience(
-    result.resume.experience,
-    profile.experience,
-  );
+  let letters: ParsedCoverLetter | null = null;
 
-  if (dropped.length) {
-    console.warn(
-      "[generate] dropped unanchored roles",
-      dropped.map((d) => `${d.title ?? "?"} @ ${d.company ?? "?"}`),
+  if (wantCoverLetter) {
+    /**
+     * Written against the resume just produced, when there is one, so the
+     * letter cites the same achievements in the same words as the document
+     * being attached. That is why this call waits for the first rather than
+     * running alongside it.
+     *
+     * On a letter-only run there is no tailored resume to quote, so the stored
+     * profile goes in instead. The prompt is written against "the candidate's
+     * stored resume/profile" throughout and reads either happily — but the
+     * letter is then drawn from the whole profile rather than from a document
+     * already narrowed to this posting.
+     *
+     * Only the requested languages are written, and the token ceiling scales
+     * with that count. Cyrillic costs more tokens per character than Latin, so
+     * the budget leaves headroom — a letter that runs past the limit is cut
+     * off mid-sentence.
+     */
+    const source = resume
+      ? [
+          "Candidate resume (already tailored to this job — quote from this):",
+          tailoredResumeToPrompt(resume, profile.personal_information),
+        ]
+      : [
+          "Candidate profile (their full stored experience — quote from this):",
+          profileToPrompt(profile),
+        ];
+
+    const coverLetter = await completeText(
+      COVER_LETTER_SYSTEM_PROMPT,
+      [
+        ...source,
+        "",
+        "Job Description:",
+        jobDescription,
+        languageInstruction(langs),
+      ].join("\n"),
+      { temperature: 0.7, maxTokens: coverLetterTokenBudget(langs) },
     );
+
+    letters = parseCoverLetter(coverLetter);
   }
-
-  const resume: TailoredResume = {
-    headline: result.resume.headline ?? profile.personal_information.headline ?? "",
-    summary: result.resume.summary ?? "",
-    technical_skills: result.resume.technical_skills ?? [],
-    experience: anchored,
-    interests: result.resume.interests ?? [],
-    education: profile.education,
-    languages: profile.languages,
-    certifications: profile.certifications,
-  };
-
-  /**
-   * Step two: write the cover letter against the resume just produced.
-   *
-   * It reads the finished resume rather than the raw profile, so the letter
-   * cites the same achievements, in the same words, as the document being
-   * attached. That is why this call waits for the first one instead of
-   * running alongside it.
-   *
-   * Only the requested languages are written, and the token ceiling scales
-   * with that count. Cyrillic costs more tokens per character than Latin, so
-   * the budget leaves headroom — a letter that runs past the limit is cut
-   * off mid-sentence.
-   */
-  const coverLetter = await completeText(
-    COVER_LETTER_SYSTEM_PROMPT,
-    [
-      "Candidate resume (already tailored to this job — quote from this):",
-      tailoredResumeToPrompt(resume, profile.personal_information),
-      "",
-      "Job Description:",
-      jobDescription,
-      languageInstruction(langs),
-    ].join("\n"),
-    { temperature: 0.7, maxTokens: coverLetterTokenBudget(langs) },
-  );
-
-  const letters = parseCoverLetter(coverLetter);
 
   // The slot was already taken before the AI calls ran; this only reads the
   // resulting figures back for the UI.
   const after = await getUsage(userId);
 
   return NextResponse.json({
+    /** Which documents this run actually produced. */
+    outputs,
     resume,
-    cover_letter: letters.versions,
+    cover_letter: letters?.versions ?? null,
     /** Languages in the order asked for: the posting's own language first. */
-    cover_letter_order: letters.order,
-    matched_keywords: result.matched_keywords ?? [],
-    gaps: result.gaps ?? [],
+    cover_letter_order: letters?.order ?? [],
+    matched_keywords: matchedKeywords,
+    gaps,
     person: profile.personal_information,
     usage: {
       used: after.used,

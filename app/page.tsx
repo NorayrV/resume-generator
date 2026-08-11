@@ -10,6 +10,7 @@ import { CoverLetter } from "@/components/CoverLetter";
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
 import { sanitiseLangs, type Lang } from "@/lib/coverLetter";
+import { sanitiseOutputs, type OutputKind } from "@/lib/outputs";
 import type { PlanPricing } from "@/lib/plan";
 import type {
   CoverLetterVersions,
@@ -19,8 +20,9 @@ import type {
 } from "@/lib/types";
 
 interface Generation {
-  resume: TailoredResume;
-  cover_letter: CoverLetterVersions;
+  /** Absent on a cover-letter-only run. */
+  resume: TailoredResume | null;
+  cover_letter: CoverLetterVersions | null;
   /** Posting's own language first, so the UI can open on it. */
   cover_letter_order?: Lang[];
   matched_keywords: string[];
@@ -34,6 +36,9 @@ const CACHE_KEY = "last-generation";
 /** Remembered cover letter language choice. */
 const LANGS_KEY = "cover-letter-langs";
 
+/** Remembered choice of which documents to produce. */
+const OUTPUTS_KEY = "generate-outputs";
+
 export default function GeneratePage() {
   const [profile, setProfile] = useState<ProfileSummary | null>(null);
   const [loading, setLoading] = useState(true);
@@ -42,6 +47,12 @@ export default function GeneratePage() {
   // Defaults to English alone: extra languages cost extra output tokens, so
   // they are opted into rather than out of.
   const [langs, setLangs] = useState<Lang[]>(["english"]);
+  // Both by default, which is what every generation did before this choice
+  // existed — so nothing changes for anyone who ignores it.
+  const [outputs, setOutputs] = useState<OutputKind[]>([
+    "resume",
+    "cover_letter",
+  ]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [quotaExceeded, setQuotaExceeded] = useState(false);
@@ -68,6 +79,13 @@ export default function GeneratePage() {
     } catch {
       // Fall back to the English default.
     }
+
+    try {
+      const saved = localStorage.getItem(OUTPUTS_KEY);
+      if (saved) setOutputs(sanitiseOutputs(JSON.parse(saved)));
+    } catch {
+      // Fall back to producing both.
+    }
   }, []);
 
   /** Remember the language choice, so it does not reset on every visit. */
@@ -75,6 +93,15 @@ export default function GeneratePage() {
     setLangs(next);
     try {
       localStorage.setItem(LANGS_KEY, JSON.stringify(next));
+    } catch {
+      // Private browsing — the choice just will not persist.
+    }
+  }
+
+  function changeOutputs(next: OutputKind[]) {
+    setOutputs(next);
+    try {
+      localStorage.setItem(OUTPUTS_KEY, JSON.stringify(next));
     } catch {
       // Private browsing — the choice just will not persist.
     }
@@ -91,7 +118,7 @@ export default function GeneratePage() {
       const response = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ jobDescription, languages: langs }),
+        body: JSON.stringify({ jobDescription, languages: langs, outputs }),
       });
 
       const data = await response.json();
@@ -175,6 +202,8 @@ export default function GeneratePage() {
                   busy={busy}
                   langs={langs}
                   onLangsChange={changeLangs}
+                  outputs={outputs}
+                  onOutputsChange={changeOutputs}
                 />
               </div>
             </section>
@@ -211,36 +240,53 @@ export default function GeneratePage() {
               </div>
             )}
 
-            {/* ---- Step 2: the two documents, side by side when there is room ---- */}
-            {result && (
-              <div id="output" className="animate-rise space-y-4">
-                <div className="grid gap-6 lg:grid-cols-2">
-                  <ResumeResult
-                    resume={result.resume}
-                    person={result.person}
-                    role={result.resume.experience?.[0]?.title ?? ""}
-                    matchedKeywords={result.matched_keywords}
-                    gaps={result.gaps}
-                  />
+            {/* ---- Step 2: whichever documents were asked for ---- */}
+            {result &&
+              (() => {
+                const hasResume = Boolean(result.resume);
+                const hasLetter = Object.values(result.cover_letter ?? {}).some(
+                  (v) => v?.trim(),
+                );
 
-                  {Object.values(result.cover_letter ?? {}).some((v) =>
-                    v?.trim(),
-                  ) && (
-                    <CoverLetter
-                      letters={result.cover_letter}
-                      order={result.cover_letter_order}
-                    />
-                  )}
-                </div>
+                // One document gets the full width rather than half of it.
+                const twoUp = hasResume && hasLetter;
 
-                <div className="flex justify-center pt-2">
-                  <Button variant="secondary" onClick={generate} disabled={busy}>
-                    <RotateCcw className="h-4 w-4" aria-hidden />
-                    Generate again
-                  </Button>
-                </div>
-              </div>
-            )}
+                return (
+                  <div id="output" className="animate-rise space-y-4">
+                    <div
+                      className={`grid gap-6 ${twoUp ? "lg:grid-cols-2" : ""}`}
+                    >
+                      {result.resume && (
+                        <ResumeResult
+                          resume={result.resume}
+                          person={result.person}
+                          role={result.resume.experience?.[0]?.title ?? ""}
+                          matchedKeywords={result.matched_keywords}
+                          gaps={result.gaps}
+                        />
+                      )}
+
+                      {hasLetter && result.cover_letter && (
+                        <CoverLetter
+                          letters={result.cover_letter}
+                          order={result.cover_letter_order}
+                        />
+                      )}
+                    </div>
+
+                    <div className="flex justify-center pt-2">
+                      <Button
+                        variant="secondary"
+                        onClick={generate}
+                        disabled={busy}
+                      >
+                        <RotateCcw className="h-4 w-4" aria-hidden />
+                        Generate again
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })()}
 
             {/* A quiet nudge only when there is nothing on screen yet. */}
             {!result && !busy && (
