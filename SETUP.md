@@ -20,8 +20,10 @@ Work top to bottom: each section produces values the next one needs.
      for granting free unlimited access
    - [`supabase/005_claim_generation.sql`](supabase/005_claim_generation.sql) —
      makes the free-tier limit race-proof
+   - [`supabase/006_rls_initplan_and_search_path.sql`](supabase/006_rls_initplan_and_search_path.sql)
+     — stops RLS policies re-evaluating `auth.uid()` once per row
 
-   All five are safe to run more than once.
+   All six are safe to run more than once.
 3. **Project Settings → API** and copy three values into `.env.local`:
 
    | Dashboard label | Variable |
