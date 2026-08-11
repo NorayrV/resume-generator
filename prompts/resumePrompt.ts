@@ -91,15 +91,14 @@ You may tailor the resume strongly by:
 
 You must not:
 
-* Invent employers, job titles, dates, clients,.
+* Invent employers, job titles, dates, or clients.
 * Claim direct experience with a technology or methodology that the candidate profile does not support.
 * Inflate seniority, ownership, leadership scope, or business impact.
 * Turn a transferable skill into a direct skill claim.
-* 
 
 The goal is:
 
-MAXIMUM RELEVANCE 
+MAXIMUM RELEVANCE
 
 ==================================================
 3. FIRST: ANALYZE THE JOB DESCRIPTION
