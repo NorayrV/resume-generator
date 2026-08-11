@@ -108,42 +108,45 @@ export function JobDescriptionInput({
         </p>
       </fieldset>
 
-      {/* Each extra language is a longer, costlier generation, so this is an
-          explicit choice rather than a default of everything. */}
-      <fieldset
-        disabled={busy || !wantsCoverLetter}
-        className="disabled:opacity-60"
-      >
-        <legend className="label">Cover letter language</legend>
-        <div className="flex flex-wrap gap-2">
-          {ALL_LANGS.map((lang) => {
-            const on = langs.includes(lang);
-            const only = on && langs.length === 1;
-            return (
-              <button
-                key={lang}
-                type="button"
-                role="checkbox"
-                aria-checked={on}
-                onClick={() => toggle(lang)}
-                title={only ? "Keep at least one language" : undefined}
-                className={`rounded-full border px-3.5 py-1.5 text-small font-medium transition-colors ${
-                  on
-                    ? "border-accent bg-accent text-white"
-                    : "border-line bg-paper text-muted hover:border-faint hover:text-ink"
-                } ${only ? "cursor-default" : ""}`}
-              >
-                {LANGUAGES[lang].label}
-              </button>
-            );
-          })}
-        </div>
-        <p className="hint mt-2">
-          {langs.length === 1
-            ? "One version will be written."
-            : `${langs.length} versions will be written — each one makes the generation longer.`}
-        </p>
-      </fieldset>
+      {/* Hidden rather than disabled when no letter is being written: a
+          greyed-out control still asks to be read and reasoned about, and
+          this one has nothing to say when there is no letter.
+
+          Each extra language is a longer, costlier generation, so which ones
+          to write stays an explicit choice rather than a default of all. */}
+      {wantsCoverLetter && (
+        <fieldset disabled={busy} className="disabled:opacity-60">
+          <legend className="label">Cover letter language</legend>
+          <div className="flex flex-wrap gap-2">
+            {ALL_LANGS.map((lang) => {
+              const on = langs.includes(lang);
+              const only = on && langs.length === 1;
+              return (
+                <button
+                  key={lang}
+                  type="button"
+                  role="checkbox"
+                  aria-checked={on}
+                  onClick={() => toggle(lang)}
+                  title={only ? "Keep at least one language" : undefined}
+                  className={`rounded-full border px-3.5 py-1.5 text-small font-medium transition-colors ${
+                    on
+                      ? "border-accent bg-accent text-white"
+                      : "border-line bg-paper text-muted hover:border-faint hover:text-ink"
+                  } ${only ? "cursor-default" : ""}`}
+                >
+                  {LANGUAGES[lang].label}
+                </button>
+              );
+            })}
+          </div>
+          <p className="hint mt-2">
+            {langs.length === 1
+              ? "One version will be written."
+              : `${langs.length} versions will be written — each one makes the generation longer.`}
+          </p>
+        </fieldset>
+      )}
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         {/* Always says why the button is disabled, rather than leaving you guessing. */}
