@@ -12,8 +12,17 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: "Resume Generator",
-  description: "Tailor a resume and cover letter to one job description.",
-  robots: { index: false, follow: false },
+  description:
+    "Paste a job posting and get a resume and cover letter rewritten around it, using your own experience — never invented.",
+  /*
+   * Indexable on purpose. This was noindex while the site was private, which
+   * would now keep it out of search results entirely.
+   *
+   * Only the landing page is actually reachable by a crawler: middleware sends
+   * signed-out visitors from every other route to /login, so there is nothing
+   * private for a search engine to reach and no per-page opt-out needed.
+   */
+  robots: { index: true, follow: true },
   /*
    * Domain ownership proof for the Cryptomus merchant account. It lives in the
    * root layout rather than on one page because a signed-out visitor — which

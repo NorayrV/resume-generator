@@ -8,6 +8,7 @@ import {
 } from "@/lib/resumeStore";
 import { completeJSON, DeepSeekError } from "@/lib/deepseek";
 import { EXTRACT_SYSTEM_PROMPT } from "@/prompts/extractPrompt";
+import { MAX_RESUME_TEXT_CHARS } from "@/lib/plan";
 import type { MasterProfile } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -98,6 +99,20 @@ export async function POST(request: Request) {
           "That is too short to read as a resume. Paste the whole thing — contact details, every role, skills and education.",
       },
       { status: 422 },
+    );
+  }
+
+  /*
+   * A ceiling as well as a floor, matching the one the file upload already
+   * enforces. Every character here is billed to this deployment's DeepSeek
+   * key, and a two-page resume is nowhere near this limit.
+   */
+  if (text.length > MAX_RESUME_TEXT_CHARS) {
+    return NextResponse.json(
+      {
+        error: `That is ${text.length.toLocaleString()} characters — too long to read as a resume. Paste up to ${MAX_RESUME_TEXT_CHARS.toLocaleString()}.`,
+      },
+      { status: 413 },
     );
   }
 

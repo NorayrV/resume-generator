@@ -12,6 +12,20 @@ export const FREE_GENERATIONS_PER_MONTH = 5;
 /** Rolling window the free tier is counted over. */
 export const USAGE_WINDOW_DAYS = 30;
 
+/**
+ * Ceilings on the free-text a user can send for an AI call.
+ *
+ * Every character is billed to the deployment's DeepSeek key, and both of
+ * these fields previously had a floor but no ceiling — so one request could
+ * cost dollars instead of a fraction of a cent. These are generous: a long
+ * job posting is a few thousand characters and a two-page resume around six.
+ *
+ * Enforced server-side, where it counts. The UI shows the same numbers so the
+ * limit is visible before the request is sent rather than after it fails.
+ */
+export const MAX_JOB_DESCRIPTION_CHARS = 20_000;
+export const MAX_RESUME_TEXT_CHARS = 20_000;
+
 /** What to show for the paid plan. Read from Polar, so never typed twice. */
 export interface PlanPricing {
   /** Formatted for display, e.g. "$9". */

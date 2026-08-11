@@ -4,6 +4,7 @@ import { Loader2, Sparkles } from "lucide-react";
 import { Textarea } from "./ui/textarea";
 import { Button } from "./ui/button";
 import { ALL_LANGS, LANGUAGES, type Lang } from "@/lib/coverLetter";
+import { MAX_JOB_DESCRIPTION_CHARS } from "@/lib/plan";
 
 interface Props {
   value: string;
@@ -25,7 +26,9 @@ export function JobDescriptionInput({
   onLangsChange,
 }: Props) {
   const count = value.trim().length;
-  const ready = count >= MIN_CHARS;
+  const tooLong = count > MAX_JOB_DESCRIPTION_CHARS;
+  // The server enforces both bounds; this only saves the round trip.
+  const ready = count >= MIN_CHARS && !tooLong;
 
   /** Toggle a language, but never let the last one be turned off. */
   function toggle(lang: Lang) {
@@ -84,12 +87,16 @@ export function JobDescriptionInput({
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         {/* Always says why the button is disabled, rather than leaving you guessing. */}
-        <p className="text-small text-muted tnum">
+        <p
+          className={`text-small tnum ${tooLong ? "text-flag" : "text-muted"}`}
+        >
           {count === 0
             ? "Paste a posting to get started"
-            : ready
-              ? `${count.toLocaleString()} characters`
-              : `${MIN_CHARS - count} more characters needed`}
+            : tooLong
+              ? `${count.toLocaleString()} characters — ${(count - MAX_JOB_DESCRIPTION_CHARS).toLocaleString()} over the limit`
+              : ready
+                ? `${count.toLocaleString()} characters`
+                : `${MIN_CHARS - count} more characters needed`}
         </p>
 
         <Button size="lg" onClick={onGenerate} disabled={busy || !ready}>

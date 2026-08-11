@@ -60,7 +60,76 @@ export async function getUsage(userId: string): Promise<UsageStatus> {
   };
 }
 
-/** Record one generation against the user's meter. */
+/** Record one generation against the user's meter, with no limit check. */
 export async function recordGeneration(userId: string): Promise<void> {
   await supabaseAdmin().from("generations").insert({ user_id: userId });
+}
+
+/** A slot taken before generating, to be released if generation fails. */
+export type Claim =
+  | { ok: true; id: number | null }
+  | { ok: false; used: number; limit: number };
+
+/**
+ * Take one generation off the meter *before* the AI calls run.
+ *
+ * Checking the count and writing the row have to happen together, or they
+ * don't happen at all: the two DeepSeek calls sit between them and take half
+ * a minute, and every request that started inside that window used to read the
+ * same stale count and pass. Serverless functions share no memory, so the
+ * database is the only place the two steps can be made atomic — see
+ * supabase/005_claim_generation.sql.
+ *
+ * Paid users skip the check entirely; their generations are still recorded.
+ */
+export async function claimGeneration(userId: string): Promise<Claim> {
+  if (await hasPaidAccess(userId)) {
+    await recordGeneration(userId);
+    return { ok: true, id: null };
+  }
+
+  const { data, error } = await supabaseAdmin().rpc("claim_generation", {
+    p_user_id: userId,
+    p_limit: FREE_GENERATIONS_PER_MONTH,
+    p_window_days: USAGE_WINDOW_DAYS,
+  });
+
+  if (error) {
+    /*
+     * Fail closed. Handing out an uncounted AI call because the meter is
+     * unreachable is the one outcome worth avoiding — it is exactly what an
+     * attacker would try to induce.
+     */
+    console.error("[usage] claim_generation", error);
+    return {
+      ok: false,
+      used: FREE_GENERATIONS_PER_MONTH,
+      limit: FREE_GENERATIONS_PER_MONTH,
+    };
+  }
+
+  // NULL means the limit is already reached.
+  if (data === null || data === undefined) {
+    const usage = await getUsage(userId);
+    return { ok: false, used: usage.used, limit: usage.limit };
+  }
+
+  return { ok: true, id: Number(data) };
+}
+
+/**
+ * Hand a claimed slot back after a failed generation.
+ *
+ * Deletes by row id, so it can only ever remove the row this request created.
+ * A failure here is logged and swallowed: the user already has an error, and
+ * one over-counted generation is not worth a second one on top of it.
+ */
+export async function releaseGeneration(id: number | null): Promise<void> {
+  if (id === null) return;
+
+  const { error } = await supabaseAdmin().rpc("release_generation", {
+    p_id: id,
+  });
+
+  if (error) console.error("[usage] release_generation", error);
 }
