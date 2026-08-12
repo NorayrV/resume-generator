@@ -51,16 +51,68 @@ function isFormat(value: unknown): value is Format {
   return value === "docx" || value === "pdf";
 }
 
-function filename(name: string, role: string, ext: string) {
-  const slug = (value: string) =>
-    value
-      .normalize("NFKD")
-      .replace(/[^\w\s-]/g, "")
-      .trim()
-      .replace(/\s+/g, "-");
+/** Characters no filesystem will accept, plus control characters. */
+// eslint-disable-next-line no-control-regex
+const ILLEGAL = /[\\/:*?"<>|\u0000-\u001F]/g;
 
-  const parts = [slug(name) || "Resume", slug(role)].filter(Boolean);
-  return `${parts.join("-")}.${ext}`;
+const words = (value: string) =>
+  value.replace(ILLEGAL, " ").trim().split(/\s+/).filter(Boolean);
+
+/**
+ * Name_Surname_Headline — "Norayr_Vardanyan_DataAnalyst".
+ *
+ * Underscores separate the person from the role; the headline itself closes
+ * up, so "Data Analyst" reads as one token rather than splitting into two
+ * more underscore-delimited parts.
+ *
+ * Letters are left in whatever script they were written in. The previous
+ * version stripped anything outside [A-Za-z0-9_], which quietly deleted
+ * Armenian and Cyrillic names entirely and downloaded the file as
+ * "Resume.pdf" — the one part of the name that matters most, gone.
+ */
+function documentName(fullName: string, headline: string): string {
+  const person = words(fullName).join("_");
+  const role = words(headline).join("");
+
+  return [person, role].filter(Boolean).join("_") || "Resume";
+}
+
+/**
+ * A plain-ASCII version, for the `filename=` parameter.
+ *
+ * Content-Disposition's original parameter is not safe for non-ASCII, so the
+ * real name travels in `filename*` (RFC 5987) and this is what an old client
+ * falls back to. Accented Latin survives via NFKD; other scripts do not, and
+ * "Resume" is better than mojibake.
+ */
+function asciiName(name: string): string {
+  const stripped = name
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036F]/g, "")
+    .replace(/[^A-Za-z0-9._-]/g, "");
+
+  return stripped.replace(/^[._-]+/, "") || "Resume";
+}
+
+/** RFC 5987 encoding — stricter than encodeURIComponent about ' ( ) *. */
+function rfc5987(value: string): string {
+  return encodeURIComponent(value).replace(
+    /['()*]/g,
+    (c) => "%" + c.charCodeAt(0).toString(16).toUpperCase(),
+  );
+}
+
+/**
+ * Both spellings of the filename, so every browser gets the best one it
+ * understands.
+ */
+function contentDisposition(name: string, ext: string): string {
+  const full = `${name}.${ext}`;
+  return [
+    "attachment",
+    `filename="${asciiName(name)}.${ext}"`,
+    `filename*=UTF-8''${rfc5987(full)}`,
+  ].join("; ");
 }
 
 export async function POST(request: Request) {
@@ -88,7 +140,6 @@ export async function POST(request: Request) {
     let body: {
       resume?: TailoredResume;
       person?: PersonalInformation;
-      role?: unknown;
       format?: unknown;
     } | null = null;
 
@@ -100,7 +151,6 @@ export async function POST(request: Request) {
 
     const resume = body?.resume;
     const person = body?.person;
-    const role = String(body?.role ?? "");
 
     // Anything unrecognised falls back to Word, which is what the button did
     // before PDF existed.
@@ -132,7 +182,10 @@ export async function POST(request: Request) {
       status: 200,
       headers: {
         "Content-Type": mime,
-        "Content-Disposition": `attachment; filename="${filename(person.full_name, role, ext)}"`,
+        "Content-Disposition": contentDisposition(
+          documentName(person.full_name, resume.headline ?? ""),
+          ext,
+        ),
         "Content-Length": String(buffer.length),
         "Cache-Control": "no-store",
       },

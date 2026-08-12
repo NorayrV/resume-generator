@@ -12,7 +12,6 @@ type Format = "docx" | "pdf";
 interface Props {
   resume: TailoredResume;
   person: PersonalInformation;
-  role: string;
   matchedKeywords: string[];
   gaps: string[];
   /** Roles the model wrote bullets for, because the profile had none. */
@@ -22,7 +21,6 @@ interface Props {
 export function ResumeResult({
   resume,
   person,
-  role,
   matchedKeywords,
   gaps,
   draftedRoles,
@@ -38,7 +36,7 @@ export function ResumeResult({
       const response = await fetch("/api/download", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ resume, person, role, format }),
+        body: JSON.stringify({ resume, person, format }),
       });
 
       if (!response.ok) {
@@ -49,12 +47,30 @@ export function ResumeResult({
 
       const blob = await response.blob();
       const disposition = response.headers.get("Content-Disposition") ?? "";
-      const match = disposition.match(/filename="(.+?)"/);
+
+      /*
+       * filename* first. It is the only one that can carry a name written in
+       * Armenian, Cyrillic or any other non-Latin script; the plain filename=
+       * beside it is a stripped-back ASCII fallback. Reading the fallback
+       * first would throw the real name away on exactly the accounts that
+       * most need it.
+       */
+      const encoded = disposition.match(/filename\*=UTF-8''([^;]+)/i)?.[1];
+      const plain = disposition.match(/filename="(.+?)"/)?.[1];
+
+      let suggested = plain;
+      if (encoded) {
+        try {
+          suggested = decodeURIComponent(encoded);
+        } catch {
+          // Malformed encoding — the ASCII fallback is still fine.
+        }
+      }
 
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = match?.[1] ?? `resume.${format}`;
+      link.download = suggested ?? `resume.${format}`;
       document.body.appendChild(link);
       link.click();
       link.remove();

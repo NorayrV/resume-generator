@@ -262,7 +262,6 @@ export default function GeneratePage() {
                         <ResumeResult
                           resume={result.resume}
                           person={result.person}
-                          role={result.resume.experience?.[0]?.title ?? ""}
                           matchedKeywords={result.matched_keywords}
                           gaps={result.gaps}
                           draftedRoles={result.drafted_roles ?? []}
