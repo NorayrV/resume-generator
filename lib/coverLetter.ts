@@ -119,10 +119,15 @@ export const LANGUAGES: Record<
 export const ALL_LANGS: Lang[] = ["english", "russian", "spanish"];
 
 /** Keep only recognised languages, in a stable order. Falls back to English. */
-export function sanitiseLangs(input: unknown): Lang[] {
-  const wanted = Array.isArray(input) ? input : [];
-  const picked = ALL_LANGS.filter((l) => wanted.includes(l));
-  return picked.length > 0 ? picked : ["english"];
+export function sanitiseLang(input: unknown): Lang {
+  /*
+   * Arrays are accepted so the two older shapes still resolve: the API used to
+   * take a `languages` array, and the browser used to store one. Taking the
+   * first entry turns an existing multi-language preference into the closest
+   * single-language equivalent rather than silently resetting it to English.
+   */
+  const value = Array.isArray(input) ? input[0] : input;
+  return ALL_LANGS.includes(value as Lang) ? (value as Lang) : "english";
 }
 
 /**
@@ -133,8 +138,8 @@ export function sanitiseLangs(input: unknown): Lang[] {
  * this overrides that for a single request. It is deliberately blunt: the
  * instruction it is countermanding is written in capitals.
  */
-export function languageInstruction(langs: Lang[]): string {
-  const list = langs.map((l) => LANGUAGES[l].heading).join(", ");
+export function languageInstruction(lang: Lang): string {
+  const heading = LANGUAGES[lang].heading;
 
   return [
     "",
@@ -142,30 +147,17 @@ export function languageInstruction(langs: Lang[]): string {
     "LANGUAGE OVERRIDE FOR THIS REQUEST",
     "==================================================",
     "",
-    `Write ONLY the following version(s): ${list}.`,
+    `Write the cover letter in ${LANGUAGES[lang].label} only.`,
     "",
     "This replaces any earlier instruction to always produce three versions.",
     "Do not write, translate, mention or leave a heading for any other language.",
     "",
-    langs.length === 1
-      ? `Output exactly one section, beginning with the heading "## ${LANGUAGES[langs[0]].heading}".`
-      : [
-          `Output exactly ${langs.length} sections, one per language, each under its own heading:`,
-          langs.map((l) => `  ## ${LANGUAGES[l].heading}`).join("\n"),
-          "",
-          "Order them so the job description's own language comes first, if it is among them.",
-        ].join("\n"),
+    `Output exactly one section, beginning with the heading "## ${heading}".`,
     "",
     "Everything else in the instructions above still applies.",
   ].join("\n");
 }
 
-/**
- * Output ceiling for the cover letter call.
- *
- * Roughly one letter's worth per language plus headroom, so asking for one
- * language does not pay for a three-language budget.
- */
-export function coverLetterTokenBudget(langs: Lang[]): number {
-  return 600 + 1000 * Math.max(1, langs.length);
+export function coverLetterTokenBudget(): number {
+  return 1600;
 }

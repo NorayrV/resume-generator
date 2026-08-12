@@ -9,7 +9,7 @@ import { ResumeResult } from "@/components/ResumeResult";
 import { CoverLetter } from "@/components/CoverLetter";
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
-import { sanitiseLangs, type Lang } from "@/lib/coverLetter";
+import { sanitiseLang, type Lang } from "@/lib/coverLetter";
 import {
   DEFAULT_OUTPUTS,
   sanitiseOutputs,
@@ -39,7 +39,13 @@ interface Generation {
 /** Kept so a trip to Profile and back does not throw away a generation. */
 const CACHE_KEY = "last-generation";
 
-/** Remembered cover letter language choice. */
+/**
+ * Remembered cover letter language.
+ *
+ * The key keeps its plural name on purpose: it used to hold an array, and
+ * sanitiseLang() reads that shape too, so an existing choice survives the
+ * move to a single language instead of silently resetting to English.
+ */
 const LANGS_KEY = "cover-letter-langs";
 
 /** Remembered choice of which documents to produce. */
@@ -50,9 +56,7 @@ export default function GeneratePage() {
   const [loading, setLoading] = useState(true);
 
   const [jobDescription, setJobDescription] = useState("");
-  // Defaults to English alone: extra languages cost extra output tokens, so
-  // they are opted into rather than out of.
-  const [langs, setLangs] = useState<Lang[]>(["english"]);
+  const [lang, setLang] = useState<Lang>("english");
   // Resume only unless asked otherwise. A saved choice below overrides this,
   // so anyone who has already turned the letter on keeps it.
   const [outputs, setOutputs] = useState<OutputKind[]>(DEFAULT_OUTPUTS);
@@ -78,7 +82,7 @@ export default function GeneratePage() {
 
     try {
       const saved = localStorage.getItem(LANGS_KEY);
-      if (saved) setLangs(sanitiseLangs(JSON.parse(saved)));
+      if (saved) setLang(sanitiseLang(JSON.parse(saved)));
     } catch {
       // Fall back to the English default.
     }
@@ -87,13 +91,13 @@ export default function GeneratePage() {
       const saved = localStorage.getItem(OUTPUTS_KEY);
       if (saved) setOutputs(sanitiseOutputs(JSON.parse(saved)));
     } catch {
-      // Fall back to producing both.
+      // Fall back to the default selection.
     }
   }, []);
 
   /** Remember the language choice, so it does not reset on every visit. */
-  function changeLangs(next: Lang[]) {
-    setLangs(next);
+  function changeLang(next: Lang) {
+    setLang(next);
     try {
       localStorage.setItem(LANGS_KEY, JSON.stringify(next));
     } catch {
@@ -121,7 +125,7 @@ export default function GeneratePage() {
       const response = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ jobDescription, languages: langs, outputs }),
+        body: JSON.stringify({ jobDescription, language: lang, outputs }),
       });
 
       const data = await response.json();
@@ -203,8 +207,8 @@ export default function GeneratePage() {
                   onChange={setJobDescription}
                   onGenerate={generate}
                   busy={busy}
-                  langs={langs}
-                  onLangsChange={changeLangs}
+                  lang={lang}
+                  onLangChange={changeLang}
                   outputs={outputs}
                   onOutputsChange={changeOutputs}
                 />

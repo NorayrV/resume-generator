@@ -16,8 +16,8 @@ interface Props {
   onChange: (value: string) => void;
   onGenerate: () => void;
   busy: boolean;
-  langs: Lang[];
-  onLangsChange: (langs: Lang[]) => void;
+  lang: Lang;
+  onLangChange: (lang: Lang) => void;
   outputs: OutputKind[];
   onOutputsChange: (outputs: OutputKind[]) => void;
 }
@@ -29,8 +29,8 @@ export function JobDescriptionInput({
   onChange,
   onGenerate,
   busy,
-  langs,
-  onLangsChange,
+  lang,
+  onLangChange,
   outputs,
   onOutputsChange,
 }: Props) {
@@ -50,16 +50,6 @@ export function JobDescriptionInput({
   const tooLong = count > MAX_JOB_DESCRIPTION_CHARS;
   // The server enforces both bounds; this only saves the round trip.
   const ready = count >= MIN_CHARS && !tooLong;
-
-  /** Toggle a language, but never let the last one be turned off. */
-  function toggle(lang: Lang) {
-    const next = langs.includes(lang)
-      ? langs.filter((l) => l !== lang)
-      : [...langs, lang];
-
-    if (next.length === 0) return;
-    onLangsChange(ALL_LANGS.filter((l) => next.includes(l)));
-  }
 
   return (
     <div className="space-y-4">
@@ -110,40 +100,33 @@ export function JobDescriptionInput({
 
       {/* Hidden rather than disabled when no letter is being written: a
           greyed-out control still asks to be read and reasoned about, and
-          this one has nothing to say when there is no letter.
-
-          Each extra language is a longer, costlier generation, so which ones
-          to write stays an explicit choice rather than a default of all. */}
+          this one has nothing to say when there is no letter. */}
       {wantsCoverLetter && (
         <fieldset disabled={busy} className="disabled:opacity-60">
           <legend className="label">Cover letter language</legend>
-          <div className="flex flex-wrap gap-2">
-            {ALL_LANGS.map((lang) => {
-              const on = langs.includes(lang);
-              const only = on && langs.length === 1;
+          <div role="radiogroup" className="flex flex-wrap gap-2">
+            {ALL_LANGS.map((option) => {
+              const on = lang === option;
               return (
                 <button
-                  key={lang}
+                  key={option}
                   type="button"
-                  role="checkbox"
+                  role="radio"
                   aria-checked={on}
-                  onClick={() => toggle(lang)}
-                  title={only ? "Keep at least one language" : undefined}
+                  onClick={() => onLangChange(option)}
                   className={`rounded-full border px-3.5 py-1.5 text-small font-medium transition-colors ${
                     on
                       ? "border-accent bg-accent text-white"
                       : "border-line bg-paper text-muted hover:border-faint hover:text-ink"
-                  } ${only ? "cursor-default" : ""}`}
+                  }`}
                 >
-                  {LANGUAGES[lang].label}
+                  {LANGUAGES[option].label}
                 </button>
               );
             })}
           </div>
           <p className="hint mt-2">
-            {langs.length === 1
-              ? "One version will be written."
-              : `${langs.length} versions will be written — each one makes the generation longer.`}
+            Written in {LANGUAGES[lang].label}.
           </p>
         </fieldset>
       )}

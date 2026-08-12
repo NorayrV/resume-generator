@@ -11,7 +11,7 @@ import {
   coverLetterTokenBudget,
   languageInstruction,
   parseCoverLetter,
-  sanitiseLangs,
+  sanitiseLang,
   type Lang,
   type ParsedCoverLetter,
 } from "@/lib/coverLetter";
@@ -51,12 +51,12 @@ export async function POST(request: Request) {
     const body = await request.json().catch(() => ({}));
     const jobDescription = String(body?.jobDescription ?? "").trim();
 
-    // Which cover letter languages to write. Each extra one is output tokens
-    // the user pays for, so we only ask for what was requested.
-    const langs = sanitiseLangs(body?.languages);
+    // Which language the cover letter is written in. `languages` is the older
+    // field name and still resolves, so a cached client keeps working.
+    const lang = sanitiseLang(body?.language ?? body?.languages);
 
-    // Which documents to produce. Defaults to both, so an older client that
-    // does not send the field keeps behaving exactly as it did.
+    // Which documents to produce. Defaults to the resume alone; the cover
+    // letter is opt-in.
     const outputs = sanitiseOutputs(body?.outputs);
 
     if (!jobDescription) {
@@ -150,7 +150,7 @@ export async function POST(request: Request) {
         userId: user.id,
         profile,
         jobDescription,
-        langs,
+        lang,
         outputs,
       });
     } catch (error) {
@@ -187,13 +187,13 @@ async function generateFor({
   userId,
   profile,
   jobDescription,
-  langs,
+  lang,
   outputs,
 }: {
   userId: string;
   profile: MasterProfile;
   jobDescription: string;
-  langs: Lang[];
+  lang: Lang;
   outputs: OutputKind[];
 }): Promise<NextResponse> {
   const wantResume = outputs.includes("resume");
@@ -320,9 +320,9 @@ async function generateFor({
         "",
         "Job Description:",
         jobDescription,
-        languageInstruction(langs),
+        languageInstruction(lang),
       ].join("\n"),
-      { temperature: 0.7, maxTokens: coverLetterTokenBudget(langs) },
+      { temperature: 0.7, maxTokens: coverLetterTokenBudget() },
     );
 
     letters = parseCoverLetter(coverLetter);
