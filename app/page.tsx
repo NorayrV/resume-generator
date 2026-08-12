@@ -10,11 +10,7 @@ import { CoverLetter } from "@/components/CoverLetter";
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
 import { sanitiseLang, type Lang } from "@/lib/coverLetter";
-import {
-  DEFAULT_OUTPUTS,
-  sanitiseOutputs,
-  type OutputKind,
-} from "@/lib/outputs";
+import { DEFAULT_OUTPUTS, type OutputKind } from "@/lib/outputs";
 import { PRO_GENERATIONS_PER_MONTH, type PlanPricing } from "@/lib/plan";
 import type {
   CoverLetterVersions,
@@ -48,17 +44,19 @@ const CACHE_KEY = "last-generation";
  */
 const LANGS_KEY = "cover-letter-langs";
 
-/** Remembered choice of which documents to produce. */
-const OUTPUTS_KEY = "generate-outputs";
-
 export default function GeneratePage() {
   const [profile, setProfile] = useState<ProfileSummary | null>(null);
   const [loading, setLoading] = useState(true);
 
   const [jobDescription, setJobDescription] = useState("");
   const [lang, setLang] = useState<Lang>("english");
-  // Resume only unless asked otherwise. A saved choice below overrides this,
-  // so anyone who has already turned the letter on keeps it.
+  /*
+   * Deliberately not remembered. Every visit starts on the resume alone, so
+   * turning the cover letter on is a decision made per application rather
+   * than once, months ago, and then silently repeated on every generation.
+   * The language beside it does persist — that is a preference, not a choice
+   * about what this particular application needs.
+   */
   const [outputs, setOutputs] = useState<OutputKind[]>(DEFAULT_OUTPUTS);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -86,13 +84,6 @@ export default function GeneratePage() {
     } catch {
       // Fall back to the English default.
     }
-
-    try {
-      const saved = localStorage.getItem(OUTPUTS_KEY);
-      if (saved) setOutputs(sanitiseOutputs(JSON.parse(saved)));
-    } catch {
-      // Fall back to the default selection.
-    }
   }, []);
 
   /** Remember the language choice, so it does not reset on every visit. */
@@ -100,15 +91,6 @@ export default function GeneratePage() {
     setLang(next);
     try {
       localStorage.setItem(LANGS_KEY, JSON.stringify(next));
-    } catch {
-      // Private browsing — the choice just will not persist.
-    }
-  }
-
-  function changeOutputs(next: OutputKind[]) {
-    setOutputs(next);
-    try {
-      localStorage.setItem(OUTPUTS_KEY, JSON.stringify(next));
     } catch {
       // Private browsing — the choice just will not persist.
     }
@@ -210,7 +192,7 @@ export default function GeneratePage() {
                   lang={lang}
                   onLangChange={changeLang}
                   outputs={outputs}
-                  onOutputsChange={changeOutputs}
+                  onOutputsChange={setOutputs}
                 />
               </div>
             </section>
