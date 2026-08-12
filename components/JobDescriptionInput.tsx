@@ -104,7 +104,7 @@ export function JobDescriptionInput({
             ? "The letter is written against the finished resume, so the two agree."
             : wantsCoverLetter
               ? "Written from your full profile, since no resume is being tailored alongside it."
-              : "No cover letter this time."}
+              : "Resume only. Add the cover letter if this application asks for one."}
         </p>
       </fieldset>
 

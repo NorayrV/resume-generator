@@ -15,6 +15,15 @@ export type OutputKind = "resume" | "cover_letter";
 
 export const ALL_OUTPUTS: OutputKind[] = ["resume", "cover_letter"];
 
+/**
+ * What a generation produces when nobody has said otherwise.
+ *
+ * The resume alone. A cover letter is opt-in: many applications never ask for
+ * one, and it is half the output tokens of a full run, so producing it by
+ * default spent a pack's worth of writing on something most people discarded.
+ */
+export const DEFAULT_OUTPUTS: OutputKind[] = ["resume"];
+
 export const OUTPUT_LABELS: Record<OutputKind, string> = {
   resume: "Resume",
   cover_letter: "Cover letter",
@@ -23,12 +32,13 @@ export const OUTPUT_LABELS: Record<OutputKind, string> = {
 /**
  * Keep only recognised kinds, in a stable order.
  *
- * Falls back to both, which is what every generation did before this existed —
- * so an old client, or a request that forgets the field, behaves as it always
- * has rather than silently producing nothing.
+ * Falls back to the default rather than to both. A request that omits the
+ * field should not quietly buy a cover letter nobody asked for — the previous
+ * fallback did exactly that, which is the wrong way round now the letter is
+ * opt-in.
  */
 export function sanitiseOutputs(input: unknown): OutputKind[] {
   const wanted = Array.isArray(input) ? input : [];
   const picked = ALL_OUTPUTS.filter((kind) => wanted.includes(kind));
-  return picked.length > 0 ? picked : [...ALL_OUTPUTS];
+  return picked.length > 0 ? picked : [...DEFAULT_OUTPUTS];
 }

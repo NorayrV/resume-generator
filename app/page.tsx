@@ -10,7 +10,11 @@ import { CoverLetter } from "@/components/CoverLetter";
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
 import { sanitiseLangs, type Lang } from "@/lib/coverLetter";
-import { sanitiseOutputs, type OutputKind } from "@/lib/outputs";
+import {
+  DEFAULT_OUTPUTS,
+  sanitiseOutputs,
+  type OutputKind,
+} from "@/lib/outputs";
 import { PRO_GENERATIONS_PER_MONTH, type PlanPricing } from "@/lib/plan";
 import type {
   CoverLetterVersions,
@@ -49,12 +53,9 @@ export default function GeneratePage() {
   // Defaults to English alone: extra languages cost extra output tokens, so
   // they are opted into rather than out of.
   const [langs, setLangs] = useState<Lang[]>(["english"]);
-  // Both by default, which is what every generation did before this choice
-  // existed — so nothing changes for anyone who ignores it.
-  const [outputs, setOutputs] = useState<OutputKind[]>([
-    "resume",
-    "cover_letter",
-  ]);
+  // Resume only unless asked otherwise. A saved choice below overrides this,
+  // so anyone who has already turned the letter on keeps it.
+  const [outputs, setOutputs] = useState<OutputKind[]>(DEFAULT_OUTPUTS);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [quotaExceeded, setQuotaExceeded] = useState(false);
