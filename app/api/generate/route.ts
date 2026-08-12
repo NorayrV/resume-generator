@@ -115,13 +115,28 @@ export async function POST(request: Request) {
     const claim = await claimGeneration(user.id);
 
     if (!claim.ok) {
+      /*
+       * Only a free account is offered an upgrade. A Pro subscriber who has
+       * worked through their monthly packs needs to know when they come back,
+       * not a pitch for the plan they are already paying for.
+       */
+      if (claim.tier !== "free") {
+        return NextResponse.json(
+          {
+            error: `You have used all ${claim.limit} application packs this month. Each one frees up 30 days after you used it.`,
+            usage: { used: claim.used, limit: claim.limit },
+          },
+          { status: 429 },
+        );
+      }
+
       // Send the live price with the refusal, so the upgrade prompt can quote
       // it without a second round trip.
       const plan = await getPlanPricing();
 
       return NextResponse.json(
         {
-          error: `You have used all ${claim.limit} free generations this month. Upgrade for unlimited.`,
+          error: `You have used all ${claim.limit} free application packs this month.`,
           code: "quota_exceeded",
           usage: { used: claim.used, limit: claim.limit },
           plan,

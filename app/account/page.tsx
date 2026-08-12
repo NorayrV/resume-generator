@@ -6,7 +6,7 @@ import { Check, CreditCard, Loader2 } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
-import type { PlanPricing } from "@/lib/plan";
+import { PRO_GENERATIONS_PER_MONTH, type PlanPricing } from "@/lib/plan";
 
 /** A union of one for now; a second payment method slots back in here. */
 type Method = "card";
@@ -18,6 +18,7 @@ interface AccountData {
     limit: number;
     unlimited: boolean;
     remaining: number | null;
+    tier: "free" | "pro" | "comp";
   };
   billing: { card: boolean };
   plan: PlanPricing;
@@ -139,30 +140,26 @@ function AccountBody() {
                 : "border border-line text-muted"
             }`}
           >
-            {usage.unlimited ? "Unlimited" : "Free plan"}
+            {usage.tier === "comp"
+              ? "Unlimited"
+              : usage.tier === "pro"
+                ? "Pro"
+                : "Free plan"}
           </span>
         </div>
 
-        {usage.unlimited ? (
+        {usage.tier === "comp" ? (
           <>
             {/*
               Comped access has no billing date worth showing — the stored one
               is a placeholder decades out, and printing "Renews on 31 December
               2099" would just look broken.
             */}
-            {access?.provider === "comp" ? (
-              <p className="hint mt-3">
-                You have unlimited access. Generate as many resumes as you need
-                — there is nothing to pay and nothing to renew.
-              </p>
-            ) : (
-              <p className="hint mt-3">
-                You are on the paid plan. Generate as many resumes as you need.
-                {access?.until && ` Renews on ${formatDate(access.until)}.`}
-              </p>
-            )}
+            <p className="hint mt-3">
+              You have unlimited access. Generate as many packs as you need —
+              there is nothing to pay and nothing to renew.
+            </p>
 
-            {/* Only card subscriptions have a portal to manage. */}
             {access?.provider === "polar" && billing.card && (
               <>
                 <Button
@@ -188,7 +185,10 @@ function AccountBody() {
           <>
             <p className="mt-3 text-body tnum">
               <span className="font-semibold">{usage.used}</span>
-              <span className="text-muted"> of {usage.limit} generations used</span>
+              <span className="text-muted">
+                {" "}
+                of {usage.limit} application packs used
+              </span>
             </p>
 
             <div className="mt-3 h-2 overflow-hidden rounded-full bg-surface">
@@ -202,9 +202,34 @@ function AccountBody() {
 
             <p className="hint mt-2">
               {usage.remaining === 0
-                ? "You have used your free generations for this month."
-                : `${usage.remaining} left. Resets 30 days after each generation.`}
+                ? usage.tier === "pro"
+                  ? "You have used this month's packs. They free up 30 days after each one."
+                  : "You have used your free packs for this month."
+                : `${usage.remaining} left. Each frees up 30 days after you use it.`}
             </p>
+
+            {/* A Pro subscriber still needs a way to cancel or change card. */}
+            {usage.tier === "pro" && access?.provider === "polar" && billing.card && (
+              <>
+                <Button
+                  variant="secondary"
+                  className="mt-4"
+                  onClick={manageBilling}
+                  disabled={managing}
+                >
+                  {managing ? (
+                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                  ) : (
+                    <CreditCard className="h-4 w-4" aria-hidden />
+                  )}
+                  Manage subscription
+                </Button>
+                <p className="mt-2 text-[0.75rem] text-faint">
+                  Cancel, update your card or download invoices.
+                  {access?.until && ` Renews on ${formatDate(access.until)}.`}
+                </p>
+              </>
+            )}
           </>
         )}
       </section>
@@ -214,10 +239,10 @@ function AccountBody() {
         it when payments are unconfigured left a dead end: the generator tells
         you to upgrade, and the page it sends you to shows nothing at all.
       */}
-      {!usage.unlimited && (
+      {usage.tier === "free" && (
         <section className="card p-5 sm:p-6">
           <h2 className="text-body font-semibold tracking-[-0.01em]">
-            Upgrade to unlimited
+            Upgrade to Pro
           </h2>
 
           {/* Never show an unpriced buy button. */}
@@ -230,7 +255,7 @@ function AccountBody() {
 
           <ul className="mt-4 space-y-1.5">
             {[
-              "Unlimited resumes and cover letters",
+              `${PRO_GENERATIONS_PER_MONTH} application packs a month`,
               "Every language version, every time",
               "Cancel whenever you like",
             ].map((line) => (
@@ -271,7 +296,7 @@ function AccountBody() {
                 Upgrade
               </Button>
               <Alert tone="info" className="mt-3">
-                Payments are not switched on yet. Your free generations still
+                Payments are not switched on yet. Your free packs still
                 work, and upgrading will be available shortly.
               </Alert>
             </div>

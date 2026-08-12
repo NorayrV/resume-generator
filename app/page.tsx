@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
 import { sanitiseLangs, type Lang } from "@/lib/coverLetter";
 import { sanitiseOutputs, type OutputKind } from "@/lib/outputs";
-import type { PlanPricing } from "@/lib/plan";
+import { PRO_GENERATIONS_PER_MONTH, type PlanPricing } from "@/lib/plan";
 import type {
   CoverLetterVersions,
   PersonalInformation,
@@ -216,7 +216,7 @@ export default function GeneratePage() {
                   <div>
                     <p className="text-body font-medium">{error}</p>
                     <p className="hint mt-0.5">
-                      Unlimited resumes and cover letters
+                      {PRO_GENERATIONS_PER_MONTH} application packs a month
                       {plan ? ` for ${plan.price}/${plan.period}` : ""}.
                     </p>
                   </div>

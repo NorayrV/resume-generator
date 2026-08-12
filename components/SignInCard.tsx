@@ -21,7 +21,7 @@ export function SignInCard() {
         Start for free
       </h2>
       <p className="hint mt-1">
-        {FREE_GENERATIONS_PER_MONTH} generations a month, no card needed.
+        {FREE_GENERATIONS_PER_MONTH} application packs a month, no card needed.
       </p>
 
       <div className="mt-5">

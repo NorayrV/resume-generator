@@ -1,5 +1,9 @@
-import { hasPaidAccess } from "./billing";
-import { FREE_GENERATIONS_PER_MONTH, USAGE_WINDOW_DAYS } from "./plan";
+import { getEntitlement } from "./billing";
+import {
+  FREE_GENERATIONS_PER_MONTH,
+  PRO_GENERATIONS_PER_MONTH,
+  USAGE_WINDOW_DAYS,
+} from "./plan";
 import { supabaseAdmin } from "./supabase/server";
 
 /**
@@ -14,26 +18,60 @@ import { supabaseAdmin } from "./supabase/server";
  * meter to get unlimited free runs.
  */
 
-export { FREE_GENERATIONS_PER_MONTH } from "./plan";
+export { FREE_GENERATIONS_PER_MONTH, PRO_GENERATIONS_PER_MONTH } from "./plan";
+
+/**
+ * Which allowance a user is on.
+ *
+ * "comp" is the owner and anyone they have granted access to by hand. It is
+ * the only genuinely uncapped tier, because admin.grant_unlimited() says
+ * unlimited and should mean it.
+ */
+export type Tier = "free" | "pro" | "comp";
 
 export interface UsageStatus {
   used: number;
   limit: number;
-  /** Unlimited while the user has paid access. */
+  /** Only ever true for a comped account. */
   unlimited: boolean;
   remaining: number;
   allowed: boolean;
+  tier: Tier;
 }
 
-/** How much of the free tier this user has left. */
+/** The tier and the number of packs it includes per window. */
+export async function getAllowance(
+  userId: string,
+): Promise<{ tier: Tier; limit: number; unlimited: boolean }> {
+  const entitlement = await getEntitlement(userId);
+  const live =
+    entitlement?.accessUntil !== null &&
+    entitlement?.accessUntil !== undefined &&
+    entitlement.accessUntil.getTime() > Date.now();
+
+  if (!live) {
+    return { tier: "free", limit: FREE_GENERATIONS_PER_MONTH, unlimited: false };
+  }
+
+  if (entitlement?.provider === "comp") {
+    return { tier: "comp", limit: PRO_GENERATIONS_PER_MONTH, unlimited: true };
+  }
+
+  return { tier: "pro", limit: PRO_GENERATIONS_PER_MONTH, unlimited: false };
+}
+
+/** How much of this user's allowance is left. */
 export async function getUsage(userId: string): Promise<UsageStatus> {
-  if (await hasPaidAccess(userId)) {
+  const { tier, limit, unlimited } = await getAllowance(userId);
+
+  if (unlimited) {
     return {
       used: 0,
-      limit: FREE_GENERATIONS_PER_MONTH,
+      limit,
       unlimited: true,
       remaining: Number.POSITIVE_INFINITY,
       allowed: true,
+      tier,
     };
   }
 
@@ -47,17 +85,11 @@ export async function getUsage(userId: string): Promise<UsageStatus> {
     .eq("user_id", userId)
     .gte("created_at", since);
 
-  // Fail closed on a counting error rather than handing out free generations.
-  const used = error ? FREE_GENERATIONS_PER_MONTH : (count ?? 0);
-  const remaining = Math.max(0, FREE_GENERATIONS_PER_MONTH - used);
+  // Fail closed on a counting error rather than handing out free packs.
+  const used = error ? limit : (count ?? 0);
+  const remaining = Math.max(0, limit - used);
 
-  return {
-    used,
-    limit: FREE_GENERATIONS_PER_MONTH,
-    unlimited: false,
-    remaining,
-    allowed: remaining > 0,
-  };
+  return { used, limit, unlimited: false, remaining, allowed: remaining > 0, tier };
 }
 
 /** Record one generation against the user's meter, with no limit check. */
@@ -68,7 +100,7 @@ export async function recordGeneration(userId: string): Promise<void> {
 /** A slot taken before generating, to be released if generation fails. */
 export type Claim =
   | { ok: true; id: number | null }
-  | { ok: false; used: number; limit: number };
+  | { ok: false; used: number; limit: number; tier: Tier };
 
 /**
  * Take one generation off the meter *before* the AI calls run.
@@ -83,14 +115,18 @@ export type Claim =
  * Paid users skip the check entirely; their generations are still recorded.
  */
 export async function claimGeneration(userId: string): Promise<Claim> {
-  if (await hasPaidAccess(userId)) {
+  const { tier, limit, unlimited } = await getAllowance(userId);
+
+  // Only a comped account skips the meter. Paid accounts run through the
+  // same atomic claim as free ones, with a larger number.
+  if (unlimited) {
     await recordGeneration(userId);
     return { ok: true, id: null };
   }
 
   const { data, error } = await supabaseAdmin().rpc("claim_generation", {
     p_user_id: userId,
-    p_limit: FREE_GENERATIONS_PER_MONTH,
+    p_limit: limit,
     p_window_days: USAGE_WINDOW_DAYS,
   });
 
@@ -101,17 +137,13 @@ export async function claimGeneration(userId: string): Promise<Claim> {
      * attacker would try to induce.
      */
     console.error("[usage] claim_generation", error);
-    return {
-      ok: false,
-      used: FREE_GENERATIONS_PER_MONTH,
-      limit: FREE_GENERATIONS_PER_MONTH,
-    };
+    return { ok: false, used: limit, limit, tier };
   }
 
-  // NULL means the limit is already reached.
+  // NULL means the allowance is already used up.
   if (data === null || data === undefined) {
     const usage = await getUsage(userId);
-    return { ok: false, used: usage.used, limit: usage.limit };
+    return { ok: false, used: usage.used, limit: usage.limit, tier };
   }
 
   return { ok: true, id: Number(data) };

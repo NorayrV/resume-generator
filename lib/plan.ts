@@ -6,10 +6,33 @@
  * the browser bundle would be a serious mistake.
  */
 
-/** Generations included in the free tier, per rolling 30 days. */
-export const FREE_GENERATIONS_PER_MONTH = 5;
+/**
+ * One generation is one **application pack** in everything the user reads:
+ * a job description analysed, a resume tailored to it, a cover letter, the
+ * keyword and gap report, and the exports. The code keeps saying
+ * "generation" because that is what the `generations` table counts, and
+ * renaming a live table buys nothing.
+ *
+ * Editing, re-downloading and re-reading an old pack cost nothing.
+ */
 
-/** Rolling window the free tier is counted over. */
+/** Application packs included free, per rolling 30 days. */
+export const FREE_GENERATIONS_PER_MONTH = 3;
+
+/**
+ * Application packs included with a paid plan, per rolling 30 days.
+ *
+ * Not advertised as unlimited, deliberately. A hundred packs is far more
+ * than a real job search consumes — a month of applying to three roles a
+ * day would not reach it — while still being a number, which keeps the
+ * plan honest and makes reselling access pointless.
+ *
+ * It is not a cost control. Measured on the live model, a pack costs about
+ * $0.00035, so honouring all hundred of them costs three and a half cents.
+ */
+export const PRO_GENERATIONS_PER_MONTH = 100;
+
+/** Rolling window both allowances are counted over. */
 export const USAGE_WINDOW_DAYS = 30;
 
 /**
@@ -43,9 +66,9 @@ export interface PlanPricing {
  * charged; lib/polar.ts reads the real figure. These exist so a pricing page
  * still renders something sensible if that call fails.
  */
-export const FALLBACK_PLAN_PRICE = "$9";
+export const FALLBACK_PLAN_PRICE = "$12.99";
 export const FALLBACK_PLAN_PERIOD = "month";
 
 /** Same figure in minor units, for quoting a crypto invoice. */
-export const FALLBACK_PLAN_AMOUNT_MINOR = 900;
+export const FALLBACK_PLAN_AMOUNT_MINOR = 1299;
 export const FALLBACK_PLAN_CURRENCY = "USD";

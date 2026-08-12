@@ -1,7 +1,10 @@
 import { Suspense } from "react";
 import { Check, FileText, ListChecks, Sparkles } from "lucide-react";
 import { SignInCard } from "@/components/SignInCard";
-import { FREE_GENERATIONS_PER_MONTH } from "@/lib/plan";
+import {
+  FREE_GENERATIONS_PER_MONTH,
+  PRO_GENERATIONS_PER_MONTH,
+} from "@/lib/plan";
 import { getPlanPricing } from "@/lib/polar";
 
 /**
@@ -154,13 +157,13 @@ export default async function LoginPage() {
                 </span>
               </p>
               <p className="hint mt-2">
-                {FREE_GENERATIONS_PER_MONTH} generations every 30 days. No card
-                required.
+                {FREE_GENERATIONS_PER_MONTH} application packs every 30 days.
+                No card required.
               </p>
             </div>
 
             <div className="card border-accent/30 p-6">
-              <p className="text-small font-medium text-accent">Unlimited</p>
+              <p className="text-small font-medium text-accent">Pro</p>
               <p className="mt-1.5 flex items-baseline gap-1.5">
                 <span className="text-2xl font-semibold tracking-[-0.02em]">
                   {plan.price}
@@ -168,10 +171,28 @@ export default async function LoginPage() {
                 <span className="text-small text-muted">per {plan.period}</span>
               </p>
               <p className="hint mt-2">
-                As many resumes and cover letters as you need. Cancel whenever
-                you like.
+                {PRO_GENERATIONS_PER_MONTH} application packs a month — far
+                more than a real search needs. Cancel whenever you like.
               </p>
             </div>
+          </div>
+
+          {/*
+            Metered plans are only fair if the unit is spelled out. The thing
+            that costs a pack is a generation; everything you do afterwards
+            with what it produced is free.
+          */}
+          <div className="card mt-4 p-5">
+            <p className="text-small font-medium">
+              One application pack is one job
+            </p>
+            <p className="hint mt-1.5">
+              Paste a posting and you get a resume tailored to it, a cover
+              letter, the matched keywords and the honest list of requirements
+              you do not meet — all counted as one pack. Editing what comes
+              back, downloading it again in Word or PDF, and reading anything
+              you generated earlier are free and never count.
+            </p>
           </div>
         </section>
 

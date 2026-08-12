@@ -35,6 +35,7 @@ export async function GET() {
       limit: usage.limit,
       unlimited: usage.unlimited,
       remaining: usage.unlimited ? null : usage.remaining,
+      tier: usage.tier,
     },
     /** Which payment methods this deployment can actually take. */
     billing: {

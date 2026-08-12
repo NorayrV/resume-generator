@@ -28,13 +28,6 @@ export interface Entitlement {
   externalCustomerId: string | null;
 }
 
-/** True while the user's paid access has not run out. */
-export async function hasPaidAccess(userId: string): Promise<boolean> {
-  const entitlement = await getEntitlement(userId);
-  if (!entitlement?.accessUntil) return false;
-  return entitlement.accessUntil.getTime() > Date.now();
-}
-
 export async function getEntitlement(
   userId: string,
 ): Promise<Entitlement | null> {
