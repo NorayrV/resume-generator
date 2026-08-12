@@ -33,7 +33,7 @@ export function AppHeader({ subtitle }: { subtitle?: string }) {
       <div className="mx-auto flex h-14 max-w-5xl items-center gap-4 px-4 sm:px-6">
         {/* The wordmark is the first thing to go when width runs out. */}
         <span className="hidden whitespace-nowrap text-[0.9375rem] font-semibold tracking-[-0.01em] sm:inline">
-          Resume Generator
+          Gatecrash
         </span>
 
         <nav className="flex h-full items-center gap-1">

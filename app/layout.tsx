@@ -11,7 +11,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Resume Generator",
+  title: "Gatecrash",
   description:
     "Paste a job posting and get a resume and cover letter rewritten around it, using your own experience — never invented.",
   /*

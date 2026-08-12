@@ -1,5 +1,5 @@
 -- ===========================================================================
--- Resume Generator — database schema
+-- Gatecrash — database schema
 -- ===========================================================================
 --
 -- Run this once in the Supabase SQL editor (Dashboard → SQL Editor → New query).

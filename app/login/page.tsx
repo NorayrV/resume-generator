@@ -55,7 +55,7 @@ export default async function LoginPage() {
       <header className="border-b border-line bg-paper">
         <div className="mx-auto flex h-14 max-w-5xl items-center px-4 sm:px-6">
           <span className="text-[0.9375rem] font-semibold tracking-[-0.01em]">
-            Resume Generator
+            Gatecrash
           </span>
         </div>
       </header>
@@ -198,7 +198,7 @@ export default async function LoginPage() {
 
         <footer className="border-t border-line py-8">
           <p className="text-[0.75rem] text-faint">
-            Resume Generator — tailor your resume to one job at a time.
+            Gatecrash — tailor your resume to one job at a time.
           </p>
         </footer>
       </main>

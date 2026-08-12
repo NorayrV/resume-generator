@@ -1,4 +1,4 @@
-# Resume Generator
+# Gatecrash
 
 Tailors your resume and cover letter to a single job posting, then hands you a
 Word file, a PDF and a letter ready to send.

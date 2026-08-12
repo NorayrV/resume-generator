@@ -1,5 +1,5 @@
 -- ===========================================================================
--- Resume Generator — resume import log
+-- Gatecrash — resume import log
 -- ===========================================================================
 --
 -- Run this in the Supabase SQL editor after schema.sql and 002_entitlements.sql.
