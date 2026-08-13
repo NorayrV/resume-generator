@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { Check, FileText, ListChecks, Sparkles } from "lucide-react";
+import { Logo } from "@/components/Logo";
 import { SignInCard } from "@/components/SignInCard";
 import {
   FREE_GENERATIONS_PER_MONTH,
@@ -54,9 +55,7 @@ export default async function LoginPage() {
       {/* ---- Header ---- */}
       <header className="border-b border-line bg-paper">
         <div className="mx-auto flex h-14 max-w-5xl items-center px-4 sm:px-6">
-          <span className="text-[0.9375rem] font-semibold tracking-[-0.01em]">
-            Gatecrash
-          </span>
+          <Logo size={22} />
         </div>
       </header>
 

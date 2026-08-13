@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { CreditCard, FileText, LogOut, User } from "lucide-react";
 import { supabaseBrowser } from "@/lib/supabase/client";
+import { Logo } from "./Logo";
 
 /**
  * Three destinations, always visible: Generate (what you do daily), Profile
@@ -31,10 +32,14 @@ export function AppHeader({ subtitle }: { subtitle?: string }) {
   return (
     <header className="sticky top-0 z-20 border-b border-line bg-paper">
       <div className="mx-auto flex h-14 max-w-5xl items-center gap-4 px-4 sm:px-6">
-        {/* The wordmark is the first thing to go when width runs out. */}
-        <span className="hidden whitespace-nowrap text-[0.9375rem] font-semibold tracking-[-0.01em] sm:inline">
-          Gatecrash
-        </span>
+        {/*
+          The mark stays at every width; the wordmark beside it is the first
+          thing to go when the nav needs the room.
+        */}
+        <Link href="/" aria-label="Gatecrash" className="flex items-center">
+          <Logo size={20} withWordmark={false} className="sm:hidden" />
+          <Logo size={20} className="hidden sm:flex" />
+        </Link>
 
         <nav className="flex h-full items-center gap-1">
           {TABS.map(({ href, label, icon: Icon }) => {

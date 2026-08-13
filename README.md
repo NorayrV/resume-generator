@@ -234,7 +234,28 @@ lib/
 
 supabase/                        schema and migrations, with RLS
 assets/fonts/                    DejaVu Sans, embedded in generated PDFs
+
+public/logo.png                  the source artwork — the only file to replace
+public/logo-mark.png             generated: ink mark, transparent
+app/icon.png                     generated: favicon, white mark on a badge
+app/apple-icon.png               generated: iOS home screen, opaque
 ```
+
+### The logo
+
+`public/logo.png` is a white mark painted on an opaque black rectangle, so it
+cannot go straight into a light interface — it would show as a black oblong.
+The mark is monochrome, so its luminance doubles as an alpha mask, and the
+three files above are cut from it.
+
+Replace `public/logo.png` and regenerate:
+
+```bash
+python3 scripts/build-logo-assets.py
+```
+
+The favicon keeps the dark badge on purpose: the mark is white, and a browser
+tab strip can be light or dark.
 
 ---
 
