@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import Link from "next/link";
 import { Check, FileText, ListChecks, Sparkles } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { SignInCard } from "@/components/SignInCard";
@@ -196,9 +197,19 @@ export default async function LoginPage() {
         </section>
 
         <footer className="border-t border-line py-8">
-          <p className="text-[0.75rem] text-faint">
-            Gatecrash — tailor your resume to one job at a time.
-          </p>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-[0.75rem] text-faint">
+              Gatecrash — tailor your resume to one job at a time.
+            </p>
+            <nav className="flex gap-4 text-[0.75rem] text-faint">
+              <Link href="/privacy" className="hover:text-ink">
+                Privacy
+              </Link>
+              <Link href="/terms" className="hover:text-ink">
+                Terms
+              </Link>
+            </nav>
+          </div>
         </footer>
       </main>
     </div>
