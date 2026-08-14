@@ -12,7 +12,7 @@ export const Input = React.forwardRef<
     ref={ref}
     className={cn(
       "h-10 w-full rounded-md border border-line bg-paper px-3 text-body text-ink",
-      "placeholder:text-faint",
+      "placeholder:text-placeholder",
       "transition-colors hover:border-faint",
       "focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20",
       "disabled:cursor-not-allowed disabled:bg-surface disabled:opacity-60",

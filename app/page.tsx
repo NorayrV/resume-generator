@@ -2,13 +2,16 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, RotateCcw, Sparkles } from "lucide-react";
+import { ArrowRight, FileText, RotateCcw } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
 import { JobDescriptionInput } from "@/components/JobDescriptionInput";
+import { GenerationProgress } from "@/components/GenerationProgress";
+import { ResultsOverview } from "@/components/ResultsOverview";
 import { ResumeResult } from "@/components/ResumeResult";
 import { CoverLetter } from "@/components/CoverLetter";
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
+import { Skeleton } from "@/components/ui/skeleton";
 import { sanitiseLang, type Lang } from "@/lib/coverLetter";
 import { DEFAULT_OUTPUTS, type OutputKind } from "@/lib/outputs";
 import { PRO_GENERATIONS_PER_MONTH, type PlanPricing } from "@/lib/plan";
@@ -30,6 +33,8 @@ interface Generation {
   /** Roles whose bullets the model wrote, because none were supplied. */
   drafted_roles?: string[];
   person: PersonalInformation;
+  /** What was asked for, so the summary line can name it after a reload. */
+  requested?: OutputKind[];
 }
 
 /** Kept so a trip to Profile and back does not throw away a generation. */
@@ -123,9 +128,10 @@ export default function GeneratePage() {
 
       setQuotaExceeded(false);
 
-      setResult(data);
+      const generation: Generation = { ...data, requested: outputs };
+      setResult(generation);
       try {
-        sessionStorage.setItem(CACHE_KEY, JSON.stringify(data));
+        sessionStorage.setItem(CACHE_KEY, JSON.stringify(generation));
       } catch {
         // Over quota is harmless: the result is already on screen.
       }
@@ -152,35 +158,22 @@ export default function GeneratePage() {
 
       <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-10">
         {loading ? (
-          <div className="card h-64 animate-pulse" />
-        ) : !hasProfile ? (
-          /* Nothing to tailor from yet — one instruction, one button. */
-          <div className="card mx-auto max-w-lg p-8 text-center">
-            <h1 className="text-lg font-semibold tracking-[-0.01em]">
-              Add your details first
-            </h1>
-            <p className="hint mx-auto mt-2 max-w-sm">
-              The generator rewrites your own experience for each job. Fill in
-              your profile once, then reuse it for every application.
-            </p>
-            <Link
-              href="/profile"
-              className="mt-6 inline-flex h-11 items-center justify-center gap-2 rounded-md bg-accent px-6 text-body font-medium text-white transition-colors hover:bg-accent/90"
-            >
-              Set up profile
-              <ArrowRight className="h-4 w-4" aria-hidden />
-            </Link>
+          <div className="space-y-4">
+            <Skeleton className="h-9 w-64" />
+            <Skeleton className="h-64 rounded-lg" />
           </div>
+        ) : !hasProfile ? (
+          <FirstRun />
         ) : (
-          <div className="space-y-8">
+          <div className="space-y-6">
             {/* ---- Step 1: the posting ---- */}
             <section className="card p-5 sm:p-6">
-              <h1 className="text-lg font-semibold tracking-[-0.01em]">
-                Paste a job description
+              <h1 className="text-[1.0625rem] font-semibold tracking-[-0.015em]">
+                Paste a job posting
               </h1>
               <p className="hint mt-1">
-                Your resume and cover letter are tailored against this text and
-                nothing else.
+                Everything is tailored against this text and nothing else.
+                Include the responsibilities and requirements.
               </p>
 
               <div className="mt-5">
@@ -199,17 +192,17 @@ export default function GeneratePage() {
 
             {error &&
               (quotaExceeded ? (
-                <div className="card flex flex-wrap items-center justify-between gap-4 border-accent/30 bg-accent-soft p-5">
+                <div className="card flex flex-wrap items-center justify-between gap-4 border-accent-line bg-accent-soft p-5">
                   <div>
                     <p className="text-body font-medium">{error}</p>
                     <p className="hint mt-0.5">
-                      {PRO_GENERATIONS_PER_MONTH} application packs a month
+                      {PRO_GENERATIONS_PER_MONTH} applications a month
                       {plan ? ` for ${plan.price}/${plan.period}` : ""}.
                     </p>
                   </div>
                   <Link
                     href="/account"
-                    className="inline-flex h-10 shrink-0 items-center gap-2 rounded-md bg-accent px-5 text-small font-medium text-white transition-colors hover:bg-accent/90"
+                    className="inline-flex h-10 shrink-0 items-center gap-2 rounded-md bg-accent px-5 text-small font-medium text-white shadow-sm transition-colors hover:bg-accent/90"
                   >
                     See plans
                     <ArrowRight className="h-4 w-4" aria-hidden />
@@ -219,15 +212,7 @@ export default function GeneratePage() {
                 <Alert tone="error">{error}</Alert>
               ))}
 
-            {busy && (
-              <div
-                className="relative h-1 overflow-hidden rounded-full bg-line"
-                role="status"
-                aria-label="Generating"
-              >
-                <div className="absolute inset-y-0 w-1/5 animate-sweep rounded-full bg-accent" />
-              </div>
-            )}
+            {busy && <GenerationProgress outputs={outputs} />}
 
             {/* ---- Step 2: whichever documents were asked for ---- */}
             {result &&
@@ -240,17 +225,28 @@ export default function GeneratePage() {
                 // One document gets the full width rather than half of it.
                 const twoUp = hasResume && hasLetter;
 
+                const produced: OutputKind[] =
+                  result.requested ??
+                  ([
+                    hasResume ? "resume" : null,
+                    hasLetter ? "cover_letter" : null,
+                  ].filter(Boolean) as OutputKind[]);
+
                 return (
                   <div id="output" className="animate-rise space-y-4">
+                    <ResultsOverview
+                      matchedKeywords={result.matched_keywords}
+                      gaps={result.gaps}
+                      outputs={produced}
+                    />
+
                     <div
-                      className={`grid gap-6 ${twoUp ? "lg:grid-cols-2" : ""}`}
+                      className={`grid gap-4 ${twoUp ? "lg:grid-cols-2" : ""}`}
                     >
                       {result.resume && (
                         <ResumeResult
                           resume={result.resume}
                           person={result.person}
-                          matchedKeywords={result.matched_keywords}
-                          gaps={result.gaps}
                           draftedRoles={result.drafted_roles ?? []}
                         />
                       )}
@@ -263,7 +259,7 @@ export default function GeneratePage() {
                       )}
                     </div>
 
-                    <div className="flex justify-center pt-2">
+                    <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
                       <Button
                         variant="secondary"
                         onClick={generate}
@@ -272,21 +268,86 @@ export default function GeneratePage() {
                         <RotateCcw className="h-4 w-4" aria-hidden />
                         Generate again
                       </Button>
+                      <p className="text-small text-faint">
+                        Uses another application from your allowance.
+                      </p>
                     </div>
                   </div>
                 );
               })()}
 
-            {/* A quiet nudge only when there is nothing on screen yet. */}
+            {/* A quiet placeholder only when there is nothing on screen yet. */}
             {!result && !busy && (
-              <p className="flex items-center justify-center gap-2 text-small text-faint">
-                <Sparkles className="h-3.5 w-3.5" aria-hidden />
-                Your resume and cover letter will appear here.
-              </p>
+              <div className="rounded-lg border border-dashed border-line py-12 text-center">
+                <FileText
+                  className="mx-auto h-5 w-5 text-faint"
+                  aria-hidden
+                />
+                <p className="mt-2.5 text-small font-medium text-muted">
+                  Your application will appear here
+                </p>
+                <p className="hint mx-auto mt-1 max-w-xs">
+                  Resume, matched keywords, and the requirements your profile
+                  does not cover.
+                </p>
+              </div>
             )}
           </div>
         )}
       </main>
     </>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+
+/**
+ * What a brand-new account sees.
+ *
+ * There is exactly one thing to do, so the screen says what will happen after
+ * it rather than showing an empty generator the user cannot yet use.
+ */
+function FirstRun() {
+  return (
+    <div className="mx-auto max-w-lg py-6 text-center">
+      <h1 className="text-[1.375rem] font-semibold tracking-[-0.02em]">
+        Set up your profile first
+      </h1>
+      <p className="lead mx-auto mt-3 max-w-sm text-small">
+        Gatecrash rewrites your own experience for each job, so it needs your
+        history once. Upload an existing resume and the fields fill themselves.
+      </p>
+
+      <Link
+        href="/profile"
+        className="mt-7 inline-flex h-11 items-center justify-center gap-2 rounded-md bg-accent px-6 text-body font-medium text-white shadow-sm transition-colors hover:bg-accent/90"
+      >
+        Set up profile
+        <ArrowRight className="h-4 w-4" aria-hidden />
+      </Link>
+
+      <ol className="mx-auto mt-10 max-w-sm space-y-3 text-left">
+        {[
+          "Upload your resume, or type your history in",
+          "Paste a job posting",
+          "Download a resume written for that job",
+        ].map((line, i) => (
+          <li key={line} className="flex items-center gap-3 text-small">
+            <span
+              className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-micro font-semibold tnum ${
+                i === 0
+                  ? "bg-accent text-white"
+                  : "border border-line text-faint"
+              }`}
+            >
+              {i + 1}
+            </span>
+            <span className={i === 0 ? "font-medium text-ink" : "text-muted"}>
+              {line}
+            </span>
+          </li>
+        ))}
+      </ol>
+    </div>
   );
 }

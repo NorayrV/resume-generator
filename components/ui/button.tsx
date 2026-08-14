@@ -9,7 +9,7 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        primary: "bg-accent text-white hover:bg-accent/90",
+        primary: "bg-accent text-white shadow-sm hover:bg-accent/90",
         secondary:
           "border border-line bg-paper text-ink hover:border-faint hover:bg-surface",
         ghost: "text-muted hover:bg-surface hover:text-ink",
@@ -19,6 +19,8 @@ const buttonVariants = cva(
         sm: "h-8 px-3 text-small",
         md: "h-9 px-4 text-small",
         lg: "h-11 px-6 text-body",
+        /* Hero and end-of-page calls to action only. */
+        xl: "h-12 px-7 text-[1rem]",
       },
     },
     defaultVariants: { variant: "primary", size: "md" },

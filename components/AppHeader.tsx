@@ -49,11 +49,11 @@ export function AppHeader({ subtitle }: { subtitle?: string }) {
                 key={href}
                 href={href}
                 aria-current={active ? "page" : undefined}
-                className={`relative flex h-14 items-center gap-2 px-2.5 text-small font-medium transition-colors sm:px-3 ${
+                className={`relative flex h-14 items-center gap-2 px-2 text-small font-medium transition-colors sm:px-3 ${
                   active ? "text-accent" : "text-muted hover:text-ink"
                 }`}
               >
-                <Icon className="h-4 w-4" aria-hidden />
+                <Icon className="hidden h-4 w-4 sm:block" aria-hidden />
                 {label}
                 {active && (
                   <span

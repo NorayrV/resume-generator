@@ -12,19 +12,11 @@ type Format = "docx" | "pdf";
 interface Props {
   resume: TailoredResume;
   person: PersonalInformation;
-  matchedKeywords: string[];
-  gaps: string[];
   /** Roles the model wrote bullets for, because the profile had none. */
   draftedRoles: string[];
 }
 
-export function ResumeResult({
-  resume,
-  person,
-  matchedKeywords,
-  gaps,
-  draftedRoles,
-}: Props) {
+export function ResumeResult({ resume, person, draftedRoles }: Props) {
   const [pending, setPending] = useState<Format | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -138,52 +130,6 @@ export function ResumeResult({
 
         <ResumePreview resume={resume} person={person} />
 
-        {/* Did the tailoring work? Two short readouts, not a report. */}
-        {(matchedKeywords.length > 0 || gaps.length > 0) && (
-          <div className="space-y-3 border-t border-line pt-4">
-            {matchedKeywords.length > 0 && (
-              <div>
-                <p className="text-small font-medium">
-                  Matched from the posting{" "}
-                  <span className="font-normal text-muted tnum">
-                    ({matchedKeywords.length})
-                  </span>
-                </p>
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  {matchedKeywords.map((word) => (
-                    <span
-                      key={word}
-                      className="rounded border border-line bg-surface px-1.5 py-0.5 text-[0.75rem] text-muted"
-                    >
-                      {word}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {gaps.length > 0 && (
-              <div>
-                <p className="text-small font-medium">
-                  Not in your profile{" "}
-                  <span className="font-normal text-muted tnum">
-                    ({gaps.length})
-                  </span>
-                </p>
-                <ul className="mt-1.5 space-y-0.5">
-                  {gaps.map((gap) => (
-                    <li key={gap} className="hint">
-                      {gap}
-                    </li>
-                  ))}
-                </ul>
-                <p className="mt-1.5 text-[0.75rem] text-faint">
-                  Left off the resume. Worth a sentence in the interview.
-                </p>
-              </div>
-            )}
-          </div>
-        )}
       </div>
     </section>
   );

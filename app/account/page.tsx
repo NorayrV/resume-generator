@@ -1,11 +1,13 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Check, CreditCard, Loader2 } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import { PRO_GENERATIONS_PER_MONTH, type PlanPricing } from "@/lib/plan";
 
 /** A union of one for now; a second payment method slots back in here. */
@@ -133,19 +135,13 @@ function AccountBody() {
       <section className="card p-5 sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-body font-semibold tracking-[-0.01em]">Usage</h2>
-          <span
-            className={`rounded-full px-2.5 py-0.5 text-[0.75rem] font-medium ${
-              usage.unlimited
-                ? "bg-accent-soft text-accent"
-                : "border border-line text-muted"
-            }`}
-          >
+          <Badge tone={usage.unlimited ? "accent" : "neutral"}>
             {usage.tier === "comp"
               ? "Unlimited"
               : usage.tier === "pro"
                 ? "Pro"
                 : "Free plan"}
-          </span>
+          </Badge>
         </div>
 
         {usage.tier === "comp" ? (
@@ -187,7 +183,7 @@ function AccountBody() {
               <span className="font-semibold">{usage.used}</span>
               <span className="text-muted">
                 {" "}
-                of {usage.limit} application packs used
+                of {usage.limit} applications used
               </span>
             </p>
 
@@ -203,8 +199,8 @@ function AccountBody() {
             <p className="hint mt-2">
               {usage.remaining === 0
                 ? usage.tier === "pro"
-                  ? "You have used this month's packs. They free up 30 days after each one."
-                  : "You have used your free packs for this month."
+                  ? "You have used this month's applications. They free up 30 days after each one."
+                  : "You have used your free applications for this month."
                 : `${usage.remaining} left. Each frees up 30 days after you use it.`}
             </p>
 
@@ -255,8 +251,8 @@ function AccountBody() {
 
           <ul className="mt-4 space-y-1.5">
             {[
-              `${PRO_GENERATIONS_PER_MONTH} application packs a month`,
-              "Every language version, every time",
+              `${PRO_GENERATIONS_PER_MONTH} applications a month`,
+              "Cover letter in English, Russian or Spanish",
               "Cancel whenever you like",
             ].map((line) => (
               <li key={line} className="flex items-center gap-2 text-small">
@@ -286,7 +282,14 @@ function AccountBody() {
               </div>
 
               <p className="mt-3 text-[0.75rem] leading-relaxed text-faint">
-                Renews monthly. Cancel any time.
+                Renews monthly. Cancel any time.{" "}
+                <Link
+                  href="/pricing"
+                  className="text-accent underline-offset-2 hover:underline"
+                >
+                  What one application includes
+                </Link>
+                .
               </p>
             </>
           ) : (

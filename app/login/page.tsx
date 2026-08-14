@@ -1,23 +1,30 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { Check, FileText, ListChecks, Sparkles } from "lucide-react";
+import { ArrowRight, Check, Lock, ShieldCheck, X } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { SignInCard } from "@/components/SignInCard";
-import {
-  FREE_GENERATIONS_PER_MONTH,
-  PRO_GENERATIONS_PER_MONTH,
-} from "@/lib/plan";
+import { Faq } from "@/components/marketing/Faq";
+import { HeroVisual } from "@/components/marketing/HeroVisual";
+import { MarketingNav } from "@/components/marketing/MarketingNav";
+import { PricingCards } from "@/components/marketing/PricingCards";
+import { Skeleton } from "@/components/ui/skeleton";
+import { FREE_GENERATIONS_PER_MONTH, USAGE_WINDOW_DAYS } from "@/lib/plan";
 import { getPlanPricing } from "@/lib/polar";
 
 /**
  * The front door.
  *
- * Every visitor lands here, signed out, so it has two jobs at once: explain
- * what the product does, and let someone sign in without hunting for it. The
- * sign-in card therefore sits in the hero rather than below the pitch.
+ * Every visitor lands here signed out, so the page has to do three things in
+ * order: say what the product does, show what comes out of it, and let
+ * someone start without hunting for the button.
  *
- * A server component, so the price comes from Polar already rendered — no
- * loading flash, and no figure typed into the source that could go stale.
+ * There is exactly one call to action on the page — signing in — and every
+ * section points at the same card. The nav button, the buttons under pricing
+ * and the one at the foot are all anchors to #start rather than competing
+ * actions.
+ *
+ * A server component, so the price is already rendered when the HTML arrives:
+ * no loading flash, and no figure typed into the source that could go stale.
  */
 
 /** Price changes are rare; serve this from cache and refresh hourly. */
@@ -25,193 +32,307 @@ export const revalidate = 3600;
 
 const STEPS = [
   {
-    icon: ListChecks,
-    title: "Fill in your profile once",
-    body: "Contact details, every role, skills, education. Entered once and reused for every application.",
+    title: "Build your profile once",
+    body: "Upload an existing resume and the fields fill themselves, or type it in. Your real roles, dates, skills and education.",
   },
   {
-    icon: FileText,
     title: "Paste a job posting",
-    body: "The whole thing — responsibilities, requirements, the company name. Everything is tailored against that text.",
+    body: "The whole thing — responsibilities, requirements, the company. Everything is tailored against that text and nothing else.",
   },
   {
-    icon: Sparkles,
-    title: "Get a resume and cover letter",
-    body: "Rewritten for that specific job, ready to download as Word or PDF and send.",
+    title: "Get your application",
+    body: "A tailored resume as Word or PDF, a cover letter if you want one, the keywords it matched, and what it could not cover.",
   },
 ];
 
-const INCLUDED = [
-  "Resume tailored to each posting, as Word or PDF",
-  "Cover letter in English, Russian or Spanish",
-  "Keywords matched from the posting, so it reads well to an ATS",
-  "An honest list of requirements your profile does not cover",
+/** The five things the AI is never allowed to write. */
+const COPIED = [
+  "Employers",
+  "Job titles",
+  "Start and end dates",
+  "Education and degrees",
+  "Certifications",
+];
+
+/** The five it does write, from what is already in your profile. */
+const REWRITTEN = [
+  "The headline under your name",
+  "Your summary",
+  "How skills are grouped",
+  "How each role is described",
+  "Which interests to show",
 ];
 
 export default async function LoginPage() {
   const plan = await getPlanPricing();
 
   return (
-    <div className="min-h-screen bg-surface">
-      {/* ---- Header ---- */}
-      <header className="border-b border-line bg-paper">
-        <div className="mx-auto flex h-14 max-w-5xl items-center px-4 sm:px-6">
-          <Logo size={22} />
-        </div>
-      </header>
+    <div id="top" className="min-h-screen bg-surface">
+      <MarketingNav onHome />
 
-      <main className="mx-auto max-w-5xl px-4 sm:px-6">
-        {/*
-          Explicit grid placement so the reading order differs by width. On a
-          phone the sign-in card comes straight after the headline, ahead of
-          the feature list — otherwise the buttons sit below four bullets and
-          a whole screen of scrolling.
-        */}
-        <section className="grid gap-x-14 gap-y-8 py-12 sm:py-16 lg:grid-cols-[1.15fr_1fr]">
-          <div className="max-w-xl lg:col-start-1 lg:row-start-1">
-            <h1 className="text-[2rem] font-semibold leading-[1.15] tracking-[-0.02em] sm:text-[2.5rem]">
-              A resume written for the job you are actually applying to
-            </h1>
+      <main>
+        {/* ================= Hero ================= */}
+        <section className="section pb-14 pt-12 sm:pb-16 sm:pt-16">
+          <div className="grid gap-x-12 gap-y-10 lg:grid-cols-[1.1fr_0.9fr]">
+            <div className="max-w-2xl">
+              <h1 className="h-display">
+                A resume written for the job you are actually applying to
+              </h1>
 
-            <p className="mt-4 text-[1.0625rem] leading-relaxed text-muted">
-              Paste a job posting. Get back a resume and cover letter rewritten
-              around it, using your own experience — never invented.
-            </p>
+              <p className="lead mt-5 max-w-xl">
+                Paste a job posting. Gatecrash rewrites your resume and cover
+                letter around it — using your real experience, never inventing
+                anything.
+              </p>
+
+              <ul className="mt-7 space-y-2.5">
+                {[
+                  "Tailored resume, as Word or PDF",
+                  "Cover letter when the application asks for one",
+                  "The keywords from the posting that made it in",
+                  "An honest list of what your profile does not cover",
+                ].map((line) => (
+                  <li key={line} className="flex gap-2.5 text-body">
+                    <Check
+                      className="mt-[0.3rem] h-4 w-4 shrink-0 text-accent"
+                      aria-hidden
+                    />
+                    <span>{line}</span>
+                  </li>
+                ))}
+              </ul>
+
+              {/* Concrete and checkable — no invented counts or testimonials. */}
+              <p className="mt-7 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-small text-faint">
+                <span className="flex items-center gap-1.5">
+                  <Check className="h-3.5 w-3.5" aria-hidden />
+                  {FREE_GENERATIONS_PER_MONTH} free applications
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <Check className="h-3.5 w-3.5" aria-hidden />
+                  No card required
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <Lock className="h-3.5 w-3.5" aria-hidden />
+                  Your data is never sold
+                </span>
+              </p>
+            </div>
+
+            {/* The one action on the page. Sticky so it stays reachable. */}
+            <div id="start" className="lg:sticky lg:top-24 lg:self-start">
+              <Suspense fallback={<Skeleton className="h-[19rem] rounded-xl" />}>
+                <SignInCard />
+              </Suspense>
+            </div>
           </div>
 
-          {/* Sticky on desktop so signing in is always one click away. */}
-          <div className="lg:sticky lg:top-8 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:self-start">
-            <Suspense
-              fallback={<div className="card h-72 animate-pulse shadow-sm" />}
-            >
-              <SignInCard />
-            </Suspense>
+          {/* Show the thing before explaining it. */}
+          <div className="mt-14 sm:mt-16">
+            <HeroVisual />
           </div>
-
-          <ul className="max-w-xl space-y-2.5 lg:col-start-1 lg:row-start-2 lg:-mt-1">
-            {INCLUDED.map((line) => (
-              <li key={line} className="flex gap-2.5 text-body">
-                <Check
-                  className="mt-[0.3rem] h-4 w-4 shrink-0 text-accent"
-                  aria-hidden
-                />
-                <span>{line}</span>
-              </li>
-            ))}
-          </ul>
         </section>
 
-        {/* ---- How it works ---- */}
-        <section className="border-t border-line py-12 sm:py-14">
-          <h2 className="text-lg font-semibold tracking-[-0.01em]">
-            How it works
-          </h2>
-
-          <ol className="mt-6 grid gap-4 sm:grid-cols-3">
-            {STEPS.map(({ icon: Icon, title, body }, i) => (
-              <li key={title} className="card p-5">
-                <div className="flex h-9 w-9 items-center justify-center rounded-md bg-accent-soft">
-                  <Icon
-                    className="h-[1.125rem] w-[1.125rem] text-accent"
-                    aria-hidden
-                  />
-                </div>
-                <p className="mt-3.5 text-small font-medium text-faint tnum">
-                  Step {i + 1}
-                </p>
-                <h3 className="mt-0.5 text-body font-semibold tracking-[-0.01em]">
-                  {title}
-                </h3>
-                <p className="hint mt-1.5">{body}</p>
-              </li>
-            ))}
-          </ol>
-        </section>
-
-        {/* ---- What it will not do ---- */}
-        <section className="border-t border-line py-12 sm:py-14">
-          <div className="card max-w-2xl p-6">
-            <h2 className="text-body font-semibold tracking-[-0.01em]">
-              It will not invent experience
+        {/* ================= How it works ================= */}
+        <section
+          id="how-it-works"
+          className="border-t border-line bg-paper py-16 sm:py-20"
+        >
+          <div className="section">
+            <p className="eyebrow">How it works</p>
+            <h2 className="h-section mt-2 max-w-xl">
+              Three steps, and the first one only happens once
             </h2>
-            <p className="hint mt-2">
-              Employers, job titles, dates and education are copied straight from
-              your profile — the AI is never asked to write them, so it cannot
-              quietly change a date or add a degree. It rewrites how your real
-              experience is presented, and tells you plainly which requirements
-              you do not meet.
+
+            <ol className="mt-10 grid gap-x-8 gap-y-8 sm:grid-cols-3">
+              {STEPS.map(({ title, body }, i) => (
+                <li key={title}>
+                  <p className="text-small font-semibold text-accent tnum">
+                    {String(i + 1).padStart(2, "0")}
+                  </p>
+                  <h3 className="mt-2.5 text-[1.0625rem] font-semibold tracking-[-0.015em]">
+                    {title}
+                  </h3>
+                  <p className="mt-2 text-small leading-[1.7] text-muted">
+                    {body}
+                  </p>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </section>
+
+        {/* ================= Accuracy ================= */}
+        <section id="accuracy" className="border-t border-line py-16 sm:py-20">
+          <div className="section">
+            <p className="eyebrow">Accuracy</p>
+            <h2 className="h-section mt-2 max-w-2xl">
+              AI that works with your experience, not around it
+            </h2>
+            <p className="lead mt-4 max-w-2xl">
+              Most tools hand your history to a model and hope. Gatecrash
+              splits the job in two: the facts are copied, and only the wording
+              is written.
+            </p>
+
+            <div className="mt-10 grid gap-4 md:grid-cols-2">
+              <div className="card p-6 sm:p-7">
+                <h3 className="flex items-center gap-2 text-body font-semibold tracking-[-0.01em]">
+                  <Lock className="h-4 w-4 text-ink" aria-hidden />
+                  Copied from your profile
+                </h3>
+                <p className="hint mt-1.5">
+                  Never sent to the model as something to write, so it cannot
+                  quietly change a date or add a degree.
+                </p>
+                <ul className="mt-5 space-y-2">
+                  {COPIED.map((item) => (
+                    <li key={item} className="flex gap-2.5 text-small">
+                      <Lock
+                        className="mt-[0.2rem] h-3.5 w-3.5 shrink-0 text-faint"
+                        aria-hidden
+                      />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="card p-6 sm:p-7">
+                <h3 className="flex items-center gap-2 text-body font-semibold tracking-[-0.01em]">
+                  <ArrowRight className="h-4 w-4 text-accent" aria-hidden />
+                  Rewritten for the role
+                </h3>
+                <p className="hint mt-1.5">
+                  Built only from what is already in your profile, aimed at the
+                  posting in front of it.
+                </p>
+                <ul className="mt-5 space-y-2">
+                  {REWRITTEN.map((item) => (
+                    <li key={item} className="flex gap-2.5 text-small">
+                      <Check
+                        className="mt-[0.2rem] h-3.5 w-3.5 shrink-0 text-accent"
+                        aria-hidden
+                      />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+            {/* The part competitors leave out, given its own weight. */}
+            <div className="card-raised mt-4 flex flex-col gap-5 p-6 sm:flex-row sm:items-center sm:p-7">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-flag-soft">
+                <X className="h-5 w-5 text-flag" aria-hidden />
+              </div>
+              <div>
+                <h3 className="text-body font-semibold tracking-[-0.01em]">
+                  It tells you what you are missing
+                </h3>
+                <p className="hint mt-1.5">
+                  Every application comes with the requirements your profile
+                  does not evidence — the certification you do not hold, the
+                  tool you have not used. They are left off the resume rather
+                  than papered over, so you walk into the interview knowing
+                  exactly where the questions are coming from.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ================= Pricing ================= */}
+        <section
+          id="pricing"
+          className="border-t border-line bg-paper py-16 sm:py-20"
+        >
+          <div className="section">
+            <p className="eyebrow">Pricing</p>
+            <h2 className="h-section mt-2">One application pack is one job</h2>
+            <p className="lead mt-4 max-w-2xl">
+              Paste a posting and you get the resume, the cover letter, the
+              matched keywords and the missing requirements — all counted as
+              one. Editing what comes back and downloading it again are free
+              and never count.
+            </p>
+
+            <div className="mt-10">
+              <PricingCards plan={plan} />
+            </div>
+
+            <p className="mt-6 text-small text-faint">
+              Free packs renew every {USAGE_WINDOW_DAYS} days. Paid plans are
+              billed by Polar, cancel any time from your account.
             </p>
           </div>
         </section>
 
-        {/* ---- Pricing ---- */}
-        <section className="border-t border-line py-12 sm:py-14">
-          <h2 className="text-lg font-semibold tracking-[-0.01em]">Pricing</h2>
+        {/* ================= FAQ ================= */}
+        <section id="faq" className="border-t border-line py-16 sm:py-20">
+          <div className="section">
+            <p className="eyebrow">Questions</p>
+            <h2 className="h-section mt-2">Before you hand over your history</h2>
 
-          <div className="mt-6 grid gap-4 sm:grid-cols-2">
-            <div className="card p-6">
-              <p className="text-small font-medium text-muted">Free</p>
-              <p className="mt-1.5 flex items-baseline gap-1.5">
-                <span className="text-2xl font-semibold tracking-[-0.02em]">
-                  $0
-                </span>
-              </p>
-              <p className="hint mt-2">
-                {FREE_GENERATIONS_PER_MONTH} application packs every 30 days.
-                No card required.
-              </p>
+            <div className="mt-10">
+              <Faq />
             </div>
-
-            <div className="card border-accent/30 p-6">
-              <p className="text-small font-medium text-accent">Pro</p>
-              <p className="mt-1.5 flex items-baseline gap-1.5">
-                <span className="text-2xl font-semibold tracking-[-0.02em]">
-                  {plan.price}
-                </span>
-                <span className="text-small text-muted">per {plan.period}</span>
-              </p>
-              <p className="hint mt-2">
-                {PRO_GENERATIONS_PER_MONTH} application packs a month — far
-                more than a real search needs. Cancel whenever you like.
-              </p>
-            </div>
-          </div>
-
-          {/*
-            Metered plans are only fair if the unit is spelled out. The thing
-            that costs a pack is a generation; everything you do afterwards
-            with what it produced is free.
-          */}
-          <div className="card mt-4 p-5">
-            <p className="text-small font-medium">
-              One application pack is one job
-            </p>
-            <p className="hint mt-1.5">
-              Paste a posting and you get a resume tailored to it, a cover
-              letter, the matched keywords and the honest list of requirements
-              you do not meet — all counted as one pack. Editing what comes
-              back, downloading it again in Word or PDF, and reading anything
-              you generated earlier are free and never count.
-            </p>
           </div>
         </section>
 
-        <footer className="border-t border-line py-8">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-[0.75rem] text-faint">
-              Gatecrash — tailor your resume to one job at a time.
+        {/* ================= Close ================= */}
+        <section className="border-t border-line bg-paper py-16 sm:py-20">
+          <div className="section text-center">
+            <h2 className="h-section mx-auto max-w-xl">
+              Stop sending the same resume to every job
+            </h2>
+            <p className="lead mx-auto mt-4 max-w-lg">
+              Set up your profile once. Every application after that takes about
+              a minute.
             </p>
-            <nav className="flex gap-4 text-[0.75rem] text-faint">
-              <Link href="/privacy" className="hover:text-ink">
-                Privacy
-              </Link>
-              <Link href="/terms" className="hover:text-ink">
-                Terms
-              </Link>
-            </nav>
+
+            <a
+              href="#start"
+              className="mt-8 inline-flex h-12 items-center gap-2 rounded-md bg-accent px-7 text-[1rem] font-medium text-white shadow-sm transition-colors hover:bg-accent/90"
+            >
+              Start free
+              <ArrowRight className="h-4 w-4" aria-hidden />
+            </a>
+
+            <p className="mt-4 flex items-center justify-center gap-1.5 text-small text-faint">
+              <ShieldCheck className="h-3.5 w-3.5" aria-hidden />
+              {FREE_GENERATIONS_PER_MONTH} applications free, no card required
+            </p>
           </div>
-        </footer>
+        </section>
       </main>
+
+      {/* ================= Footer ================= */}
+      <footer className="border-t border-line py-10">
+        <div className="section flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <Logo size={20} />
+            <p className="mt-2 text-micro text-faint">
+              Tailor your resume to one job at a time.
+            </p>
+          </div>
+
+          <nav className="flex flex-wrap gap-x-5 gap-y-2 text-micro text-faint">
+            <a href="#how-it-works" className="hover:text-ink">
+              How it works
+            </a>
+            <a href="#pricing" className="hover:text-ink">
+              Pricing
+            </a>
+            <Link href="/privacy" className="hover:text-ink">
+              Privacy
+            </Link>
+            <Link href="/terms" className="hover:text-ink">
+              Terms
+            </Link>
+          </nav>
+        </div>
+      </footer>
     </div>
   );
 }

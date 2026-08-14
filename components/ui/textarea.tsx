@@ -11,7 +11,7 @@ export const Textarea = React.forwardRef<
     ref={ref}
     className={cn(
       "w-full resize-y rounded-md border border-line bg-paper p-3 text-body text-ink",
-      "placeholder:text-faint",
+      "placeholder:text-placeholder",
       "transition-colors hover:border-faint",
       "focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20",
       "disabled:cursor-not-allowed disabled:bg-surface disabled:opacity-60",

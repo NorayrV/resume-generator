@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2, Sparkles } from "lucide-react";
+import { ArrowRight, Loader2 } from "lucide-react";
 import { Textarea } from "./ui/textarea";
 import { Button } from "./ui/button";
 import { ALL_LANGS, LANGUAGES, type Lang } from "@/lib/coverLetter";
@@ -54,12 +54,13 @@ export function JobDescriptionInput({
   return (
     <div className="space-y-4">
       <Textarea
-        rows={10}
+        rows={11}
         value={value}
         disabled={busy}
         onChange={(e) => onChange(e.target.value)}
-        placeholder="Paste the full posting here — title, company, responsibilities and requirements."
+        placeholder={"Paste the job posting here.\n\nThe more of it you include \u2014 responsibilities, requirements, the company \u2014 the closer the tailoring gets."}
         aria-label="Job description"
+        className="min-h-[13rem] leading-[1.7]"
       />
 
       {/* Producing a document nobody asked for is the bulk of a wasted
@@ -149,12 +150,12 @@ export function JobDescriptionInput({
           {busy ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-              Writing…
+              Tailoring…
             </>
           ) : (
             <>
-              <Sparkles className="h-4 w-4" aria-hidden />
-              Generate
+              Tailor my application
+              <ArrowRight className="h-4 w-4" aria-hidden />
             </>
           )}
         </Button>
