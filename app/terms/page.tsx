@@ -26,8 +26,9 @@ export default function TermsPage() {
         <p>
           You keep one profile of your real career history. You paste a job
           posting. Gatecrash rewrites your experience for that posting and gives
-          you a resume, optionally a cover letter, the keywords it matched, and
-          an honest list of requirements your profile does not cover.
+          you a resume, the keywords it matched, and an honest list of
+          requirements your profile does not cover. On Pro it also writes a
+          tailored cover letter.
         </p>
       </Section>
 
@@ -69,9 +70,11 @@ export default function TermsPage() {
       <Section heading="Plans and payment">
         <p>
           The free plan includes {FREE_GENERATIONS_PER_MONTH} application packs
-          every 30 days. Pro includes {PRO_GENERATIONS_PER_MONTH} a month. One
-          pack is one generation for one posting; editing, re-downloading and
-          re-reading anything you already generated is free and never counts.
+          every 30 days. Pro includes {PRO_GENERATIONS_PER_MONTH} a month and
+          adds tailored cover letters, which the free plan does not generate.
+          One pack is one generation for one posting; editing, re-downloading
+          and re-reading anything you already generated is free and never
+          counts.
         </p>
         <p>
           Payment is handled by Polar, which acts as merchant of record and

@@ -19,6 +19,7 @@ import { anchorExperience } from "@/lib/anchorExperience";
 import { currentUser } from "@/lib/supabase/server";
 import { getPlanPricing } from "@/lib/polar";
 import { claimGeneration, getUsage, releaseGeneration } from "@/lib/usage";
+import { checkOutputAccess } from "@/lib/access";
 import { MAX_JOB_DESCRIPTION_CHARS } from "@/lib/plan";
 import { sanitiseOutputs, type OutputKind } from "@/lib/outputs";
 import {
@@ -88,6 +89,34 @@ export async function POST(request: Request) {
           error: `That job description is ${jobDescription.length.toLocaleString()} characters. Paste just the posting itself — up to ${MAX_JOB_DESCRIPTION_CHARS.toLocaleString()}.`,
         },
         { status: 413 },
+      );
+    }
+
+    /*
+     * Can this account generate what it asked for?
+     *
+     * Before the profile read, before the meter, and long before any AI call:
+     * a refused request must cost the user nothing off their allowance and
+     * cost us nothing in tokens. The frontend hides the cover letter behind a
+     * Pro badge, but that is a courtesy — this is the check that actually
+     * holds, and it holds identically for a direct POST, a replayed request
+     * or a client with its state edited in devtools.
+     */
+    const access = await checkOutputAccess(user.id, outputs);
+
+    if (!access.ok) {
+      // Quote the live price with the refusal, so the upgrade prompt does not
+      // need a second round trip — same shape as the quota refusal below.
+      const plan = await getPlanPricing();
+
+      return NextResponse.json(
+        {
+          error: access.message,
+          code: "subscription_required",
+          blocked: access.blocked,
+          plan,
+        },
+        { status: 403 },
       );
     }
 

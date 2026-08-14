@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, FileText, RotateCcw } from "lucide-react";
+import { ArrowRight, FileText, Lock, RotateCcw } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
 import { JobDescriptionInput } from "@/components/JobDescriptionInput";
 import { GenerationProgress } from "@/components/GenerationProgress";
@@ -41,6 +41,15 @@ interface Generation {
 const CACHE_KEY = "last-generation";
 
 /**
+ * The posting being worked on.
+ *
+ * Remembered so that leaving to upgrade — or to fix the profile — and coming
+ * back does not mean finding and pasting the job advert a second time. Session
+ * storage, not local: it belongs to this application, not to the account.
+ */
+const DRAFT_KEY = "job-description-draft";
+
+/**
  * Remembered cover letter language.
  *
  * The key keeps its plural name on purpose: it used to hold an array, and
@@ -68,6 +77,13 @@ export default function GeneratePage() {
   const [quotaExceeded, setQuotaExceeded] = useState(false);
   const [plan, setPlan] = useState<PlanPricing | null>(null);
   const [result, setResult] = useState<Generation | null>(null);
+  /*
+   * Null until the account loads. The cover letter control reads this to
+   * decide whether to show the Pro badge; the server checks the same
+   * entitlement itself before generating anything, so this is presentation.
+   */
+  const [paidPlan, setPaidPlan] = useState<boolean | null>(null);
+  const [blocked, setBlocked] = useState(false);
 
   useEffect(() => {
     fetch("/api/profile")
@@ -75,6 +91,27 @@ export default function GeneratePage() {
       .then((data) => setProfile(data.summary))
       .catch(() => setProfile({ exists: false }))
       .finally(() => setLoading(false));
+
+    /*
+     * Which tier this account is on, from the endpoint the account page
+     * already uses. Failing this read leaves the control unlocked: the server
+     * refuses regardless, so the worst case is one refused press rather than
+     * a paying subscriber wrongly told to upgrade.
+     */
+    fetch("/api/account")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data?.usage?.tier) setPaidPlan(data.usage.tier !== "free");
+        if (data?.plan) setPlan(data.plan);
+      })
+      .catch(() => {});
+
+    try {
+      const draft = sessionStorage.getItem(DRAFT_KEY);
+      if (draft) setJobDescription(draft);
+    } catch {
+      // Private browsing — the draft simply will not survive a navigation.
+    }
 
     try {
       const cached = sessionStorage.getItem(CACHE_KEY);
@@ -91,6 +128,17 @@ export default function GeneratePage() {
     }
   }, []);
 
+  /** Keep the posting for the trip to /account or /profile and back. */
+  function changeJobDescription(next: string) {
+    setJobDescription(next);
+    try {
+      if (next.trim()) sessionStorage.setItem(DRAFT_KEY, next);
+      else sessionStorage.removeItem(DRAFT_KEY);
+    } catch {
+      // Nothing to do: the box still works, it just will not be remembered.
+    }
+  }
+
   /** Remember the language choice, so it does not reset on every visit. */
   function changeLang(next: Lang) {
     setLang(next);
@@ -105,6 +153,7 @@ export default function GeneratePage() {
     setBusy(true);
     setError(null);
     setQuotaExceeded(false);
+    setBlocked(false);
     setResult(null);
     sessionStorage.removeItem(CACHE_KEY);
 
@@ -118,15 +167,32 @@ export default function GeneratePage() {
       const data = await response.json();
 
       if (!response.ok) {
-        // 402 means the free tier is spent — point at the upgrade rather than
-        // leaving a dead-end error message.
+        /*
+         * Two refusals point at the same upgrade, for different reasons: 402
+         * is a free account that has used its packs, 403 is a free account
+         * asking for a paid output. Both are answered with the plan rather
+         * than a dead-end message.
+         */
         setQuotaExceeded(data.code === "quota_exceeded");
+        setBlocked(data.code === "subscription_required");
+
+        // A 403 is also the moment we learn the client was out of date about
+        // the tier — lock the control so the next press cannot repeat it.
+        if (data.code === "subscription_required") {
+          setPaidPlan(false);
+          setOutputs((current) => {
+            const kept = current.filter((kind) => kind !== "cover_letter");
+            return kept.length > 0 ? kept : [...DEFAULT_OUTPUTS];
+          });
+        }
+
         setPlan(data.plan ?? null);
         setError(data.error ?? "Generation failed.");
         return;
       }
 
       setQuotaExceeded(false);
+      setBlocked(false);
 
       const generation: Generation = { ...data, requested: outputs };
       setResult(generation);
@@ -179,19 +245,55 @@ export default function GeneratePage() {
               <div className="mt-5">
                 <JobDescriptionInput
                   value={jobDescription}
-                  onChange={setJobDescription}
+                  onChange={changeJobDescription}
                   onGenerate={generate}
                   busy={busy}
                   lang={lang}
                   onLangChange={changeLang}
                   outputs={outputs}
                   onOutputsChange={setOutputs}
+                  canUseCoverLetter={paidPlan}
+                  planPrice={plan?.price}
                 />
               </div>
             </section>
 
             {error &&
-              (quotaExceeded ? (
+              (blocked ? (
+                /*
+                 * Not an authorisation error as far as the reader is
+                 * concerned — a feature they have not bought yet. It says
+                 * what the feature is, what it costs, and that the work they
+                 * were doing is still there.
+                 */
+                <section className="card-raised border-accent-line p-5 sm:p-6">
+                  <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div className="max-w-xl">
+                      <div className="flex items-center gap-2">
+                        <Lock className="h-4 w-4 text-accent-text" aria-hidden />
+                        <h2 className="text-body font-semibold tracking-[-0.01em]">
+                          Cover letters are included with Pro
+                        </h2>
+                      </div>
+                      <p className="hint mt-1.5">{error}</p>
+                      <p className="hint mt-1.5">
+                        Your posting is still here, and the cover letter has
+                        been switched off — press Tailor my application to
+                        generate the resume on its own.
+                      </p>
+                    </div>
+
+                    <Link
+                      href="/account"
+                      className="inline-flex h-10 shrink-0 items-center gap-2 rounded-md bg-accent px-5 text-small font-medium text-on-accent shadow-sm transition-colors hover:bg-accent/90"
+                    >
+                      Upgrade to Pro
+                      {plan ? ` — ${plan.price}/${plan.period}` : ""}
+                      <ArrowRight className="h-4 w-4" aria-hidden />
+                    </Link>
+                  </div>
+                </section>
+              ) : quotaExceeded ? (
                 <div className="card flex flex-wrap items-center justify-between gap-4 border-accent-line bg-accent-soft p-5">
                   <div>
                     <p className="text-body font-medium">{error}</p>

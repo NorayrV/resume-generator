@@ -41,7 +41,7 @@ const STEPS = [
   },
   {
     title: "Get your application",
-    body: "A tailored resume as Word or PDF, a cover letter if you want one, the keywords it matched, and what it could not cover.",
+    body: "A tailored resume as Word or PDF, the keywords it matched, and what it could not cover. Cover letters come with Pro.",
   },
 ];
 
@@ -88,7 +88,7 @@ export default async function LoginPage() {
               <ul className="mt-7 space-y-2.5">
                 {[
                   "Tailored resume, as Word or PDF",
-                  "Cover letter when the application asks for one",
+                  "Cover letters when the application asks for one, with Pro",
                   "The keywords from the posting that made it in",
                   "An honest list of what your profile does not cover",
                 ].map((line) => (
@@ -251,10 +251,11 @@ export default async function LoginPage() {
             <p className="eyebrow">Pricing</p>
             <h2 className="h-section mt-2">One application pack is one job</h2>
             <p className="lead mt-4 max-w-2xl">
-              Paste a posting and you get the resume, the cover letter, the
-              matched keywords and the missing requirements — all counted as
-              one. Editing what comes back and downloading it again are free
-              and never count.
+              Paste a posting and you get the resume, the matched keywords
+              and the missing requirements — all counted as one, on either
+              plan. Pro adds a tailored cover letter to the same pack. Editing
+              what comes back and downloading it again are free and never
+              count.
             </p>
 
             <div className="mt-10">

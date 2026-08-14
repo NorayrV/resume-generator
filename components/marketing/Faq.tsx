@@ -50,10 +50,11 @@ const ITEMS: { q: string; a: React.ReactNode }[] = [
     q: "What exactly do I get?",
     a: (
       <>
-        A resume tailored to the posting, downloadable as Word or PDF; a cover
-        letter if you ask for one; the keywords from the posting that made it
-        into your resume; and a list of requirements your profile does not
-        cover. That last one is the part most tools leave out.
+        On any plan: a resume tailored to the posting, downloadable as Word
+        or PDF; the keywords from the posting that made it into your resume;
+        and a list of requirements your profile does not cover. That last one
+        is the part most tools leave out. Tailored cover letters are part of
+        Pro.
       </>
     ),
   },

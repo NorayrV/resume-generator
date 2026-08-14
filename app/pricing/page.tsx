@@ -28,7 +28,7 @@ export const metadata: Metadata = {
 /** What a single pack buys, spelled out so the unit is not abstract. */
 const INCLUDED = [
   "A resume tailored to that posting, as Word or PDF",
-  "A cover letter, if you asked for one",
+  "A cover letter, if you asked for one — Pro only",
   "The keywords from the posting that made it into your resume",
   "The requirements your profile does not cover",
 ];

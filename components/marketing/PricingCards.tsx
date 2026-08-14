@@ -1,4 +1,4 @@
-import { Check } from "lucide-react";
+import { Check, Minus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   FREE_GENERATIONS_PER_MONTH,
@@ -14,17 +14,40 @@ import {
  * The price comes from Polar at render time rather than being typed in here,
  * so changing it in Polar changes it on the site.
  *
- * Both cards list the same four lines in the same order. A reader comparing
- * them only has to scan one column of differences, which is the whole point
- * of a comparison — feature lists that differ in length force them to read
- * both in full.
+ * Both cards list the same four rows in the same order, and the free card
+ * marks what it does not include rather than quietly leaving the row out.
+ * A reader comparing two lists of different lengths has to read both in full;
+ * a reader comparing two identical lists only has to find the row that
+ * changed — which here is the cover letter.
  */
 
-const SHARED = [
-  "Tailored resume, as Word or PDF",
-  "Cover letter when you want one",
-  "Matched keywords and missing requirements",
-];
+/** One row of a plan. `false` means the row is shown as not included. */
+type Row = { label: React.ReactNode; included: boolean };
+
+function rows(plan: "free" | "pro"): Row[] {
+  const pro = plan === "pro";
+
+  return [
+    {
+      label: (
+        <>
+          <strong className="font-medium text-ink">
+            {pro ? PRO_GENERATIONS_PER_MONTH : FREE_GENERATIONS_PER_MONTH}{" "}
+            applications
+          </strong>{" "}
+          {pro ? "a month" : `every ${USAGE_WINDOW_DAYS} days`}
+        </>
+      ),
+      included: true,
+    },
+    { label: "Tailored resume, as Word or PDF", included: true },
+    { label: "Matched keywords and missing requirements", included: true },
+    {
+      label: "Cover letters, in English, Russian or Spanish",
+      included: pro,
+    },
+  ];
+}
 
 export function PricingCards({
   plan,
@@ -53,14 +76,10 @@ export function PricingCards({
         </p>
 
         <ul className="mt-6 space-y-2.5">
-          <Line>
-            <strong className="font-medium text-ink">
-              {FREE_GENERATIONS_PER_MONTH} applications
-            </strong>{" "}
-            every {USAGE_WINDOW_DAYS} days
-          </Line>
-          {SHARED.map((line) => (
-            <Line key={line}>{line}</Line>
+          {rows("free").map((row, i) => (
+            <Line key={i} included={row.included}>
+              {row.label}
+            </Line>
           ))}
         </ul>
 
@@ -87,18 +106,15 @@ export function PricingCards({
         </p>
 
         <p className="hint mt-2">
-          {PRO_GENERATIONS_PER_MONTH} applications a month. Cancel any time.
+          {PRO_GENERATIONS_PER_MONTH} applications a month, with cover letters.
+          Cancel any time.
         </p>
 
         <ul className="mt-6 space-y-2.5">
-          <Line>
-            <strong className="font-medium text-ink">
-              {PRO_GENERATIONS_PER_MONTH} applications
-            </strong>{" "}
-            a month
-          </Line>
-          {SHARED.map((line) => (
-            <Line key={line}>{line}</Line>
+          {rows("pro").map((row, i) => (
+            <Line key={i} included={row.included}>
+              {row.label}
+            </Line>
           ))}
         </ul>
 
@@ -115,11 +131,32 @@ export function PricingCards({
 
 /* ------------------------------------------------------------------ */
 
-function Line({ children }: { children: React.ReactNode }) {
+function Line({
+  included,
+  children,
+}: {
+  included: boolean;
+  children: React.ReactNode;
+}) {
   return (
-    <li className="flex gap-2.5 text-small text-muted">
-      <Check className="mt-[0.2rem] h-3.5 w-3.5 shrink-0 text-accent-text" aria-hidden />
-      <span>{children}</span>
+    <li
+      className={`flex gap-2.5 text-small ${
+        included ? "text-muted" : "text-faint"
+      }`}
+    >
+      {included ? (
+        <Check
+          className="mt-[0.2rem] h-3.5 w-3.5 shrink-0 text-accent-text"
+          aria-hidden
+        />
+      ) : (
+        <Minus className="mt-[0.2rem] h-3.5 w-3.5 shrink-0" aria-hidden />
+      )}
+      {/* Named for screen readers, which cannot see which icon is beside it. */}
+      <span>
+        <span className="sr-only">{included ? "Included: " : "Not included: "}</span>
+        {children}
+      </span>
     </li>
   );
 }
