@@ -16,9 +16,14 @@ import { ThemeToggle } from "@/components/ThemeToggle";
  * hero is the call to action; a header button that fakes one is worse than
  * no button.
  *
- * `onHome` decides whether the section links are same-page anchors or full
- * links back to the landing page — a bare "#accuracy" on /pricing would
- * scroll to nothing.
+ * All three links point at sections of the landing page, so they all behave
+ * identically: on the landing page they scroll, and from anywhere else they
+ * navigate there and then scroll. Pricing used to be the odd one out — a
+ * separate route while its neighbours were anchors — which made the menu feel
+ * like it worked by accident.
+ *
+ * `onHome` decides whether they are same-page anchors or full links back to
+ * the landing page: a bare "#accuracy" elsewhere would scroll to nothing.
  */
 
 export function MarketingNav({ onHome = false }: { onHome?: boolean }) {
@@ -27,7 +32,7 @@ export function MarketingNav({ onHome = false }: { onHome?: boolean }) {
   const links = [
     { href: `${home}#how-it-works`, label: "How it works" },
     { href: `${home}#accuracy`, label: "Accuracy" },
-    { href: "/pricing", label: "Pricing" },
+    { href: `${home}#pricing`, label: "Pricing" },
   ];
 
   return (
@@ -38,15 +43,30 @@ export function MarketingNav({ onHome = false }: { onHome?: boolean }) {
         </Link>
 
         <nav aria-label="Sections" className="hidden gap-1 sm:flex">
-          {links.map(({ href, label }) => (
-            <Link
-              key={href}
-              href={href}
-              className="rounded-md px-3 py-2 text-small font-medium text-muted transition-colors hover:bg-surface hover:text-ink"
-            >
-              {label}
-            </Link>
-          ))}
+          {links.map(({ href, label }) => {
+            const style =
+              "rounded-md px-3 py-2 text-small font-medium text-muted transition-colors hover:bg-surface hover:text-ink";
+
+            /*
+             * A same-page anchor has to be a plain <a>. next/link treats a
+             * bare "#section" as a route change and handles the click itself,
+             * and the App Router then does not perform the fragment scroll —
+             * the address bar updates and the page sits exactly where it was.
+             * These links did nothing at all until this was fixed.
+             *
+             * A cross-page link is a real navigation, so it stays a Link and
+             * keeps the prefetching that comes with it.
+             */
+            return href.startsWith("#") ? (
+              <a key={href} href={href} className={style}>
+                {label}
+              </a>
+            ) : (
+              <Link key={href} href={href} className={style}>
+                {label}
+              </Link>
+            );
+          })}
         </nav>
 
         <div className="ml-auto flex items-center">

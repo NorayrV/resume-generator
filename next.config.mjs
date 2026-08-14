@@ -47,6 +47,19 @@ const nextConfig = {
     "/api/**/*": ["./assets/fonts/**/*"],
   },
 
+  /*
+   * /pricing was a page of its own while the nav's other two links were
+   * anchors on the landing page, so one menu item behaved unlike its
+   * neighbours. Pricing now lives in that page alongside them, and this keeps
+   * any bookmark, shared link or search result pointing at the old route
+   * working instead of 404ing.
+   */
+  async redirects() {
+    return [
+      { source: "/pricing", destination: "/login#pricing", permanent: true },
+    ];
+  },
+
   async headers() {
     return [
       {

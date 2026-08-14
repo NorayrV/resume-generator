@@ -284,7 +284,7 @@ function AccountBody() {
               <p className="mt-3 text-[0.75rem] leading-relaxed text-faint">
                 Renews monthly. Cancel any time.{" "}
                 <Link
-                  href="/pricing"
+                  href="/login#pricing"
                   className="text-accent-text underline-offset-2 hover:underline"
                 >
                   What one application includes

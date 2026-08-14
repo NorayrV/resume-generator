@@ -21,7 +21,6 @@ const PUBLIC_PATHS = [
   // OAuth consent screen.
   "/privacy",
   "/terms",
-  "/pricing",
   "/auth/callback",
   // Polar calls this server-to-server with no session. It verifies its own
   // signature, which is what makes it safe to expose.

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowRight, Check, Lock, ShieldCheck, X } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { SignInCard } from "@/components/SignInCard";
+import { HashScroll } from "@/components/HashScroll";
 import { Faq } from "@/components/marketing/Faq";
 import { HeroVisual } from "@/components/marketing/HeroVisual";
 import { MarketingNav } from "@/components/marketing/MarketingNav";
@@ -45,6 +46,22 @@ const STEPS = [
   },
 ];
 
+/** What a single pack buys, spelled out so the unit is not abstract. */
+const PACK_INCLUDES = [
+  "A resume tailored to that posting, as Word or PDF",
+  "The keywords from the posting that made it into your resume",
+  "The requirements your profile does not cover",
+  "A cover letter, on Pro",
+];
+
+/** What is explicitly free, because metered products make people cautious. */
+const NEVER_COUNTS = [
+  "Editing anything that comes back",
+  "Downloading the same application again, in either format",
+  "Reading applications you generated earlier",
+  "Changing your profile, as often as you like",
+];
+
 /** The five things the AI is never allowed to write. */
 const COPIED = [
   "Employers",
@@ -68,6 +85,8 @@ export default async function LoginPage() {
 
   return (
     <div id="top" className="min-h-screen bg-surface">
+      {/* Arriving at /login#pricing should land on pricing, not the top. */}
+      <HashScroll />
       <MarketingNav onHome />
 
       <main>
@@ -262,9 +281,57 @@ export default async function LoginPage() {
               <PricingCards plan={plan} />
             </div>
 
-            <p className="mt-6 text-small text-faint">
+            {/*
+              What the unit contains, and what is outside it. Metered pricing
+              makes people cautious about touching anything, so the second
+              list matters as much as the first.
+            */}
+            <div className="mt-12 grid gap-10 border-t border-line pt-10 md:grid-cols-2 md:gap-16">
+              <div>
+                <h3 className="text-[1.0625rem] font-semibold tracking-[-0.015em]">
+                  What one pack gives you
+                </h3>
+                <ul className="mt-5 space-y-2.5">
+                  {PACK_INCLUDES.map((line) => (
+                    <li
+                      key={line}
+                      className="flex gap-2.5 text-small text-muted"
+                    >
+                      <Check
+                        className="mt-[0.2rem] h-3.5 w-3.5 shrink-0 text-accent-text"
+                        aria-hidden
+                      />
+                      <span>{line}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div>
+                <h3 className="text-[1.0625rem] font-semibold tracking-[-0.015em]">
+                  What never counts
+                </h3>
+                <ul className="mt-5 space-y-2.5">
+                  {NEVER_COUNTS.map((line) => (
+                    <li
+                      key={line}
+                      className="flex gap-2.5 text-small text-muted"
+                    >
+                      <Check
+                        className="mt-[0.2rem] h-3.5 w-3.5 shrink-0 text-good"
+                        aria-hidden
+                      />
+                      <span>{line}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+            <p className="mt-8 text-small text-faint">
               Free packs renew every {USAGE_WINDOW_DAYS} days. Paid plans are
-              billed by Polar, cancel any time from your account.
+              billed by Polar as merchant of record; cancel any time from your
+              account.
             </p>
           </div>
         </section>
