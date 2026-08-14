@@ -44,10 +44,16 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
       title={theme ? `Switch to ${next} mode` : "Switch theme"}
       className={`flex h-9 w-9 items-center justify-center rounded-md text-muted transition-colors hover:bg-surface hover:text-ink ${className}`}
     >
+      {/*
+        The icon shows the destination, not the current state, so it agrees
+        with the label beside it: in light mode you see a moon and the label
+        reads "switch to dark mode". Showing the current theme instead would
+        pair a sun with "switch to dark mode", which reads as a contradiction.
+      */}
       {theme === "dark" ? (
-        <Moon className="h-4 w-4" aria-hidden />
-      ) : theme === "light" ? (
         <Sun className="h-4 w-4" aria-hidden />
+      ) : theme === "light" ? (
+        <Moon className="h-4 w-4" aria-hidden />
       ) : (
         /* Pre-hydration: hold the space so the header does not shift. */
         <span className="h-4 w-4" aria-hidden />

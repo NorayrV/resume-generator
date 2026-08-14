@@ -5,10 +5,16 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 /**
  * The landing page's header.
  *
- * Three links and one call to action. No dropdowns and no hamburger: the
- * marketing site is one page plus pricing, so a menu button would hide three
- * links behind a tap for no gain. Below `sm` the links drop away and the
- * button stays, because on a phone the only thing worth a tap is signing up.
+ * Three section links and the theme toggle. No dropdowns and no hamburger:
+ * the marketing site is one page plus pricing, so a menu button would hide
+ * three links behind a tap for no gain.
+ *
+ * There is deliberately no "Sign in" or "Start free" button up here. Both
+ * were anchors to #start, and on a desktop the sign-in card is already in
+ * view beside the headline — so pressing them scrolled to something the
+ * reader was looking at and appeared to do nothing at all. The card in the
+ * hero is the call to action; a header button that fakes one is worse than
+ * no button.
  *
  * `onHome` decides whether the section links are same-page anchors or full
  * links back to the landing page — a bare "#accuracy" on /pricing would
@@ -17,7 +23,6 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 
 export function MarketingNav({ onHome = false }: { onHome?: boolean }) {
   const home = onHome ? "" : "/login";
-  const start = `${home}#start`;
 
   const links = [
     { href: `${home}#how-it-works`, label: "How it works" },
@@ -44,20 +49,8 @@ export function MarketingNav({ onHome = false }: { onHome?: boolean }) {
           ))}
         </nav>
 
-        <div className="ml-auto flex items-center gap-1 sm:gap-2">
+        <div className="ml-auto flex items-center">
           <ThemeToggle />
-          <Link
-            href={start}
-            className="hidden h-9 items-center rounded-md px-3 text-small font-medium text-muted transition-colors hover:text-ink sm:inline-flex"
-          >
-            Sign in
-          </Link>
-          <Link
-            href={start}
-            className="inline-flex h-9 items-center rounded-md bg-accent px-4 text-small font-medium text-on-accent shadow-sm transition-colors hover:bg-accent/90"
-          >
-            Start free
-          </Link>
         </div>
       </div>
     </header>
