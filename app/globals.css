@@ -3,7 +3,18 @@
 @tailwind utilities;
 
 @layer base {
+  /*
+   * ==========================================================================
+   * Light — the default.
+   * ==========================================================================
+   *
+   * Every colour in the app comes from this block or its dark counterpart
+   * below. No component hardcodes a colour, which is what makes a second
+   * theme a matter of redefining variables rather than editing screens.
+   */
   :root {
+    color-scheme: light;
+
     /* Neutral and familiar: white page, grey lines, near-black text. */
     --paper: 0 0% 100%;
     --surface: 0 0% 98%;
@@ -32,10 +43,19 @@
      */
     --line-soft: 0 0% 94%;
 
-    /* One blue. Primary button, focus ring, active nav. Nothing else. */
+    /*
+     * One blue, but two jobs, and they pull in opposite directions: a filled
+     * button needs to stay dark enough for white text to clear 4.5:1, while
+     * the same blue used as a link needs to stay light enough to clear 4.5:1
+     * against the page. One value cannot do both once the page goes dark, so
+     * --accent fills and --accent-text writes.
+     */
     --accent: 221 83% 53%;
+    --accent-text: 221 83% 45%;
     --accent-soft: 221 83% 97%;
     --accent-line: 221 83% 88%;
+    /* What sits on top of a filled --accent. */
+    --on-accent: 0 0% 100%;
 
     /* Errors and anything out of range. Darkened to clear 4.5:1 on --flag-soft. */
     --flag: 0 70% 42%;
@@ -48,6 +68,89 @@
      */
     --good: 152 62% 26%;
     --good-soft: 152 55% 96%;
+
+    /*
+     * Depth. Held in a variable because a shadow tuned for a white page is
+     * invisible on a dark one — see the dark block for what replaces it.
+     */
+    --shadow-card: 0 1px 2px 0 rgb(0 0 0 / 0.04), 0 4px 12px -2px rgb(0 0 0 / 0.06);
+    --shadow-lift: 0 2px 4px 0 rgb(0 0 0 / 0.04), 0 12px 28px -6px rgb(0 0 0 / 0.10);
+
+    /*
+     * ------------------------------------------------------------------
+     * The document, which does NOT follow the theme.
+     * ------------------------------------------------------------------
+     *
+     * The resume preview is a picture of a file the user is about to send to
+     * an employer. That file is black on white whichever theme the app is
+     * wearing, so showing it dark would be showing them something they are
+     * not going to get. These four stay fixed in both themes; only the frame
+     * around the sheet is themed.
+     */
+    --doc-paper: 0 0% 100%;
+    --doc-ink: 0 0% 9%;
+    --doc-muted: 0 0% 35%;
+    --doc-line: 0 0% 80%;
+    /*
+     * The blue used inside the sheet. Pinned to the darker light-mode value:
+     * the themed --accent is lifted in dark mode for legibility on a dark
+     * page, and that lighter blue measures only 4.3:1 against the white sheet
+     * at the 10px these chips are set in.
+     */
+    --doc-accent: 221 83% 45%;
+  }
+
+  /*
+   * ==========================================================================
+   * Dark.
+   * ==========================================================================
+   *
+   * Layered rather than inverted: the page is the darkest surface, cards sit
+   * a step above it, and borders do the separating that shadows do in light
+   * mode. Neutrals carry a slight blue cast (hue 220) because a perfectly
+   * desaturated dark grey reads as dead on most screens.
+   *
+   * Nothing here is pure black or pure white. #000 makes borders impossible
+   * to see and haloes text on OLED; #fff at 15px on a dark field is harsh to
+   * read for any length of time.
+   */
+  .dark {
+    color-scheme: dark;
+
+    --paper: 220 13% 11%;
+    --surface: 220 16% 7%;
+    --ink: 220 20% 96%;
+    --muted: 220 10% 71%;
+    --faint: 220 9% 60%;
+    --line: 220 10% 20%;
+    --line-soft: 220 10% 16%;
+    --placeholder: 220 8% 46%;
+
+    /*
+     * The fill stays close to its light-mode value so white still clears AA
+     * on top of it; the text variant lifts well clear of the page instead.
+     */
+    --accent: 221 83% 56%;
+    --accent-text: 217 92% 72%;
+    --accent-soft: 221 55% 16%;
+    --accent-line: 221 45% 32%;
+    --on-accent: 0 0% 100%;
+
+    --flag: 0 84% 71%;
+    --flag-soft: 0 40% 15%;
+
+    --good: 152 52% 58%;
+    --good-soft: 152 35% 13%;
+
+    /*
+     * Deeper and tighter. A soft, wide shadow is invisible against a dark
+     * page, so elevation here comes mostly from --paper sitting above
+     * --surface, with the shadow only grounding the edge.
+     */
+    --shadow-card: 0 1px 2px 0 rgb(0 0 0 / 0.4), 0 4px 14px -3px rgb(0 0 0 / 0.5);
+    --shadow-lift: 0 2px 6px 0 rgb(0 0 0 / 0.45), 0 16px 36px -8px rgb(0 0 0 / 0.6);
+
+    /* --doc-* are deliberately absent: the sheet stays white. */
   }
 
   * {
@@ -74,7 +177,7 @@
   }
 
   :focus-visible {
-    outline: 2px solid hsl(var(--accent));
+    outline: 2px solid hsl(var(--accent-text));
     outline-offset: 2px;
     border-radius: 4px;
   }
@@ -129,7 +232,7 @@
 
   /* The eyebrow above a section heading: small, spaced, quiet. */
   .eyebrow {
-    @apply text-[0.75rem] font-semibold uppercase tracking-[0.08em] text-accent;
+    @apply text-[0.75rem] font-semibold uppercase tracking-[0.08em] text-accent-text;
   }
 
   /*

@@ -202,7 +202,7 @@ export default function GeneratePage() {
                   </div>
                   <Link
                     href="/account"
-                    className="inline-flex h-10 shrink-0 items-center gap-2 rounded-md bg-accent px-5 text-small font-medium text-white shadow-sm transition-colors hover:bg-accent/90"
+                    className="inline-flex h-10 shrink-0 items-center gap-2 rounded-md bg-accent px-5 text-small font-medium text-on-accent shadow-sm transition-colors hover:bg-accent/90"
                   >
                     See plans
                     <ArrowRight className="h-4 w-4" aria-hidden />
@@ -320,7 +320,7 @@ function FirstRun() {
 
       <Link
         href="/profile"
-        className="mt-7 inline-flex h-11 items-center justify-center gap-2 rounded-md bg-accent px-6 text-body font-medium text-white shadow-sm transition-colors hover:bg-accent/90"
+        className="mt-7 inline-flex h-11 items-center justify-center gap-2 rounded-md bg-accent px-6 text-body font-medium text-on-accent shadow-sm transition-colors hover:bg-accent/90"
       >
         Set up profile
         <ArrowRight className="h-4 w-4" aria-hidden />
@@ -336,7 +336,7 @@ function FirstRun() {
             <span
               className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-micro font-semibold tnum ${
                 i === 0
-                  ? "bg-accent text-white"
+                  ? "bg-accent text-on-accent"
                   : "border border-line text-faint"
               }`}
             >

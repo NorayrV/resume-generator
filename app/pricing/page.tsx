@@ -82,7 +82,7 @@ export default async function PricingPage() {
                 {INCLUDED.map((line) => (
                   <li key={line} className="flex gap-2.5 text-small text-muted">
                     <Check
-                      className="mt-[0.2rem] h-3.5 w-3.5 shrink-0 text-accent"
+                      className="mt-[0.2rem] h-3.5 w-3.5 shrink-0 text-accent-text"
                       aria-hidden
                     />
                     <span>{line}</span>
@@ -129,7 +129,7 @@ export default async function PricingPage() {
             </p>
             <Link
               href="/login#start"
-              className="mt-8 inline-flex h-12 items-center gap-2 rounded-md bg-accent px-7 text-[1rem] font-medium text-white shadow-sm transition-colors hover:bg-accent/90"
+              className="mt-8 inline-flex h-12 items-center gap-2 rounded-md bg-accent px-7 text-[1rem] font-medium text-on-accent shadow-sm transition-colors hover:bg-accent/90"
             >
               Start free
               <ArrowRight className="h-4 w-4" aria-hidden />

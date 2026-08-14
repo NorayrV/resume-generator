@@ -52,7 +52,7 @@ export function LegalPage({
             Questions about anything here? Write to{" "}
             <a
               href={`mailto:${CONTACT_EMAIL}`}
-              className="text-accent underline-offset-2 hover:underline"
+              className="text-accent-text underline-offset-2 hover:underline"
             >
               {CONTACT_EMAIL}
             </a>

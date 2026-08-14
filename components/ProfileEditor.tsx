@@ -106,7 +106,7 @@ function AddButton({ label, onClick }: { label: string; onClick: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center justify-center gap-1.5 rounded-md border border-dashed border-line py-2.5 text-small font-medium text-muted transition-colors hover:border-accent hover:bg-accent-soft hover:text-accent"
+      className="flex w-full items-center justify-center gap-1.5 rounded-md border border-dashed border-line py-2.5 text-small font-medium text-muted transition-colors hover:border-accent hover:bg-accent-soft hover:text-accent-text"
     >
       <Plus className="h-4 w-4" aria-hidden />
       {label}

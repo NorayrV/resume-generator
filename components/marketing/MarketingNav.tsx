@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Logo } from "@/components/Logo";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 /**
  * The landing page's header.
@@ -43,7 +44,8 @@ export function MarketingNav({ onHome = false }: { onHome?: boolean }) {
           ))}
         </nav>
 
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex items-center gap-1 sm:gap-2">
+          <ThemeToggle />
           <Link
             href={start}
             className="hidden h-9 items-center rounded-md px-3 text-small font-medium text-muted transition-colors hover:text-ink sm:inline-flex"
@@ -52,7 +54,7 @@ export function MarketingNav({ onHome = false }: { onHome?: boolean }) {
           </Link>
           <Link
             href={start}
-            className="inline-flex h-9 items-center rounded-md bg-accent px-4 text-small font-medium text-white shadow-sm transition-colors hover:bg-accent/90"
+            className="inline-flex h-9 items-center rounded-md bg-accent px-4 text-small font-medium text-on-accent shadow-sm transition-colors hover:bg-accent/90"
           >
             Start free
           </Link>

@@ -103,7 +103,7 @@ export function GenerationProgress({ outputs }: Props) {
                   <Check className="h-3.5 w-3.5 text-good" aria-hidden />
                 ) : current ? (
                   <Loader2
-                    className="h-3.5 w-3.5 animate-spin text-accent"
+                    className="h-3.5 w-3.5 animate-spin text-accent-text"
                     aria-hidden
                   />
                 ) : (

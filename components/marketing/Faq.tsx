@@ -78,7 +78,7 @@ const ITEMS: { q: string; a: React.ReactNode }[] = [
         Nothing is sold or shared. The{" "}
         <a
           href="/privacy"
-          className="text-accent underline-offset-2 hover:underline"
+          className="text-accent-text underline-offset-2 hover:underline"
         >
           privacy page
         </a>{" "}
@@ -105,7 +105,7 @@ export function Faq() {
     <div className="mx-auto max-w-3xl divide-y divide-line border-y border-line">
       {ITEMS.map(({ q, a }) => (
         <details key={q} className="group">
-          <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-4 text-body font-medium text-ink transition-colors hover:text-accent">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-4 text-body font-medium text-ink transition-colors hover:text-accent-text">
             {q}
             <ChevronDown
               className="h-4 w-4 shrink-0 text-faint transition-transform group-open:rotate-180"

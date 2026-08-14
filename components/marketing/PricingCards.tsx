@@ -75,7 +75,7 @@ export function PricingCards({
       {/* ---- Pro ---- */}
       <div className="card-raised flex flex-col border-accent-line p-6 sm:p-7">
         <div className="flex items-center justify-between gap-3">
-          <p className="text-small font-semibold text-accent">Pro</p>
+          <p className="text-small font-semibold text-accent-text">Pro</p>
           <Badge tone="accent">For an active search</Badge>
         </div>
 
@@ -104,7 +104,7 @@ export function PricingCards({
 
         <a
           href={ctaHref}
-          className="mt-7 inline-flex h-11 items-center justify-center rounded-md bg-accent px-6 text-body font-medium text-white shadow-sm transition-colors hover:bg-accent/90"
+          className="mt-7 inline-flex h-11 items-center justify-center rounded-md bg-accent px-6 text-body font-medium text-on-accent shadow-sm transition-colors hover:bg-accent/90"
         >
           Start free, upgrade later
         </a>
@@ -118,7 +118,7 @@ export function PricingCards({
 function Line({ children }: { children: React.ReactNode }) {
   return (
     <li className="flex gap-2.5 text-small text-muted">
-      <Check className="mt-[0.2rem] h-3.5 w-3.5 shrink-0 text-accent" aria-hidden />
+      <Check className="mt-[0.2rem] h-3.5 w-3.5 shrink-0 text-accent-text" aria-hidden />
       <span>{children}</span>
     </li>
   );

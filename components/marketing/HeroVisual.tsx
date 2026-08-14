@@ -102,12 +102,17 @@ export function HeroVisual() {
               </div>
             </div>
 
-            <div className="px-5 py-4">
-              <p className="text-center text-[0.8125rem] font-bold uppercase tracking-[0.02em] text-ink">
+            {/*
+              The sheet itself, in document colours rather than theme ones —
+              it stays white when the page goes dark, exactly as the real
+              preview does, because that is what the exported file looks like.
+            */}
+            <div className="bg-doc-paper px-5 py-4">
+              <p className="text-center text-[0.8125rem] font-bold uppercase tracking-[0.02em] text-doc-ink">
                 Jane Doe
               </p>
               {/* The headline is rewritten per posting — the visible tailoring. */}
-              <p className="mt-0.5 text-center text-micro font-bold text-accent">
+              <p className="mt-0.5 text-center text-micro font-bold text-doc-accent">
                 Financial Analyst
               </p>
 
@@ -184,20 +189,26 @@ function Block({
 }) {
   return (
     <div>
-      <p className="border-b border-ink/20 pb-0.5 text-[0.5625rem] font-bold uppercase tracking-[0.06em] text-ink">
+      <p className="border-b border-doc-ink/30 pb-0.5 text-[0.5625rem] font-bold uppercase tracking-[0.06em] text-doc-ink">
         {heading}
       </p>
 
       {role && (
-        <p className="mt-1 text-[0.625rem] font-semibold text-ink">{role}</p>
+        <p className="mt-1 text-[0.625rem] font-semibold text-doc-ink">{role}</p>
       )}
 
+      {/*
+        Chips use --doc-accent, not the themed --accent. These sit on the
+        sheet, which stays white in both themes, so they need the darker blue
+        that reads on white rather than the lifted one that reads on a dark
+        page.
+      */}
       {chips && (
         <div className="mt-1.5 flex flex-wrap gap-1">
           {chips.map((c) => (
             <span
               key={c}
-              className="rounded bg-accent-soft px-1.5 py-0.5 text-[0.625rem] font-medium text-accent"
+              className="rounded bg-doc-accent/10 px-1.5 py-0.5 text-[0.625rem] font-medium text-doc-accent"
             >
               {c}
             </span>
@@ -210,7 +221,7 @@ function Block({
           {lines.map((w, i) => (
             <span
               key={i}
-              className="block h-1 rounded-full bg-line-soft"
+              className="block h-1 rounded-full bg-doc-line/50"
               style={{ width: w }}
             />
           ))}

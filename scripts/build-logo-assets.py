@@ -16,6 +16,7 @@ from PIL import Image, ImageDraw
 
 SRC = "public/logo.png"
 INK = (23, 23, 23)        # --ink: 0 0% 9%
+PALE = (240, 243, 247)    # --ink in dark mode: 220 20% 96%
 BADGE = (10, 10, 10)      # near-black badge behind the mark on icons
 
 src = Image.open(SRC).convert("RGBA")
@@ -56,6 +57,11 @@ def square(fg, bg, size, pad_ratio=0.18, rounded=False, opaque=False):
 ink = tinted(INK)
 ink.save("public/logo-mark.png")
 
+# The same mark in the dark theme's text colour. An ink-coloured mark on a
+# near-black header is invisible, so the Logo component swaps to this one by
+# theme. Not pure white: it should match the wordmark beside it.
+tinted(PALE).save("public/logo-mark-dark.png")
+
 # Favicon: a badge, so the white mark stays visible on a light or dark tab bar.
 square((255, 255, 255), BADGE, 512, rounded=True).save("app/icon.png")
 
@@ -65,6 +71,6 @@ square((255, 255, 255), BADGE, 180, rounded=False, opaque=True).convert("RGB").s
 )
 
 print(f"mark bbox {mark.size}")
-for f in ("public/logo-mark.png", "app/icon.png", "app/apple-icon.png"):
+for f in ("public/logo-mark.png", "public/logo-mark-dark.png", "app/icon.png", "app/apple-icon.png"):
     im = Image.open(f)
     print(f"  {f:26} {im.size[0]}x{im.size[1]} {im.mode}")

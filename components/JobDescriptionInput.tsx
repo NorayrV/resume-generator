@@ -81,7 +81,7 @@ export function JobDescriptionInput({
                 title={only ? "Keep at least one" : undefined}
                 className={`rounded-full border px-3.5 py-1.5 text-small font-medium transition-colors ${
                   on
-                    ? "border-accent bg-accent text-white"
+                    ? "border-accent bg-accent text-on-accent"
                     : "border-line bg-paper text-muted hover:border-faint hover:text-ink"
                 } ${only ? "cursor-default" : ""}`}
               >
@@ -117,7 +117,7 @@ export function JobDescriptionInput({
                   onClick={() => onLangChange(option)}
                   className={`rounded-full border px-3.5 py-1.5 text-small font-medium transition-colors ${
                     on
-                      ? "border-accent bg-accent text-white"
+                      ? "border-accent bg-accent text-on-accent"
                       : "border-line bg-paper text-muted hover:border-faint hover:text-ink"
                   }`}
                 >

@@ -116,7 +116,7 @@ export default function PrivacyPage() {
           the sign-in itself — email{" "}
           <a
             href={`mailto:${CONTACT_EMAIL}`}
-            className="text-accent underline-offset-2 hover:underline"
+            className="text-accent-text underline-offset-2 hover:underline"
           >
             {CONTACT_EMAIL}
           </a>{" "}
@@ -138,7 +138,7 @@ export default function PrivacyPage() {
           No system is perfect. If you find a problem, please write to{" "}
           <a
             href={`mailto:${CONTACT_EMAIL}`}
-            className="text-accent underline-offset-2 hover:underline"
+            className="text-accent-text underline-offset-2 hover:underline"
           >
             {CONTACT_EMAIL}
           </a>{" "}

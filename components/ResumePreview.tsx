@@ -6,6 +6,12 @@ import type { PersonalInformation, TailoredResume } from "@/lib/types";
 /**
  * What the Word file will look like, on screen.
  *
+ * Everything inside the sheet uses the doc-* colours, which do not follow the
+ * app theme. In dark mode the page around it goes dark and the sheet stays
+ * white, because the Word and PDF files the user is about to send are black
+ * on white either way — showing them a dark resume would be showing them
+ * something they are not going to get.
+ *
  * This mirrors lib/docxGenerator.ts section for section — same order, same
  * centred name and headline, same caps headings with a rule under them, same
  * bulleted skills and roles. It is a reading proof, not a pixel-exact render:
@@ -21,7 +27,7 @@ interface Props {
 /** Caps heading with the hairline rule, matching heading() in the generator. */
 function Heading({ children }: { children: React.ReactNode }) {
   return (
-    <h4 className="mb-1.5 border-b border-ink/25 pb-1 text-[0.6875rem] font-bold uppercase tracking-[0.06em] text-ink">
+    <h4 className="mb-1.5 border-b border-doc-ink/40 pb-1 text-[0.6875rem] font-bold uppercase tracking-[0.06em] text-doc-ink">
       {children}
     </h4>
   );
@@ -30,8 +36,8 @@ function Heading({ children }: { children: React.ReactNode }) {
 /** A bulleted line, matching bullet() in the generator. */
 function Bullet({ children }: { children: React.ReactNode }) {
   return (
-    <li className="flex gap-2 text-[0.75rem] leading-[1.5] text-ink">
-      <span className="text-ink" aria-hidden>
+    <li className="flex gap-2 text-[0.75rem] leading-[1.5] text-doc-ink">
+      <span className="text-doc-ink" aria-hidden>
         •
       </span>
       <span>{children}</span>
@@ -56,26 +62,26 @@ export function ResumePreview({ resume, person }: Props) {
 
   return (
     /* A sheet of paper: white, bordered, and scrollable once it runs long. */
-    <div className="max-h-[26rem] overflow-y-auto rounded-md border border-line bg-paper px-5 py-5 sm:px-7">
+    <div className="max-h-[26rem] overflow-y-auto rounded-md border border-doc-line bg-doc-paper px-5 py-5 sm:px-7">
       {/* ---- Name, headline, contact ---- */}
-      <p className="text-center text-[1.05rem] font-bold uppercase tracking-[0.02em] text-ink">
+      <p className="text-center text-[1.05rem] font-bold uppercase tracking-[0.02em] text-doc-ink">
         {person.full_name}
       </p>
 
       {resume.headline && (
-        <p className="mt-1 text-center text-[0.8125rem] font-bold text-ink">
+        <p className="mt-1 text-center text-[0.8125rem] font-bold text-doc-ink">
           {resume.headline}
         </p>
       )}
 
       {contactLine && (
-        <p className="mt-1.5 text-center text-[0.6875rem] text-muted">
+        <p className="mt-1.5 text-center text-[0.6875rem] text-doc-muted">
           {contactLine}
         </p>
       )}
 
       {links.length > 0 && (
-        <p className="mt-0.5 text-center text-[0.6875rem] text-muted">
+        <p className="mt-0.5 text-center text-[0.6875rem] text-doc-muted">
           {links.join("  |  ")}
         </p>
       )}
@@ -85,7 +91,7 @@ export function ResumePreview({ resume, person }: Props) {
         {resume.summary && (
           <section>
             <Heading>Summary</Heading>
-            <p className="text-[0.75rem] leading-[1.55] text-ink">
+            <p className="text-[0.75rem] leading-[1.55] text-doc-ink">
               {resume.summary}
             </p>
           </section>
@@ -113,10 +119,10 @@ export function ResumePreview({ resume, person }: Props) {
             <div className="space-y-3">
               {resume.experience.map((role, i) => (
                 <div key={`${role.company}-${i}`}>
-                  <p className="text-[0.8125rem] font-bold text-ink">
+                  <p className="text-[0.8125rem] font-bold text-doc-ink">
                     {role.title}
                   </p>
-                  <p className="text-[0.6875rem] text-muted">
+                  <p className="text-[0.6875rem] text-doc-muted">
                     {[
                       [role.company, role.location].filter(Boolean).join(" - "),
                       formatDateRange(role.start_date, role.end_date),
@@ -144,7 +150,7 @@ export function ResumePreview({ resume, person }: Props) {
             <div className="space-y-3">
               {resume.education.map((ed, i) => (
                 <div key={`${ed.institution}-${i}`}>
-                  <p className="text-[0.8125rem] font-bold text-ink">
+                  <p className="text-[0.8125rem] font-bold text-doc-ink">
                     {[
                       ed.institution,
                       [ed.degree, ed.field_of_study].filter(Boolean).join(" in "),
@@ -153,14 +159,14 @@ export function ResumePreview({ resume, person }: Props) {
                       .join(" - ")}
                   </p>
                   {[ed.start_date, ed.end_date].filter(Boolean).length > 0 && (
-                    <p className="text-[0.6875rem] text-muted">
+                    <p className="text-[0.6875rem] text-doc-muted">
                       {[ed.start_date, ed.end_date].filter(Boolean).join(" - ")}
                     </p>
                   )}
                   {ed.details?.map((detail, j) => (
                     <p
                       key={j}
-                      className="mt-1 text-[0.75rem] leading-[1.55] text-ink"
+                      className="mt-1 text-[0.75rem] leading-[1.55] text-doc-ink"
                     >
                       {detail}
                     </p>

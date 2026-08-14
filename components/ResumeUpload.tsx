@@ -119,7 +119,7 @@ export function ResumeUpload({ onImported, disabled }: Props) {
         {busy ? (
           <div className="flex flex-col items-center gap-2">
             <Loader2
-              className="h-5 w-5 animate-spin text-accent"
+              className="h-5 w-5 animate-spin text-accent-text"
               aria-hidden
             />
             <p className="text-small font-medium text-ink" role="status">
@@ -136,7 +136,7 @@ export function ResumeUpload({ onImported, disabled }: Props) {
                 type="button"
                 onClick={() => inputRef.current?.click()}
                 disabled={blocked}
-                className="font-medium text-accent underline-offset-2 hover:underline disabled:cursor-not-allowed"
+                className="font-medium text-accent-text underline-offset-2 hover:underline disabled:cursor-not-allowed"
               >
                 Choose a file
               </button>{" "}

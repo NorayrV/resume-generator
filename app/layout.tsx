@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import { THEME_COLOR, THEME_INIT_SCRIPT } from "@/lib/theme";
 
 const inter = Inter({
   subsets: ["latin", "cyrillic"],
@@ -31,7 +32,28 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={inter.variable}>
+    /*
+     * suppressHydrationWarning because the script below writes class="dark"
+     * onto this element before React arrives. Without it, React compares the
+     * server's bare <html> against the browser's themed one and logs a
+     * mismatch on every dark-mode page load. The warning is the only thing
+     * being suppressed — nothing else on this element is dynamic.
+     */
+    <html lang="en" className={inter.variable} suppressHydrationWarning>
+      <head>
+        {/*
+         * Declared with the light value and rewritten by the script below —
+         * it has to exist in the markup before the script can find it.
+         */}
+        <meta name="theme-color" content={THEME_COLOR.light} />
+        {/*
+         * Runs before the browser paints anything, which is the whole point:
+         * set the class in an effect instead and the page renders white for a
+         * frame and then snaps to dark. Blocking here costs well under a
+         * millisecond and buys a first paint that is already correct.
+         */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+      </head>
       <body className="font-sans">{children}</body>
     </html>
   );

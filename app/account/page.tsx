@@ -256,7 +256,7 @@ function AccountBody() {
               "Cancel whenever you like",
             ].map((line) => (
               <li key={line} className="flex items-center gap-2 text-small">
-                <Check className="h-4 w-4 shrink-0 text-accent" aria-hidden />
+                <Check className="h-4 w-4 shrink-0 text-accent-text" aria-hidden />
                 {line}
               </li>
             ))}
@@ -285,7 +285,7 @@ function AccountBody() {
                 Renews monthly. Cancel any time.{" "}
                 <Link
                   href="/pricing"
-                  className="text-accent underline-offset-2 hover:underline"
+                  className="text-accent-text underline-offset-2 hover:underline"
                 >
                   What one application includes
                 </Link>

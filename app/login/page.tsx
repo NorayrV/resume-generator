@@ -94,7 +94,7 @@ export default async function LoginPage() {
                 ].map((line) => (
                   <li key={line} className="flex gap-2.5 text-body">
                     <Check
-                      className="mt-[0.3rem] h-4 w-4 shrink-0 text-accent"
+                      className="mt-[0.3rem] h-4 w-4 shrink-0 text-accent-text"
                       aria-hidden
                     />
                     <span>{line}</span>
@@ -147,7 +147,7 @@ export default async function LoginPage() {
             <ol className="mt-10 grid gap-x-8 gap-y-8 sm:grid-cols-3">
               {STEPS.map(({ title, body }, i) => (
                 <li key={title}>
-                  <p className="text-small font-semibold text-accent tnum">
+                  <p className="text-small font-semibold text-accent-text tnum">
                     {String(i + 1).padStart(2, "0")}
                   </p>
                   <h3 className="mt-2.5 text-[1.0625rem] font-semibold tracking-[-0.015em]">
@@ -200,7 +200,7 @@ export default async function LoginPage() {
 
               <div className="card p-6 sm:p-7">
                 <h3 className="flex items-center gap-2 text-body font-semibold tracking-[-0.01em]">
-                  <ArrowRight className="h-4 w-4 text-accent" aria-hidden />
+                  <ArrowRight className="h-4 w-4 text-accent-text" aria-hidden />
                   Rewritten for the role
                 </h3>
                 <p className="hint mt-1.5">
@@ -211,7 +211,7 @@ export default async function LoginPage() {
                   {REWRITTEN.map((item) => (
                     <li key={item} className="flex gap-2.5 text-small">
                       <Check
-                        className="mt-[0.2rem] h-3.5 w-3.5 shrink-0 text-accent"
+                        className="mt-[0.2rem] h-3.5 w-3.5 shrink-0 text-accent-text"
                         aria-hidden
                       />
                       <span>{item}</span>
@@ -293,7 +293,7 @@ export default async function LoginPage() {
 
             <a
               href="#start"
-              className="mt-8 inline-flex h-12 items-center gap-2 rounded-md bg-accent px-7 text-[1rem] font-medium text-white shadow-sm transition-colors hover:bg-accent/90"
+              className="mt-8 inline-flex h-12 items-center gap-2 rounded-md bg-accent px-7 text-[1rem] font-medium text-on-accent shadow-sm transition-colors hover:bg-accent/90"
             >
               Start free
               <ArrowRight className="h-4 w-4" aria-hidden />

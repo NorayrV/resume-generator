@@ -126,7 +126,7 @@ export default function ProfilePage() {
                   </div>
                   <button
                     onClick={() => router.push("/")}
-                    className="inline-flex h-10 shrink-0 items-center gap-2 rounded-md bg-accent px-5 text-small font-medium text-white shadow-sm transition-colors hover:bg-accent/90"
+                    className="inline-flex h-10 shrink-0 items-center gap-2 rounded-md bg-accent px-5 text-small font-medium text-on-accent shadow-sm transition-colors hover:bg-accent/90"
                   >
                     Paste a job posting
                     <ArrowRight className="h-4 w-4" aria-hidden />
@@ -164,7 +164,7 @@ export default function ProfilePage() {
                   <section className="card-raised p-6 sm:p-8">
                     <div className="text-center">
                       <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-lg bg-accent-soft">
-                        <FileUp className="h-5 w-5 text-accent" aria-hidden />
+                        <FileUp className="h-5 w-5 text-accent-text" aria-hidden />
                       </div>
                       <h2 className="mt-4 text-[1.0625rem] font-semibold tracking-[-0.015em]">
                         Start from your existing resume
@@ -197,7 +197,7 @@ export default function ProfilePage() {
                             }),
                           );
                         }}
-                        className="shrink-0 text-small font-medium text-accent underline-offset-2 hover:underline"
+                        className="shrink-0 text-small font-medium text-accent-text underline-offset-2 hover:underline"
                       >
                         Enter it by hand
                       </button>

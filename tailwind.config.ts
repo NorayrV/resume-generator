@@ -2,6 +2,13 @@ import type { Config } from "tailwindcss";
 
 const config: Config = {
   content: ["./app/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}"],
+  /*
+   * Class-based rather than media-based: the theme is an explicit user
+   * choice that has to survive a reload, and `media` would ignore it. The
+   * system preference is still honoured — as the initial value only, in the
+   * script in app/layout.tsx.
+   */
+  darkMode: "class",
   theme: {
     extend: {
       colors: {
@@ -17,9 +24,12 @@ const config: Config = {
         },
         accent: {
           DEFAULT: "hsl(var(--accent))",
+          /* Same blue, used as text or an icon rather than as a fill. */
+          text: "hsl(var(--accent-text))",
           soft: "hsl(var(--accent-soft))",
           line: "hsl(var(--accent-line))",
         },
+        "on-accent": "hsl(var(--on-accent))",
         flag: {
           DEFAULT: "hsl(var(--flag))",
           soft: "hsl(var(--flag-soft))",
@@ -27,6 +37,17 @@ const config: Config = {
         good: {
           DEFAULT: "hsl(var(--good))",
           soft: "hsl(var(--good-soft))",
+        },
+        /*
+         * The resume sheet. Fixed in both themes — see the note in
+         * globals.css about why the document does not follow the app.
+         */
+        doc: {
+          paper: "hsl(var(--doc-paper))",
+          ink: "hsl(var(--doc-ink))",
+          muted: "hsl(var(--doc-muted))",
+          line: "hsl(var(--doc-line))",
+          accent: "hsl(var(--doc-accent))",
         },
       },
       fontFamily: {
@@ -46,11 +67,11 @@ const config: Config = {
       },
       boxShadow: {
         /*
-         * Two shadows, both barely there. Depth here means "this sits above
-         * the page", not "this is a floating glass panel".
+         * Both come from variables so the dark theme can swap them: a shadow
+         * tuned for a white page does nothing against a dark one.
          */
-        card: "0 1px 2px 0 rgb(0 0 0 / 0.04), 0 4px 12px -2px rgb(0 0 0 / 0.06)",
-        lift: "0 2px 4px 0 rgb(0 0 0 / 0.04), 0 12px 28px -6px rgb(0 0 0 / 0.10)",
+        card: "var(--shadow-card)",
+        lift: "var(--shadow-lift)",
       },
       keyframes: {
         rise: {

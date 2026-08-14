@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { CreditCard, FileText, LogOut, User } from "lucide-react";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { Logo } from "./Logo";
+import { ThemeToggle } from "./ThemeToggle";
 
 /**
  * Three destinations, always visible: Generate (what you do daily), Profile
@@ -50,7 +51,7 @@ export function AppHeader({ subtitle }: { subtitle?: string }) {
                 href={href}
                 aria-current={active ? "page" : undefined}
                 className={`relative flex h-14 items-center gap-2 px-2 text-small font-medium transition-colors sm:px-3 ${
-                  active ? "text-accent" : "text-muted hover:text-ink"
+                  active ? "text-accent-text" : "text-muted hover:text-ink"
                 }`}
               >
                 <Icon className="hidden h-4 w-4 sm:block" aria-hidden />
@@ -66,15 +67,16 @@ export function AppHeader({ subtitle }: { subtitle?: string }) {
           })}
         </nav>
 
-        <div className="ml-auto flex items-center gap-3">
+        <div className="ml-auto flex items-center gap-1 sm:gap-2">
           {subtitle && (
-            <span className="hidden max-w-[14rem] truncate text-small text-muted sm:inline">
+            <span className="mr-1 hidden max-w-[12rem] truncate text-small text-muted sm:inline">
               {subtitle}
             </span>
           )}
+          <ThemeToggle />
           <button
             onClick={signOut}
-            className="flex h-8 w-8 items-center justify-center rounded-md text-faint transition-colors hover:bg-surface hover:text-ink"
+            className="flex h-9 w-9 items-center justify-center rounded-md text-muted transition-colors hover:bg-surface hover:text-ink"
             aria-label="Sign out"
             title="Sign out"
           >

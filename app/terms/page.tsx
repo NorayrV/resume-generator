@@ -85,7 +85,7 @@ export default function TermsPage() {
           service did not work — write to{" "}
           <a
             href={`mailto:${CONTACT_EMAIL}`}
-            className="text-accent underline-offset-2 hover:underline"
+            className="text-accent-text underline-offset-2 hover:underline"
           >
             {CONTACT_EMAIL}
           </a>{" "}
@@ -120,7 +120,7 @@ export default function TermsPage() {
           shown to anyone else. What happens to your data is described on the{" "}
           <a
             href="/privacy"
-            className="text-accent underline-offset-2 hover:underline"
+            className="text-accent-text underline-offset-2 hover:underline"
           >
             privacy page
           </a>
