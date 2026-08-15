@@ -64,21 +64,41 @@ function inOneMonth(): Date {
 
 async function activate(data: unknown, status: string) {
   const userId = userIdFrom(data);
-  if (!userId) return;
+
+  /*
+   * This used to return in silence. If Polar ever sent an event we could not
+   * tie to a user, the customer had paid and nothing anywhere said so — no
+   * row, no log, no error for Polar to retry against. Say so loudly instead:
+   * the account page's reconciliation can still repair it, but only if
+   * somebody knows to look.
+   */
+  if (!userId) {
+    console.error(
+      "[polar/webhook] no user id on payload; access NOT granted",
+      JSON.stringify(data).slice(0, 500),
+    );
+    return;
+  }
 
   const d = data as Record<string, unknown>;
   const customer = d.customer as Record<string, unknown> | undefined;
+
+  const accessUntil = periodEndFrom(data) ?? inOneMonth();
 
   await grantAccess({
     userId,
     provider: "polar",
     status,
-    accessUntil: periodEndFrom(data) ?? inOneMonth(),
+    accessUntil,
     externalCustomerId:
       (typeof d.customerId === "string" ? d.customerId : null) ??
       (typeof customer?.id === "string" ? customer.id : null),
     externalSubscriptionId: typeof d.id === "string" ? d.id : null,
   });
+
+  console.info(
+    `[polar/webhook] ${status}: granted ${userId} until ${accessUntil.toISOString()}`,
+  );
 }
 
 const secret = process.env.POLAR_WEBHOOK_SECRET;
@@ -109,7 +129,14 @@ const handler = Webhooks({
   /** Genuinely over: cut access now. */
   onSubscriptionRevoked: async ({ data }) => {
     const userId = userIdFrom(data);
-    if (userId) await revokeAccess(userId, "revoked");
+
+    if (!userId) {
+      console.error("[polar/webhook] revoke with no user id on payload");
+      return;
+    }
+
+    await revokeAccess(userId, "revoked");
+    console.info(`[polar/webhook] revoked ${userId}`);
   },
 });
 
@@ -122,6 +149,9 @@ const handler = Webhooks({
  */
 export async function POST(request: Request): Promise<Response> {
   if (!secret) {
+    console.error(
+      "[polar/webhook] POLAR_WEBHOOK_SECRET is not set — refusing delivery",
+    );
     return NextResponse.json(
       { error: "Webhook is not configured." },
       { status: 503 },

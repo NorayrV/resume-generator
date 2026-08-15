@@ -1,9 +1,9 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Check, CreditCard, Loader2 } from "lucide-react";
+import { Check, CreditCard, Loader2, RefreshCw } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
@@ -50,16 +50,81 @@ function AccountBody() {
   const [starting, setStarting] = useState<Method | null>(null);
   const [managing, setManaging] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [syncing, setSyncing] = useState(false);
+  const [syncMessage, setSyncMessage] = useState<string | null>(null);
 
   const justPaid = params.get("paid");
 
-  useEffect(() => {
-    fetch("/api/account")
-      .then((r) => r.json())
-      .then((d) => (d.error ? setError(d.error) : setData(d)))
-      .catch(() => setError("Could not load your account."))
-      .finally(() => setLoading(false));
+  const load = useCallback(async () => {
+    const response = await fetch("/api/account");
+    const d = await response.json();
+    if (d.error) setError(d.error);
+    else setData(d);
+    return d as AccountData | { error: string };
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const d = await load();
+        if (cancelled || "error" in d) return;
+
+        /*
+         * Ask Polar directly when this account looks unpaid.
+         *
+         * Access normally arrives by webhook, but a webhook is one delivery
+         * to one URL — if it is lost, the customer has paid and the site
+         * shows them nothing. Checking here means the account page repairs
+         * itself on the next visit instead of needing a hand edit.
+         *
+         * Only when the account reads as free, so a subscriber who is
+         * already correct never triggers an extra call.
+         */
+        if (d.usage.tier === "free") {
+          const synced = await fetch("/api/polar/sync", { method: "POST" });
+          const result = await synced.json();
+          if (!cancelled && result.granted) {
+            setSyncMessage(result.message);
+            await load();
+          }
+        }
+      } catch {
+        if (!cancelled) setError("Could not load your account.");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [load]);
+
+  /** The same check, on demand, for someone staring at a stale page. */
+  async function syncPlan() {
+    setSyncing(true);
+    setSyncMessage(null);
+    setError(null);
+
+    try {
+      const response = await fetch("/api/polar/sync", { method: "POST" });
+      const result = await response.json();
+
+      if (!response.ok) {
+        setError(result.error ?? "Could not check your subscription.");
+        return;
+      }
+
+      setSyncMessage(result.message);
+      if (result.granted) await load();
+    } catch {
+      setError("Could not reach the server.");
+    } finally {
+      setSyncing(false);
+    }
+  }
 
   async function startCheckout(method: Method) {
     setStarting(method);
@@ -120,10 +185,12 @@ function AccountBody() {
     <div className="space-y-4">
       {justPaid && (
         <Alert tone="info">
-          Payment received. If your plan still shows as free, give it a few
-          seconds and reload.
+          Payment received. Your plan is checked against Polar automatically —
+          if it still shows as free below, press “Check again”.
         </Alert>
       )}
+
+      {syncMessage && <Alert tone="info">{syncMessage}</Alert>}
 
       {/* ---- Who you are ---- */}
       <section className="card p-5 sm:p-6">
@@ -203,6 +270,34 @@ function AccountBody() {
                   : "You have used your free applications for this month."
                 : `${usage.remaining} left. Each frees up 30 days after you use it.`}
             </p>
+
+            {/*
+              Paid but still showing free is the one failure a customer
+              cannot work around, so the way out is on the page rather than
+              in a support email.
+            */}
+            {usage.tier === "free" && (
+              <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-line-soft pt-4">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={syncPlan}
+                  disabled={syncing}
+                >
+                  {syncing ? (
+                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                  ) : (
+                    <RefreshCw className="h-4 w-4" aria-hidden />
+                  )}
+                  Check again
+                </Button>
+                <p className="text-micro text-faint">
+                  Already subscribed and still seeing the free plan? This asks
+                  Polar directly.
+                </p>
+              </div>
+            )}
+
 
             {/* A Pro subscriber still needs a way to cancel or change card. */}
             {usage.tier === "pro" && access?.provider === "polar" && billing.card && (

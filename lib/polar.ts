@@ -127,3 +127,93 @@ export async function getPlanAmountMinor(): Promise<{
     return null;
   }
 }
+
+/* ------------------------------------------------------------------ */
+/* Asking Polar directly                                               */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Statuses that mean the customer currently has access.
+ *
+ * "canceled" is included on purpose: Polar keeps a cancelled subscription in
+ * that state until the period it was paid for actually runs out, and taking
+ * access away early would be taking away time somebody paid for. The period
+ * end still governs — see accessUntilFrom below.
+ */
+const LIVE_STATUSES = new Set(["active", "trialing", "canceled"]);
+
+export interface PolarSubscription {
+  id: string;
+  status: string;
+  customerId: string | null;
+  /** When the paid period runs out. */
+  accessUntil: Date;
+}
+
+/**
+ * What Polar says about this user, right now.
+ *
+ * The webhook is how access normally arrives, and it is faster — but it is
+ * also a single delivery over the public internet to one URL, and if that
+ * delivery fails the customer has paid and received nothing. This is the
+ * other direction: we ask, rather than wait to be told.
+ *
+ * Looks the customer up by externalCustomerId, which the checkout route sets
+ * to our own user id, so no extra mapping table is needed.
+ *
+ * Returns null on any failure rather than throwing. A caller uses this to
+ * *add* access it could not otherwise prove; it must never be the reason a
+ * page fails to load.
+ */
+export async function findLiveSubscription(
+  userId: string,
+): Promise<PolarSubscription | null> {
+  if (!polarEnabled()) return null;
+
+  try {
+    const page = await polar().subscriptions.list({
+      externalCustomerId: userId,
+      // Not `active: true` — that would exclude a cancelled subscription
+      // still inside the period the customer paid for.
+      limit: 20,
+    });
+
+    const items = page.result?.items ?? [];
+
+    let best: PolarSubscription | null = null;
+
+    for (const sub of items) {
+      if (!LIVE_STATUSES.has(String(sub.status))) continue;
+
+      const until = accessUntilFrom(sub);
+      if (!until || until.getTime() <= Date.now()) continue;
+
+      // Keep whichever runs longest, in case of an upgrade leaving two rows.
+      if (!best || until.getTime() > best.accessUntil.getTime()) {
+        best = {
+          id: String(sub.id),
+          status: String(sub.status),
+          customerId: sub.customerId ? String(sub.customerId) : null,
+          accessUntil: until,
+        };
+      }
+    }
+
+    return best;
+  } catch (error) {
+    console.error("[polar] findLiveSubscription", error);
+    return null;
+  }
+}
+
+/** endsAt when Polar has set one, otherwise the current period end. */
+function accessUntilFrom(sub: {
+  currentPeriodEnd?: Date | null;
+  endsAt?: Date | null;
+}): Date | null {
+  const raw = sub.endsAt ?? sub.currentPeriodEnd ?? null;
+  if (!raw) return null;
+
+  const date = raw instanceof Date ? raw : new Date(raw);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
