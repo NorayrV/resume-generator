@@ -151,6 +151,18 @@ export interface PolarSubscription {
 }
 
 /**
+ * The outcome of asking, which is not the same as the answer.
+ *
+ * "Polar has no subscription for you" and "we could not ask Polar" look
+ * identical if both are reported as null, and they are opposite problems: the
+ * first is a customer who never paid, the second is a broken integration.
+ * Collapsing them told a paying customer their subscription did not exist.
+ */
+export type SubscriptionLookup =
+  | { ok: true; subscription: PolarSubscription | null }
+  | { ok: false; error: string };
+
+/**
  * What Polar says about this user, right now.
  *
  * The webhook is how access normally arrives, and it is faster — but it is
@@ -176,8 +188,10 @@ export async function findLiveSubscription(
    * external id to match on.
    */
   email?: string | null,
-): Promise<PolarSubscription | null> {
-  if (!polarEnabled()) return null;
+): Promise<SubscriptionLookup> {
+  if (!polarEnabled()) {
+    return { ok: false, error: "Polar is not configured on this deployment." };
+  }
 
   try {
     let items = await listSubscriptions({
@@ -213,10 +227,28 @@ export async function findLiveSubscription(
       }
     }
 
-    return best;
+    return { ok: true, subscription: best };
   } catch (error) {
+    /*
+     * Most likely an access token without subscriptions:read — the call that
+     * fails first and the one whose absence is least obvious, because
+     * products:read and checkouts:write are enough for the site to sell a
+     * subscription it can then never look up again.
+     */
+    const message = String(
+      error && typeof error === "object" && "message" in error
+        ? (error as { message: unknown }).message
+        : error,
+    );
+
     console.error("[polar] findLiveSubscription", error);
-    return null;
+
+    return {
+      ok: false,
+      error: /insufficient_scope|403/.test(message)
+        ? "The Polar access token is missing the subscriptions:read and customers:read permissions."
+        : message.slice(0, 200),
+    };
   }
 }
 

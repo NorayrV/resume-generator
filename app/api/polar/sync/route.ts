@@ -28,19 +28,30 @@ export async function POST() {
   const result = await reconcileEntitlement(user.id, user.email ?? null);
   const usage = await getUsage(user.id);
 
-  return NextResponse.json({
-    granted: result.granted,
-    tier: usage.tier,
-    accessUntil: result.accessUntil?.toISOString() ?? null,
-    /*
-     * A plain sentence for the account page to show. "No active subscription
-     * was found" is the honest answer when Polar has nothing — it is not an
-     * error, and it tells the user their next step is support, not retrying.
-     */
-    message: result.granted
+  /*
+   * Three different outcomes, three different sentences. The one that used to
+   * be missing is the middle one: when Polar cannot be reached or refuses the
+   * request, saying "no subscription found" states as fact something we do
+   * not know, and sends the customer away believing they never paid.
+   */
+  const message = result.error
+    ? "Could not check with Polar just now, so this is not a no. Please contact support and quote: " +
+      result.error
+    : result.granted
       ? "Found your subscription. Your plan is up to date."
       : usage.tier !== "free"
         ? "Your plan is already up to date."
-        : "No active subscription found for this account on Polar.",
-  });
+        : "No active subscription found for this account on Polar.";
+
+  return NextResponse.json(
+    {
+      granted: result.granted,
+      tier: usage.tier,
+      accessUntil: result.accessUntil?.toISOString() ?? null,
+      checked: !result.error,
+      message,
+    },
+    // A failed check is a server-side problem, and should read as one.
+    { status: result.error ? 502 : 200 },
+  );
 }

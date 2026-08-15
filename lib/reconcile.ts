@@ -27,6 +27,14 @@ export interface ReconcileResult {
   accessUntil: Date | null;
   /** Present when Polar reported a subscription. */
   status?: string;
+  /**
+   * Set when Polar could not be asked at all.
+   *
+   * Kept separate from "no subscription" on purpose. Reporting a failed
+   * question as a negative answer is what told a paying customer their
+   * subscription did not exist.
+   */
+  error?: string;
 }
 
 export async function reconcileEntitlement(
@@ -45,7 +53,17 @@ export async function reconcileEntitlement(
     return { granted: false, accessUntil: existing.accessUntil };
   }
 
-  const live = await findLiveSubscription(userId, email);
+  const lookup = await findLiveSubscription(userId, email);
+
+  if (!lookup.ok) {
+    return {
+      granted: false,
+      accessUntil: existing?.accessUntil ?? null,
+      error: lookup.error,
+    };
+  }
+
+  const live = lookup.subscription;
 
   if (!live) {
     return { granted: false, accessUntil: existing?.accessUntil ?? null };

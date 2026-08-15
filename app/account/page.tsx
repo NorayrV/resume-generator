@@ -85,9 +85,15 @@ function AccountBody() {
         if (d.usage.tier === "free") {
           const synced = await fetch("/api/polar/sync", { method: "POST" });
           const result = await synced.json();
-          if (!cancelled && result.granted) {
+          if (cancelled) return;
+
+          if (result.granted) {
             setSyncMessage(result.message);
             await load();
+          } else if (result.checked === false) {
+            // The check itself failed. Say so rather than leaving someone
+            // who has paid looking at a silent free plan.
+            setError(result.message);
           }
         }
       } catch {
@@ -111,6 +117,11 @@ function AccountBody() {
     try {
       const response = await fetch("/api/polar/sync", { method: "POST" });
       const result = await response.json();
+
+      if (result.checked === false) {
+        setError(result.message ?? "Could not check your subscription.");
+        return;
+      }
 
       if (!response.ok) {
         setError(result.error ?? "Could not check your subscription.");
