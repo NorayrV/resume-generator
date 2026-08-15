@@ -1,16 +1,31 @@
 "use client";
 
-import { useState } from "react";
-import { Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ArrowLeft, Loader2, Mail } from "lucide-react";
 import { Alert } from "./ui/alert";
+import { Input } from "./ui/input";
 import { supabaseBrowser } from "@/lib/supabase/client";
 
 /**
- * The two OAuth buttons, on their own so the landing page can place them in
- * more than one spot without duplicating the sign-in logic.
+ * The ways in, on their own so the page can place them in more than one spot
+ * without duplicating the sign-in logic.
+ *
+ * Three doors, not two. Google and GitHub are two taps and stay first because
+ * that is genuinely the fastest path — but they were the *only* path, and this
+ * product is aimed squarely at people applying abroad, changing careers, and
+ * leaving their first job. The example in our own hero is a financial analyst
+ * in Berlin, who has no reason to own a GitHub account. Anyone without either
+ * provider previously had no way through this page at all, and no error to
+ * tell them so, because it was not an error: they simply left.
+ *
+ * Email is a third button rather than an always-open form on purpose. The form
+ * costs about 140px of card, and on a 375px phone the buttons are already
+ * fighting the fold; a button costs 44px and keeps the three options at equal
+ * weight.
  */
 
 type Provider = "google" | "github";
+type Mode = "choose" | "email" | "sent";
 
 function GoogleMark() {
   return (
@@ -48,17 +63,30 @@ function GitHubMark() {
   );
 }
 
-export function SignInButtons({
-  next = "/",
-  initialError = null,
-}: {
-  next?: string;
-  initialError?: string | null;
-}) {
-  const [busy, setBusy] = useState<Provider | null>(null);
-  // Show what actually went wrong. A generic "try again" hides the one piece
-  // of information needed to fix a misconfigured redirect or provider.
-  const [error, setError] = useState<string | null>(initialError);
+const BUTTON =
+  "flex h-11 w-full items-center justify-center gap-2.5 rounded-md border border-line bg-paper text-body font-medium text-ink transition-colors hover:border-faint hover:bg-surface disabled:pointer-events-none disabled:opacity-50";
+
+export function SignInButtons() {
+  const [mode, setMode] = useState<Mode>("choose");
+  const [busy, setBusy] = useState<Provider | "email" | null>(null);
+  const [email, setEmail] = useState("");
+  /*
+   * Show what actually went wrong. A generic "try again" hides the one piece
+   * of information needed to fix a misconfigured redirect or provider.
+   */
+  const [error, setError] = useState<string | null>(null);
+
+  /*
+   * The auth callback reports a failed sign-in by redirecting here with
+   * ?error=. Read after mount rather than with useSearchParams, which would
+   * force this into a Suspense boundary and knock the whole card out of the
+   * static HTML — leaving a grey skeleton where the only call to action on
+   * the page should be, for anyone on a slow connection or with JS disabled.
+   */
+  useEffect(() => {
+    const reported = new URLSearchParams(window.location.search).get("error");
+    if (reported) setError(reported);
+  }, []);
 
   async function signIn(provider: Provider) {
     setBusy(provider);
@@ -66,9 +94,7 @@ export function SignInButtons({
 
     const { error: authError } = await supabaseBrowser().auth.signInWithOAuth({
       provider,
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
-      },
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
     });
 
     if (authError) {
@@ -78,15 +104,125 @@ export function SignInButtons({
     // On success the browser is redirected away, so there is nothing to reset.
   }
 
-  const base =
-    "flex h-11 w-full items-center justify-center gap-2.5 rounded-md border border-line bg-paper text-body font-medium text-ink transition-colors hover:border-faint hover:bg-surface disabled:pointer-events-none disabled:opacity-50";
+  async function sendLink(event: React.FormEvent) {
+    event.preventDefault();
+    setBusy("email");
+    setError(null);
 
+    const { error: authError } = await supabaseBrowser().auth.signInWithOtp({
+      email: email.trim(),
+      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+    });
+
+    setBusy(null);
+
+    if (authError) {
+      setError(authError.message);
+      return;
+    }
+
+    setMode("sent");
+  }
+
+  /* ---------------- Link sent ---------------- */
+  if (mode === "sent") {
+    return (
+      <div className="space-y-3" role="status">
+        <div className="rounded-md border border-good/20 bg-good-soft p-4">
+          <p className="flex items-center gap-2 text-body font-medium text-good">
+            <Mail className="h-4 w-4" aria-hidden />
+            Check your email
+          </p>
+          <p className="mt-1.5 text-small leading-relaxed text-muted">
+            A sign-in link is on its way to{" "}
+            <strong className="font-medium text-ink">{email.trim()}</strong>.
+            {/*
+              Same-device is a real constraint of the PKCE flow, not a
+              nicety: the verifier that completes the exchange lives in this
+              browser, so a link opened on a phone after requesting it on a
+              laptop fails. Better said now than discovered as an error.
+            */}{" "}
+            Open it on this device — the link only works in the browser that
+            asked for it.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => {
+            setMode("email");
+            setError(null);
+          }}
+          className="text-small font-medium text-accent-text underline-offset-2 hover:underline"
+        >
+          Use a different address
+        </button>
+      </div>
+    );
+  }
+
+  /* ---------------- Email form ---------------- */
+  if (mode === "email") {
+    return (
+      <form onSubmit={sendLink} className="space-y-3">
+        <div>
+          <label
+            htmlFor="signin-email"
+            className="label"
+          >
+            Email address
+          </label>
+          <Input
+            id="signin-email"
+            type="email"
+            required
+            autoFocus
+            autoComplete="email"
+            inputMode="email"
+            placeholder="you@example.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            disabled={busy !== null}
+          />
+        </div>
+
+        <button
+          type="submit"
+          disabled={busy !== null || email.trim().length < 3}
+          className="flex h-11 w-full items-center justify-center gap-2.5 rounded-md bg-accent text-body font-medium text-on-accent shadow-sm transition-colors hover:bg-accent/90 disabled:pointer-events-none disabled:opacity-50"
+        >
+          {busy === "email" ? (
+            <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+          ) : (
+            <Mail className="h-4 w-4" aria-hidden />
+          )}
+          Send me a sign-in link
+        </button>
+
+        {error && <Alert tone="error">{error}</Alert>}
+
+        <button
+          type="button"
+          onClick={() => {
+            setMode("choose");
+            setError(null);
+          }}
+          className="flex items-center gap-1.5 text-small font-medium text-muted transition-colors hover:text-ink"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" aria-hidden />
+          Other ways to sign in
+        </button>
+      </form>
+    );
+  }
+
+  /* ---------------- The three doors ---------------- */
   return (
     <div className="space-y-2.5">
       <button
         onClick={() => signIn("google")}
         disabled={busy !== null}
-        className={base}
+        className={BUTTON}
       >
         {busy === "google" ? (
           <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
@@ -99,7 +235,7 @@ export function SignInButtons({
       <button
         onClick={() => signIn("github")}
         disabled={busy !== null}
-        className={base}
+        className={BUTTON}
       >
         {busy === "github" ? (
           <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
@@ -107,6 +243,18 @@ export function SignInButtons({
           <GitHubMark />
         )}
         Continue with GitHub
+      </button>
+
+      <button
+        onClick={() => {
+          setMode("email");
+          setError(null);
+        }}
+        disabled={busy !== null}
+        className={BUTTON}
+      >
+        <Mail className="h-[1.125rem] w-[1.125rem] text-muted" aria-hidden />
+        Continue with email
       </button>
 
       {error && <Alert tone="error">{error}</Alert>}

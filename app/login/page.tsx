@@ -1,4 +1,3 @@
-import { Suspense } from "react";
 import Link from "next/link";
 import { ArrowRight, Check, Lock, ShieldCheck, X } from "lucide-react";
 import { Logo } from "@/components/Logo";
@@ -8,7 +7,6 @@ import { Faq } from "@/components/marketing/Faq";
 import { HeroVisual } from "@/components/marketing/HeroVisual";
 import { MarketingNav } from "@/components/marketing/MarketingNav";
 import { PricingCards } from "@/components/marketing/PricingCards";
-import { Skeleton } from "@/components/ui/skeleton";
 import { FREE_GENERATIONS_PER_MONTH, USAGE_WINDOW_DAYS } from "@/lib/plan";
 import { getPlanPricing } from "@/lib/polar";
 
@@ -104,14 +102,33 @@ export default async function LoginPage() {
                 anything.
               </p>
 
+              {/*
+                The last two are hidden on a phone, not deleted: both are
+                restated word for word in PACK_INCLUDES further down, and at
+                375px they cost about 115px of the space between the headline
+                and the only button on the page. Measured before this change,
+                the Google button began at 801px against an 812px fold.
+              */}
               <ul className="mt-7 space-y-2.5">
                 {[
-                  "Tailored resume, as Word or PDF",
-                  "Cover letters when the application asks for one, with Pro",
-                  "The keywords from the posting that made it in",
-                  "An honest list of what your profile does not cover",
-                ].map((line) => (
-                  <li key={line} className="flex gap-2.5 text-body">
+                  { line: "Tailored resume, as Word or PDF", onPhone: true },
+                  {
+                    line: "Cover letters when the application asks for one, with Pro",
+                    onPhone: true,
+                  },
+                  {
+                    line: "The keywords from the posting that made it in",
+                    onPhone: false,
+                  },
+                  {
+                    line: "An honest list of what your profile does not cover",
+                    onPhone: false,
+                  },
+                ].map(({ line, onPhone }) => (
+                  <li
+                    key={line}
+                    className={`gap-2.5 text-body ${onPhone ? "flex" : "hidden sm:flex"}`}
+                  >
                     <Check
                       className="mt-[0.3rem] h-4 w-4 shrink-0 text-accent-text"
                       aria-hidden
@@ -121,8 +138,14 @@ export default async function LoginPage() {
                 ))}
               </ul>
 
-              {/* Concrete and checkable — no invented counts or testimonials. */}
-              <p className="mt-7 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-small text-faint">
+              {/*
+                Concrete and checkable — no invented counts or testimonials.
+                Hidden on a phone because the card immediately below already
+                says "3 applications every 30 days. No card, no trial timer."
+                and carries the privacy line; repeating it here only pushed the
+                button past the fold.
+              */}
+              <p className="mt-7 hidden flex-wrap items-center gap-x-4 gap-y-1.5 text-small text-faint sm:flex">
                 <span className="flex items-center gap-1.5">
                   <Check className="h-3.5 w-3.5" aria-hidden />
                   {FREE_GENERATIONS_PER_MONTH} free applications
@@ -138,11 +161,14 @@ export default async function LoginPage() {
               </p>
             </div>
 
-            {/* The one action on the page. Sticky so it stays reachable. */}
+            {/*
+              The one action on the page, in the static HTML rather than
+              behind a Suspense boundary — see the note in SignInCard for why
+              that boundary was costing an 89px shift and a CTA that never
+              rendered without JavaScript.
+            */}
             <div id="start" className="lg:sticky lg:top-24 lg:self-start">
-              <Suspense fallback={<Skeleton className="h-[19rem] rounded-xl" />}>
-                <SignInCard />
-              </Suspense>
+              <SignInCard />
             </div>
           </div>
 
