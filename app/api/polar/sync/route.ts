@@ -25,7 +25,7 @@ export async function POST() {
     return NextResponse.json({ error: "Not signed in." }, { status: 401 });
   }
 
-  const result = await reconcileEntitlement(user.id);
+  const result = await reconcileEntitlement(user.id, user.email ?? null);
   const usage = await getUsage(user.id);
 
   return NextResponse.json({

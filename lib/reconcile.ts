@@ -31,6 +31,8 @@ export interface ReconcileResult {
 
 export async function reconcileEntitlement(
   userId: string,
+  /** Falls back to matching on this if no external id is recorded in Polar. */
+  email?: string | null,
 ): Promise<ReconcileResult> {
   const existing = await getEntitlement(userId);
 
@@ -43,7 +45,7 @@ export async function reconcileEntitlement(
     return { granted: false, accessUntil: existing.accessUntil };
   }
 
-  const live = await findLiveSubscription(userId);
+  const live = await findLiveSubscription(userId, email);
 
   if (!live) {
     return { granted: false, accessUntil: existing?.accessUntil ?? null };

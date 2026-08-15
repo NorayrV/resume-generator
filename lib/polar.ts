@@ -167,18 +167,32 @@ export interface PolarSubscription {
  */
 export async function findLiveSubscription(
   userId: string,
+  /**
+   * The account's email, used only as a fallback.
+   *
+   * Every checkout this app creates carries externalCustomerId, so the id
+   * lookup normally finds it. Email covers the case it cannot: a
+   * subscription created by hand in the Polar dashboard, which has no
+   * external id to match on.
+   */
+  email?: string | null,
 ): Promise<PolarSubscription | null> {
   if (!polarEnabled()) return null;
 
   try {
-    const page = await polar().subscriptions.list({
+    let items = await listSubscriptions({
       externalCustomerId: userId,
-      // Not `active: true` — that would exclude a cancelled subscription
-      // still inside the period the customer paid for.
       limit: 20,
     });
 
-    const items = page.result?.items ?? [];
+    if (items.length === 0 && email) {
+      const customerIds = await customerIdsForEmail(email);
+
+      for (const customerId of customerIds) {
+        const byCustomer = await listSubscriptions({ customerId, limit: 20 });
+        items = items.concat(byCustomer);
+      }
+    }
 
     let best: PolarSubscription | null = null;
 
@@ -203,6 +217,41 @@ export async function findLiveSubscription(
   } catch (error) {
     console.error("[polar] findLiveSubscription", error);
     return null;
+  }
+}
+
+/**
+ * One page of subscriptions, or an empty list.
+ *
+ * Note there is no product or price filter anywhere here. A subscription
+ * bought at an older price, or on a product that has since been replaced, is
+ * still a subscription — filtering on either would quietly strand exactly the
+ * customers who bought earliest.
+ */
+async function listSubscriptions(
+  request: Record<string, unknown>,
+): Promise<
+  Array<{
+    id: string;
+    status: string;
+    customerId?: string | null;
+    currentPeriodEnd?: Date | null;
+    endsAt?: Date | null;
+  }>
+> {
+  const page = await polar().subscriptions.list(request as never);
+  return (page.result?.items ?? []) as never;
+}
+
+/** Polar customer ids registered against an email address. */
+async function customerIdsForEmail(email: string): Promise<string[]> {
+  try {
+    const page = await polar().customers.list({ email, limit: 10 });
+    const items = (page.result?.items ?? []) as Array<{ id?: string }>;
+    return items.map((c) => String(c.id)).filter(Boolean);
+  } catch (error) {
+    console.error("[polar] customerIdsForEmail", error);
+    return [];
   }
 }
 
