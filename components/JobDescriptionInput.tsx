@@ -36,6 +36,18 @@ interface Props {
   canUseCoverLetter: boolean | null;
   /** Live price, for the upgrade line. Absent until the account loads. */
   planPrice?: string;
+  /**
+   * What is left of the allowance, shown beside the button that spends it.
+   *
+   * Null while the account loads, and for an uncapped account, where a
+   * counter would be noise. The figure comes from the server on every
+   * generation, so it cannot drift from what was actually charged.
+   */
+  allowance?: {
+    limit: number;
+    remaining: number | null;
+    unlimited: boolean;
+  } | null;
 }
 
 const MIN_CHARS = 120;
@@ -51,6 +63,7 @@ export function JobDescriptionInput({
   onOutputsChange,
   canUseCoverLetter,
   planPrice,
+  allowance,
 }: Props) {
   const wantsCoverLetter = outputs.includes("cover_letter");
   /* Treat "still loading" as unlocked, so the badge does not flash on for a
@@ -198,9 +211,10 @@ export function JobDescriptionInput({
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         {/* Always says why the button is disabled, rather than leaving you guessing. */}
-        <p
-          className={`text-small tnum ${tooLong ? "text-flag" : "text-muted"}`}
-        >
+        <div>
+          <p
+            className={`text-small tnum ${tooLong ? "text-flag" : "text-muted"}`}
+          >
           {count === 0
             ? "Paste a posting to get started"
             : tooLong
@@ -208,7 +222,25 @@ export function JobDescriptionInput({
               : ready
                 ? `${count.toLocaleString()} characters`
                 : `${MIN_CHARS - count} more characters needed`}
-        </p>
+          </p>
+
+          {/*
+            The unit being spent, at the moment of spending. Previously this
+            number existed only on the billing page, so the limit was
+            discoverable only by hitting it.
+          */}
+          {allowance && !allowance.unlimited && allowance.remaining !== null && (
+            <p
+              className={`mt-0.5 text-micro tnum ${
+                allowance.remaining === 0 ? "text-flag" : "text-faint"
+              }`}
+            >
+              {allowance.remaining === 0
+                ? "No applications left"
+                : `${allowance.remaining} of ${allowance.limit} applications left`}
+            </p>
+          )}
+        </div>
 
         <Button size="lg" onClick={onGenerate} disabled={busy || !ready}>
           {busy ? (

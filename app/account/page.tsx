@@ -1,7 +1,6 @@
 "use client";
 
 import { Suspense, useCallback, useEffect, useState } from "react";
-import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Check, CreditCard, Loader2, RefreshCw } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
@@ -388,14 +387,10 @@ function AccountBody() {
               </div>
 
               <p className="mt-3 text-[0.75rem] leading-relaxed text-faint">
-                Renews monthly. Cancel any time.{" "}
-                <Link
-                  href="/login#pricing"
-                  className="text-accent-text underline-offset-2 hover:underline"
-                >
-                  What one application includes
-                </Link>
-                .
+                Renews monthly. Cancel any time. One application is one job
+                posting: the tailored resume, the cover letter, the matched
+                keywords and the requirements you do not cover. Editing and
+                re-downloading what comes back is free and never counts.
               </p>
             </>
           ) : (

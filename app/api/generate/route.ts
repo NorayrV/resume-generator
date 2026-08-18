@@ -152,7 +152,14 @@ export async function POST(request: Request) {
       if (claim.tier !== "free") {
         return NextResponse.json(
           {
-            error: `You have used all ${claim.limit} application packs this month. Each one frees up 30 days after you used it.`,
+            error: `You have used all ${claim.limit} applications this month. Each one frees up 30 days after you used it.`,
+            /*
+             * Coded so the client can tell this apart from a failure. Without
+             * it this fell through to the generic red error panel — a
+             * scheduling state rendered as a crash, to the one group of users
+             * who are already paying.
+             */
+            code: "allowance_spent",
             usage: { used: claim.used, limit: claim.limit },
           },
           { status: 429 },
@@ -165,7 +172,7 @@ export async function POST(request: Request) {
 
       return NextResponse.json(
         {
-          error: `You have used all ${claim.limit} free application packs this month.`,
+          error: `You have used all ${claim.limit} free applications this month.`,
           code: "quota_exceeded",
           usage: { used: claim.used, limit: claim.limit },
           plan,

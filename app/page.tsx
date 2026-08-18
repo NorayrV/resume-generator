@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, FileText, Lock, RotateCcw } from "lucide-react";
+import { ArrowRight, Clock, FileText, Lock, RotateCcw } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
 import { JobDescriptionInput } from "@/components/JobDescriptionInput";
 import { GenerationProgress } from "@/components/GenerationProgress";
@@ -35,6 +35,13 @@ interface Generation {
   person: PersonalInformation;
   /** What was asked for, so the summary line can name it after a reload. */
   requested?: OutputKind[];
+}
+
+/** What is left of this account's allowance. */
+interface Allowance {
+  limit: number;
+  remaining: number | null;
+  unlimited: boolean;
 }
 
 /** Kept so a trip to Profile and back does not throw away a generation. */
@@ -84,6 +91,19 @@ export default function GeneratePage() {
    */
   const [paidPlan, setPaidPlan] = useState<boolean | null>(null);
   const [blocked, setBlocked] = useState(false);
+  /*
+   * How much of the allowance is left.
+   *
+   * Both /api/account and the generate response have always carried this and
+   * the page threw it away, so the only way to discover the limit was to be
+   * refused by it. Seeded on load and refreshed from each generation, so the
+   * number beside the button is the number the server just used.
+   */
+  const [allowance, setAllowance] = useState<Allowance | null>(null);
+  /** Spent when the allowance runs out on a paid plan. Not a failure. */
+  const [spent, setSpent] = useState(false);
+  /** Announced to screen readers when a run finishes. */
+  const [announcement, setAnnouncement] = useState("");
 
   useEffect(() => {
     fetch("/api/profile")
@@ -103,6 +123,13 @@ export default function GeneratePage() {
       .then((data) => {
         if (data?.usage?.tier) setPaidPlan(data.usage.tier !== "free");
         if (data?.plan) setPlan(data.plan);
+        if (data?.usage) {
+          setAllowance({
+            limit: data.usage.limit,
+            remaining: data.usage.remaining,
+            unlimited: Boolean(data.usage.unlimited),
+          });
+        }
       })
       .catch(() => {});
 
@@ -154,6 +181,20 @@ export default function GeneratePage() {
     setError(null);
     setQuotaExceeded(false);
     setBlocked(false);
+    setSpent(false);
+    setAnnouncement("");
+
+    /*
+     * Put the wait on screen. Measured before this: the progress card's top
+     * landed at y=802 on a 900px viewport with the page unscrolled, so the
+     * first thing you saw after pressing the button was the same form, greyed.
+     * Instant rather than smooth — this is orientation, not a flourish.
+     */
+    requestAnimationFrame(() =>
+      document
+        .getElementById("progress")
+        ?.scrollIntoView({ behavior: "instant" as ScrollBehavior, block: "center" }),
+    );
 
     /*
      * The previous result deliberately stays on screen.
@@ -188,6 +229,15 @@ export default function GeneratePage() {
          */
         setQuotaExceeded(data.code === "quota_exceeded");
         setBlocked(data.code === "subscription_required");
+        setSpent(data.code === "allowance_spent");
+
+        if (data.usage) {
+          setAllowance((current) => ({
+            limit: data.usage.limit ?? current?.limit ?? 0,
+            remaining: 0,
+            unlimited: false,
+          }));
+        }
 
         // A 403 is also the moment we learn the client was out of date about
         // the tier — lock the control so the next press cannot repeat it.
@@ -210,6 +260,26 @@ export default function GeneratePage() {
       const generation: Generation = { ...data, requested: outputs };
       // Only now is the previous application replaced.
       setResult(generation);
+
+      if (data.usage) {
+        setAllowance({
+          limit: data.usage.limit,
+          remaining: data.usage.remaining,
+          unlimited: Boolean(data.usage.unlimited),
+        });
+      }
+
+      /*
+       * The wait ends in silence otherwise: GenerationProgress carries the
+       * only live region in the flow and unmounts at the exact moment the
+       * result appears, so a screen reader user who waited a minute is told
+       * nothing at all.
+       */
+      setAnnouncement(
+        outputs.includes("cover_letter")
+          ? "Your resume and cover letter are ready."
+          : "Your resume is ready.",
+      );
       try {
         sessionStorage.setItem(CACHE_KEY, JSON.stringify(generation));
       } catch {
@@ -268,12 +338,33 @@ export default function GeneratePage() {
                   onOutputsChange={setOutputs}
                   canUseCoverLetter={paidPlan}
                   planPrice={plan?.price}
+                  allowance={allowance}
                 />
               </div>
             </section>
 
             {error &&
-              (blocked ? (
+              (spent ? (
+                /*
+                 * A paid account that has worked through the month's
+                 * allowance. Nothing has gone wrong, so this does not wear the
+                 * error palette — it says when the next one frees up.
+                 */
+                <section className="card border-accent-line bg-accent-soft p-5">
+                  <div className="flex items-start gap-3">
+                    <Clock
+                      className="mt-0.5 h-4 w-4 shrink-0 text-accent-text"
+                      aria-hidden
+                    />
+                    <div>
+                      <p className="text-body font-medium">
+                        You have used this month&apos;s applications
+                      </p>
+                      <p className="hint mt-1">{error}</p>
+                    </div>
+                  </div>
+                </section>
+              ) : blocked ? (
                 /*
                  * Not an authorisation error as far as the reader is
                  * concerned — a feature they have not bought yet. It says
@@ -328,7 +419,18 @@ export default function GeneratePage() {
                 <Alert tone="error">{error}</Alert>
               ))}
 
-            {busy && <GenerationProgress outputs={outputs} />}
+            {/*
+              Lives outside the busy branch on purpose. A live region that
+              unmounts cannot announce anything, which is exactly why the end
+              of a 60-second wait was silent.
+            */}
+            <p role="status" aria-live="polite" className="sr-only">
+              {announcement}
+            </p>
+
+            <div id="progress">
+              {busy && <GenerationProgress outputs={outputs} />}
+            </div>
 
             {/* ---- Step 2: whichever documents were asked for ---- */}
             {result &&
