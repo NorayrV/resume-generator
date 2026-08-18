@@ -154,8 +154,21 @@ export default function GeneratePage() {
     setError(null);
     setQuotaExceeded(false);
     setBlocked(false);
-    setResult(null);
-    sessionStorage.removeItem(CACHE_KEY);
+
+    /*
+     * The previous result deliberately stays on screen.
+     *
+     * This used to clear it here, before the request went out — so any
+     * refusal or failure emptied the page. A free account pressing "Generate
+     * again" with no packs left got a 402 and lost the finished application
+     * it was reading, permanently, because nothing keeps a history. Two
+     * clicks to reproduce, and the button most likely to trigger it is the
+     * one directly under the result.
+     *
+     * Now the old result is replaced only once a new one has actually
+     * arrived. Generating with a result on screen reads as a re-run, which is
+     * what it is, and the progress card above it says so.
+     */
 
     try {
       const response = await fetch("/api/generate", {
@@ -195,6 +208,7 @@ export default function GeneratePage() {
       setBlocked(false);
 
       const generation: Generation = { ...data, requested: outputs };
+      // Only now is the previous application replaced.
       setResult(generation);
       try {
         sessionStorage.setItem(CACHE_KEY, JSON.stringify(generation));

@@ -62,7 +62,20 @@ export function ResumePreview({ resume, person }: Props) {
 
   return (
     /* A sheet of paper: white, bordered, and scrollable once it runs long. */
-    <div className="max-h-[26rem] overflow-y-auto rounded-md border border-doc-line bg-doc-paper px-5 py-5 sm:px-7">
+    /*
+      Focusable on purpose. This pane hides roughly half the document — 361px
+      at 1280 and 472px at 375 — and a scroll container that is not in the tab
+      order cannot be scrolled by keyboard at all. The product's own
+      instruction is to read this before sending it, so the reading surface
+      has to be reachable without a mouse. role + label give it a name once it
+      is a stop in the tab order.
+    */
+    <div
+      tabIndex={0}
+      role="region"
+      aria-label="Resume preview. Scrollable."
+      className="max-h-[26rem] overflow-y-auto rounded-md border border-doc-line bg-doc-paper px-5 py-5 sm:px-7"
+    >
       {/* ---- Name, headline, contact ---- */}
       <p className="text-center text-[1.05rem] font-bold uppercase tracking-[0.02em] text-doc-ink">
         {person.full_name}

@@ -168,7 +168,14 @@ function LetterBody({ text }: { text: string }) {
     });
 
   return (
-    <div className="max-h-[26rem] overflow-y-auto rounded-md bg-surface p-4">
+    /* Same reasoning as ResumePreview: a scroll container outside the tab
+       order is unreachable by keyboard. 124px is hidden here at 375px. */
+    <div
+      tabIndex={0}
+      role="region"
+      aria-label="Cover letter. Scrollable."
+      className="max-h-[26rem] overflow-y-auto rounded-md bg-surface p-4"
+    >
       <div className="space-y-3.5 text-body leading-[1.7]">
         {blocks.map((block, i) =>
           block.type === "list" ? (
