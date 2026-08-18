@@ -63,6 +63,43 @@ function GitHubMark() {
   );
 }
 
+/**
+ * Turn a provider error into a sentence someone applying for a job can act on.
+ *
+ * supabase-js surfaces the auth server's response body as `message`, and when
+ * that body is empty or unparseable the message is the literal string "{}".
+ * Printing it raw tells the reader nothing at all — it does not name the
+ * problem and it does not name a way out, which is the entire job of an error.
+ *
+ * The raw text is kept whenever it actually says something, because the person
+ * reading it is as often the site owner as a customer.
+ */
+function describeAuthError(error: { message?: string; status?: number }): string {
+  const raw = (error.message ?? "").trim();
+  const status = error.status;
+
+  // Empty body, stringified object, or an object that never had a message.
+  const opaque = !raw || raw === "{}" || raw === "[object Object]";
+
+  if (status === 429 || /rate limit|too many/i.test(raw)) {
+    return "Too many sign-in emails have been requested from here. Wait a minute and try again.";
+  }
+
+  if (/signups? not allowed|logins? are disabled|provider is not enabled|email provider/i.test(raw)) {
+    return "Email sign-in is not switched on for this site yet. Google and GitHub still work.";
+  }
+
+  if (/invalid.*email|valid email|unable to validate email/i.test(raw)) {
+    return "That does not look like a complete email address.";
+  }
+
+  if (opaque) {
+    return `The email could not be sent${status ? ` (error ${status})` : ""}. Email sign-in may not be fully set up yet — Google and GitHub still work.`;
+  }
+
+  return raw;
+}
+
 const BUTTON =
   "flex h-11 w-full items-center justify-center gap-2.5 rounded-md border border-line bg-paper text-body font-medium text-ink transition-colors hover:border-faint hover:bg-surface disabled:pointer-events-none disabled:opacity-50";
 
@@ -98,7 +135,7 @@ export function SignInButtons() {
     });
 
     if (authError) {
-      setError(authError.message);
+      setError(describeAuthError(authError));
       setBusy(null);
     }
     // On success the browser is redirected away, so there is nothing to reset.
@@ -117,7 +154,10 @@ export function SignInButtons() {
     setBusy(null);
 
     if (authError) {
-      setError(authError.message);
+      setError(describeAuthError(authError));
+      // Log the untouched error so the owner can read the real cause in the
+      // console; the sentence above is for the person trying to sign in.
+      console.error("[signin] signInWithOtp", authError);
       return;
     }
 
