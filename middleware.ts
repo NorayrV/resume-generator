@@ -22,6 +22,8 @@ const PUBLIC_PATHS = [
   "/privacy",
   "/terms",
   "/auth/callback",
+  // Emailed sign-in links land here; the visitor has no session yet.
+  "/auth/confirm",
   // Polar calls this server-to-server with no session. It verifies its own
   // signature, which is what makes it safe to expose.
   "/api/polar/webhook",

@@ -93,6 +93,24 @@ function describeAuthError(error: { message?: string; status?: number }): string
     return "That does not look like a complete email address.";
   }
 
+  /*
+   * The PKCE verifier lives in the browser that asked for the link, so a link
+   * opened somewhere else cannot complete. Supabase's own text explains this
+   * to a developer — it names @supabase/ssr and SvelteKit — which is no use
+   * to someone trying to sign in.
+   */
+  if (/code verifier|pkce/i.test(raw)) {
+    return "That link was opened in a different browser from the one that asked for it. Request a new link and open it here.";
+  }
+
+  if (/expired|already been used|token has expired|otp_expired/i.test(raw)) {
+    return "That sign-in link has expired or was already used. Request a new one.";
+  }
+
+  if (raw === "missing_token" || raw === "unsupported_link_type") {
+    return "That sign-in link is incomplete. Request a new one.";
+  }
+
   if (opaque) {
     return `The email could not be sent${status ? ` (error ${status})` : ""}. Email sign-in may not be fully set up yet — Google and GitHub still work.`;
   }
@@ -122,7 +140,9 @@ export function SignInButtons() {
    */
   useEffect(() => {
     const reported = new URLSearchParams(window.location.search).get("error");
-    if (reported) setError(reported);
+    // Through the same humaniser as a live failure: this is where the auth
+    // callback's messages surface, and they are written for developers.
+    if (reported) setError(describeAuthError({ message: reported }));
   }, []);
 
   async function signIn(provider: Provider) {
