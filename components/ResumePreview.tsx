@@ -22,14 +22,28 @@ import type { PersonalInformation, TailoredResume } from "@/lib/types";
 interface Props {
   resume: TailoredResume;
   person: PersonalInformation;
+  /**
+   * Roles whose bullets the model wrote, because the profile had none.
+   *
+   * Marked in place rather than only named in the banner above. The banner
+   * used to assert a role title and leave the reader to find it by hand in a
+   * document with no anchors — a memory task, on the one screen that exists
+   * for checking.
+   */
+  draftedRoles?: string[];
+}
+
+/** Stable anchor for a role, so the drafted-roles banner can point at it. */
+export function roleAnchor(title: string): string {
+  return `role-${title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`;
 }
 
 /** Caps heading with the hairline rule, matching heading() in the generator. */
 function Heading({ children }: { children: React.ReactNode }) {
   return (
-    <h4 className="mb-1.5 border-b border-doc-ink/40 pb-1 text-[0.6875rem] font-bold uppercase tracking-[0.06em] text-doc-ink">
+    <h3 className="mb-1.5 border-b border-doc-ink/40 pb-1 text-[0.6875rem] font-bold uppercase tracking-[0.06em] text-doc-ink">
       {children}
-    </h4>
+    </h3>
   );
 }
 
@@ -45,7 +59,7 @@ function Bullet({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function ResumePreview({ resume, person }: Props) {
+export function ResumePreview({ resume, person, draftedRoles = [] }: Props) {
   const contactLine = [person.location, person.phone, person.email]
     .filter(Boolean)
     .join("  |  ");
@@ -63,19 +77,20 @@ export function ResumePreview({ resume, person }: Props) {
   return (
     /* A sheet of paper: white, bordered, and scrollable once it runs long. */
     /*
-      Focusable on purpose. This pane hides roughly half the document — 361px
-      at 1280 and 472px at 375 — and a scroll container that is not in the tab
-      order cannot be scrolled by keyboard at all. The product's own
-      instruction is to read this before sending it, so the reading surface
-      has to be reachable without a mouse. role + label give it a name once it
-      is a stop in the tab order.
+      No inner scroller, and no fixed height.
+      
+      This used to be a 26rem window onto a document that measured 999px at
+      1280 and 1308px at 375 — so it showed 41% and 32% of itself, with no
+      fade, no page count, and overlay scrollbars that are invisible at rest.
+      On the one screen whose stated instruction is "read it before you send
+      it", a reader could believe they had read the document having seen a
+      third of it.
+      
+      A long page is the correct shape for a long document. The page's own
+      scroll now carries it, which also removes the need to make this a tab
+      stop: it is ordinary content again, reachable the way text is.
     */
-    <div
-      tabIndex={0}
-      role="region"
-      aria-label="Resume preview. Scrollable."
-      className="max-h-[26rem] overflow-y-auto rounded-md border border-doc-line bg-doc-paper px-5 py-5 sm:px-7"
-    >
+    <div className="rounded-md border border-doc-line bg-doc-paper px-5 py-5 sm:px-7">
       {/* ---- Name, headline, contact ---- */}
       <p className="text-center text-[1.05rem] font-bold uppercase tracking-[0.02em] text-doc-ink">
         {person.full_name}
@@ -131,9 +146,21 @@ export function ResumePreview({ resume, person }: Props) {
             <Heading>Work Experience</Heading>
             <div className="space-y-3">
               {resume.experience.map((role, i) => (
-                <div key={`${role.company}-${i}`}>
-                  <p className="text-[0.8125rem] font-bold text-doc-ink">
+                <div key={`${role.company}-${i}`} id={roleAnchor(role.title)}>
+                  <p className="flex flex-wrap items-baseline gap-x-2 text-[0.8125rem] font-bold text-doc-ink">
                     {role.title}
+                    {/*
+                      An annotation, not document content — which is why it
+                      wears the app's accent rather than doc ink, and why it
+                      is worded as something the app did. Nothing here is in
+                      the exported file, and the preview otherwise matches
+                      that file field for field.
+                    */}
+                    {draftedRoles.includes(role.title) && (
+                      <span className="rounded-full bg-accent-soft px-1.5 py-0.5 text-[0.5625rem] font-semibold uppercase tracking-[0.04em] text-accent-text">
+                        Written for you
+                      </span>
+                    )}
                   </p>
                   <p className="text-[0.6875rem] text-doc-muted">
                     {[

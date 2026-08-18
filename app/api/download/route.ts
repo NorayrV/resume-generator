@@ -152,8 +152,19 @@ export async function POST(request: Request) {
     const resume = body?.resume;
     const person = body?.person;
 
-    // Anything unrecognised falls back to Word, which is what the button did
-    // before PDF existed.
+    /*
+     * An omitted format still falls back to Word — that is what the button did
+     * before PDF existed, and old callers rely on it. A format that is present
+     * but unrecognised is a different thing: answering "pdf!" with a .docx and
+     * a 200 tells the caller it succeeded at something it never asked for.
+     */
+    if (body?.format !== undefined && !isFormat(body.format)) {
+      return NextResponse.json(
+        { error: "That file format is not available. Ask for docx or pdf." },
+        { status: 400 },
+      );
+    }
+
     const format: Format = isFormat(body?.format) ? body.format : "docx";
 
     if (!resume || !person?.full_name) {
@@ -170,6 +181,9 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           error: `You have downloaded ${gate.limit} files in the past hour. Try again ${describeWait(gate.retryAfterSecs)}.`,
+          /* So the client can hold the buttons rather than offer a click that
+             is certain to fail. */
+          retry_after_seconds: gate.retryAfterSecs,
         },
         { status: 429 },
       );

@@ -40,13 +40,13 @@ export function ResultsOverview({ matchedKeywords, gaps, outputs }: Props) {
   const weak = pct < WEAK;
 
   return (
-    <section className="card-raised overflow-hidden">
+    <section aria-label="Requirements covered" className="card-raised overflow-hidden">
       <div className="grid gap-6 p-5 sm:p-6 md:grid-cols-[auto_1fr] md:gap-8">
         {/* ---- The figure ---- */}
         <div className="md:w-52">
-          <p className="text-small font-medium text-muted">
+          <h2 className="text-small font-medium text-muted">
             Requirements covered
-          </p>
+          </h2>
 
           <p className="mt-1.5 flex items-baseline gap-1.5">
             <span className="text-[2.5rem] font-semibold leading-none tracking-[-0.03em] tnum">
@@ -79,11 +79,11 @@ export function ResultsOverview({ matchedKeywords, gaps, outputs }: Props) {
         {/* ---- The two lists ---- */}
         <div className="grid gap-5 border-t border-line-soft pt-5 sm:grid-cols-2 md:border-l md:border-t-0 md:pl-8 md:pt-0">
           <div>
-            <p className="flex items-center gap-1.5 text-small font-medium">
+            <h3 className="flex items-center gap-1.5 text-small font-medium">
               <Check className="h-3.5 w-3.5 text-good" aria-hidden />
               Matched
               <span className="font-normal text-faint tnum">({matched})</span>
-            </p>
+            </h3>
 
             {matched > 0 ? (
               <div className="mt-2.5 flex flex-wrap gap-1.5">
@@ -104,11 +104,11 @@ export function ResultsOverview({ matchedKeywords, gaps, outputs }: Props) {
           </div>
 
           <div>
-            <p className="flex items-center gap-1.5 text-small font-medium">
+            <h3 className="flex items-center gap-1.5 text-small font-medium">
               <X className="h-3.5 w-3.5 text-flag" aria-hidden />
               Not covered
               <span className="font-normal text-faint tnum">({missing})</span>
-            </p>
+            </h3>
 
             {missing > 0 ? (
               <>

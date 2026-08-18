@@ -459,7 +459,7 @@ export default function GeneratePage() {
                     />
 
                     <div
-                      className={`grid gap-4 ${twoUp ? "lg:grid-cols-2" : ""}`}
+                      className={`grid gap-4 ${twoUp ? "lg:grid-cols-2 lg:items-start" : ""}`}
                     >
                       {result.resume && (
                         <ResumeResult

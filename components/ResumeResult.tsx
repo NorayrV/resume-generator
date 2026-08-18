@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Download, FileText, Loader2 } from "lucide-react";
 import { Button } from "./ui/button";
 import { Alert } from "./ui/alert";
-import { ResumePreview } from "./ResumePreview";
+import { ResumePreview, roleAnchor } from "./ResumePreview";
 import type { PersonalInformation, TailoredResume } from "@/lib/types";
 
 type Format = "docx" | "pdf";
@@ -19,6 +19,10 @@ interface Props {
 export function ResumeResult({ resume, person, draftedRoles }: Props) {
   const [pending, setPending] = useState<Format | null>(null);
   const [error, setError] = useState<string | null>(null);
+  /** Set on a 401, so the fix is offered rather than described. */
+  const [signedOut, setSignedOut] = useState(false);
+  /** Set on a 429, and cleared when the window it names has passed. */
+  const [heldUntilRetry, setHeldUntilRetry] = useState(false);
 
   async function download(format: Format) {
     setPending(format);
@@ -34,8 +38,27 @@ export function ResumeResult({ resume, person, draftedRoles }: Props) {
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
         setError(data.error ?? "The file could not be built.");
+
+        /*
+         * Five refusals used to arrive in one inert red box. The two the
+         * reader can act on now behave differently: a signed-out session
+         * gets a way back in, and a rate limit holds the buttons for the
+         * window it just named instead of offering a click that cannot work.
+         */
+        setSignedOut(response.status === 401);
+
+        if (response.status === 429) {
+          setHeldUntilRetry(true);
+          const secs = Number(data.retry_after_seconds);
+          if (Number.isFinite(secs) && secs > 0 && secs < 3600) {
+            setTimeout(() => setHeldUntilRetry(false), secs * 1000);
+          }
+        }
         return;
       }
+
+      setSignedOut(false);
+      setHeldUntilRetry(false);
 
       const blob = await response.blob();
       const disposition = response.headers.get("Content-Disposition") ?? "";
@@ -83,7 +106,7 @@ export function ResumeResult({ resume, person, draftedRoles }: Props) {
           <Button
             size="sm"
             onClick={() => download("docx")}
-            disabled={pending !== null}
+            disabled={pending !== null || heldUntilRetry}
           >
             {pending === "docx" ? (
               <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
@@ -97,7 +120,7 @@ export function ResumeResult({ resume, person, draftedRoles }: Props) {
             size="sm"
             variant="secondary"
             onClick={() => download("pdf")}
-            disabled={pending !== null}
+            disabled={pending !== null || heldUntilRetry}
           >
             {pending === "pdf" ? (
               <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
@@ -110,7 +133,23 @@ export function ResumeResult({ resume, person, draftedRoles }: Props) {
       </div>
 
       <div className="flex-1 space-y-4 p-5">
-        {error && <Alert tone="error">{error}</Alert>}
+        {error && (
+          <Alert tone="error">
+            {error}
+            {signedOut && (
+              <>
+                {" "}
+                <a
+                  href="/login"
+                  className="font-medium underline underline-offset-2"
+                >
+                  Sign in again
+                </a>
+                .
+              </>
+            )}
+          </Alert>
+        )}
 
         {/*
           These bullets came from the job title and the skills list, not from
@@ -122,13 +161,26 @@ export function ResumeResult({ resume, person, draftedRoles }: Props) {
             <strong className="font-medium">
               Written for you, so check {draftedRoles.length === 1 ? "it" : "them"}:
             </strong>{" "}
-            {draftedRoles.join(", ")}. You left {draftedRoles.length === 1 ? "this role" : "these roles"}{" "}
+            {/* Each name jumps to the role it names, now that the role is
+                marked in the document below. */}
+            {draftedRoles.map((role, i) => (
+              <span key={role}>
+                {i > 0 && ", "}
+                <a
+                  href={`#${roleAnchor(role)}`}
+                  className="font-medium text-accent-text underline underline-offset-2"
+                >
+                  {role}
+                </a>
+              </span>
+            ))}
+            . You left {draftedRoles.length === 1 ? "this role" : "these roles"}{" "}
             blank, so the bullets describe the usual duties of the job title
             rather than what you actually did.
           </Alert>
         )}
 
-        <ResumePreview resume={resume} person={person} />
+        <ResumePreview resume={resume} person={person} draftedRoles={draftedRoles} />
 
       </div>
     </section>
