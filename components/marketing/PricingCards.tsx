@@ -27,12 +27,22 @@ import {
  * a reader comparing two identical lists only has to find the row that
  * changed — which here is the cover letter.
  *
- * That comparison is why both cards open with the same header element even
- * though only one of them has a badge to put in it. Without the reserved
- * height the badge made the Pro header 24px against the free card's 20px, and
- * the 4px pushed every row below it out of line: the two prices, the two
- * hints, all four features, both buttons. Nothing looked broken, and nothing
- * lined up either.
+ * That comparison is why the two cards share one set of grid rows.
+ *
+ * The first attempt reserved a fixed height for the header, because the Pro
+ * badge made that row 24px against the free card's 20px. It fixed 1280 and it
+ * fixed the stacked phone layout, and between 768 and about 1022px it fixed
+ * nothing: the Pro hint is 413px of text on one line, so it wraps in a card
+ * narrower than ~471px while the free card's shorter hint does not, and every
+ * feature row and both buttons sat 21.13px apart with the cards side by side.
+ * At 1024 the hint cleared its card by 0.8px. That is not a margin, it is a
+ * coincidence, and reserving heights row by row only ever chases the string
+ * that happens to be longest today.
+ *
+ * `grid-rows-subgrid` makes the alignment structural instead. Both cards span
+ * the same five parent rows — header, price, hint, features, button — so each
+ * row is as tall as the taller card needs and the two stay in step at every
+ * width, whatever the copy grows into later.
  */
 
 /** One row of a plan. `false` means the row is shown as not included. */
@@ -69,15 +79,21 @@ function rows(plan: "free" | "pro"): Row[] {
   ];
 }
 
-/** Reserves the badge's height in both cards, so the two lists stay in step. */
+/**
+ * The plan name, and on Pro the badge beside it. The min-height is still here
+ * because the subgrid rows are sized by content and this row's content is a
+ * 20px label in one card and a 24px badge in the other; holding the floor at
+ * the badge's height keeps the row from changing size when the badge is not
+ * there to set it.
+ */
 const HEADER = "flex min-h-[1.5rem] items-center justify-between gap-3";
 
 export function PricingCards({ plan }: { plan: PlanPricing }) {
   return (
     <div>
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2 md:grid-rows-[auto_auto_auto_1fr_auto] md:gap-y-0">
         {/* ---- Free ---- */}
-        <div className="card flex flex-col p-6 sm:p-7">
+        <div className="card p-6 sm:p-7 md:row-span-5 md:grid md:grid-rows-subgrid">
           <div className={HEADER}>
             <p className="text-small font-semibold text-muted">Free</p>
           </div>
@@ -102,13 +118,13 @@ export function PricingCards({ plan }: { plan: PlanPricing }) {
             ))}
           </ul>
 
-          <StartLink className="mt-7 inline-flex h-11 items-center justify-center rounded-md border border-line bg-paper px-6 text-body font-medium text-ink transition-colors hover:border-faint hover:bg-surface">
+          <StartLink className="mt-7 flex h-11 w-full items-center justify-center self-end rounded-md border border-faint bg-paper px-6 text-body font-medium text-ink transition-colors hover:border-ink hover:bg-surface">
             Start free
           </StartLink>
         </div>
 
         {/* ---- Pro ---- */}
-        <div className="card-raised flex flex-col border-accent-line p-6 sm:p-7">
+        <div className="card-raised border-accent-line p-6 sm:p-7 md:row-span-5 md:grid md:grid-rows-subgrid">
           <div className={HEADER}>
             <p className="text-small font-semibold text-accent-text">Pro</p>
             <Badge tone="accent">For an active search</Badge>
@@ -134,7 +150,7 @@ export function PricingCards({ plan }: { plan: PlanPricing }) {
             ))}
           </ul>
 
-          <StartLink className="mt-7 inline-flex h-11 items-center justify-center rounded-md bg-accent px-6 text-body font-medium text-on-accent shadow-sm transition-colors hover:bg-accent/90">
+          <StartLink className="mt-7 flex h-11 w-full items-center justify-center self-end rounded-md bg-accent px-6 text-body font-medium text-on-accent shadow-sm transition-colors hover:bg-accent/90">
             Start free, upgrade later
           </StartLink>
         </div>

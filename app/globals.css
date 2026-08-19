@@ -237,7 +237,6 @@
     @apply mx-auto w-full max-w-6xl px-5 sm:px-6 lg:px-8;
   }
 
-  /* The eyebrow above a section heading: small, spaced, quiet. */
   /*
    * Section headline. Fluid rather than stepped, so it never lands at an
    * awkward size between the sm and lg breakpoints.

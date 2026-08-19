@@ -168,10 +168,27 @@ export default async function LoginPage() {
               that boundary was costing an 89px shift and a CTA that never
               rendered without JavaScript.
             */}
+            {/*
+              tabIndex={-1} so the pricing and closing calls to action can put
+              focus here when they jump. This carried focus:outline-none for
+              one commit, which meant a reader crossed nearly three thousand
+              pixels and arrived with nothing marking where they had landed —
+              Tailwind's .focus\:outline-none:focus outranks the global
+              :focus-visible rule two to one on specificity, so no ring ever
+              rendered.
+
+              The ring is on :focus rather than :focus-visible deliberately.
+              Focus arrives here programmatically, and the focus-visible
+              heuristic only carries over when the activation that caused it
+              was itself keyboard-driven — measured here, a pointer-driven jump
+              lands with :focus-visible false and outline-style none. Marking
+              the destination after a jump that long is worth showing to
+              everyone, whichever way they pressed the button.
+            */}
             <div
               id="start"
               tabIndex={-1}
-              className="lg:sticky lg:top-24 lg:self-start focus:outline-none"
+              className="rounded-lg focus:outline focus:outline-2 focus:outline-offset-4 focus:outline-accent-text lg:sticky lg:top-24 lg:self-start"
             >
               <SignInCard />
             </div>
