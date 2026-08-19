@@ -62,7 +62,7 @@ const ITEMS: { q: string; a: React.ReactNode }[] = [
     q: "Do I have to pay to try it?",
     a: (
       <>
-        No. {FREE_GENERATIONS_PER_MONTH} applications every {USAGE_WINDOW_DAYS}{" "}
+        No. {FREE_GENERATIONS_PER_MONTH} applications in any {USAGE_WINDOW_DAYS}{" "}
         days, no card, no trial timer. You only pay if you are applying often
         enough to run out.
       </>

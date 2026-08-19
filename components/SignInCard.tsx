@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { Lock } from "lucide-react";
 import { SignInButtons } from "./SignInButtons";
-import { FREE_GENERATIONS_PER_MONTH, USAGE_WINDOW_DAYS } from "@/lib/plan";
+import {
+  FREE_GENERATIONS_PER_MONTH,
+  USAGE_WINDOW_DAYS,
+  type PlanPricing,
+} from "@/lib/plan";
 
 /**
  * The landing page's one call to action.
@@ -22,17 +26,36 @@ import { FREE_GENERATIONS_PER_MONTH, USAGE_WINDOW_DAYS } from "@/lib/plan";
  * query string when it redirects here, so the parameter was never populated —
  * and the sign-in error is read from window.location after mount instead,
  * inside the client component that already needed to be one.
+ *
+ * The Pro line below stays a server-rendered node too, shown by CSS when
+ * StartLink marks #start with data-plan="pro". Reading that with React state
+ * would have meant making this a client component again for one sentence.
  */
-export function SignInCard() {
+export function SignInCard({ plan }: { plan?: PlanPricing }) {
   return (
     <div className="card-raised p-6 sm:p-7">
       <h2 className="text-[1.0625rem] font-semibold tracking-[-0.015em]">
         Start free
       </h2>
       <p className="hint mt-1">
-        {FREE_GENERATIONS_PER_MONTH} applications every {USAGE_WINDOW_DAYS}{" "}
+        {FREE_GENERATIONS_PER_MONTH} applications in any {USAGE_WINDOW_DAYS}{" "}
         days. No card, no trial timer.
       </p>
+
+      {/*
+        Only after arriving from the Pro card. Everyone signs in the same way
+        — there is no paid checkout before an account exists — so the heading
+        stays honest and this answers the one question a Pro reader lands
+        with: yes, that plan is real, here is what it costs, and here is when
+        you get it.
+      */}
+      {plan && (
+        <p className="mt-4 hidden rounded-md border border-accent-line bg-accent-soft px-3 py-2.5 text-small leading-relaxed text-accent-text group-data-[plan=pro]:block">
+          Pro is {plan.price} a {plan.period}. Sign in first — you can add it
+          from your account straight after, and your free applications are not
+          spent by upgrading.
+        </p>
+      )}
 
       <div className="mt-6">
         <SignInButtons />

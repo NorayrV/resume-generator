@@ -61,11 +61,14 @@ function rows(plan: "free" | "pro"): Row[] {
           </strong>{" "}
           {/*
             The same window on both plans, said the same way. Pro used to read
-            "a month", but lib/usage.ts counts both tiers over one rolling
-            USAGE_WINDOW_DAYS — so "a month" described the same mechanism in
-            looser words, on the plan people pay for.
+            "a month"; both then read "every N days". lib/usage.ts counts rows
+            since now minus N days, which is a window that rolls — "every"
+            reads as a date the count resets on, and someone who spends three
+            on day one and comes back on day 31 expecting a fresh three would
+            have been told that by this line. "In any" describes the window
+            that exists.
           */}
-          every {USAGE_WINDOW_DAYS} days
+          in any {USAGE_WINDOW_DAYS} days
         </>
       ),
       included: true,
@@ -106,7 +109,7 @@ export function PricingCards({ plan }: { plan: PlanPricing }) {
           </p>
 
           <p className="hint mt-2">
-            {FREE_GENERATIONS_PER_MONTH} applications every {USAGE_WINDOW_DAYS}{" "}
+            {FREE_GENERATIONS_PER_MONTH} applications in any {USAGE_WINDOW_DAYS}{" "}
             days. No card required.
           </p>
 
@@ -138,7 +141,7 @@ export function PricingCards({ plan }: { plan: PlanPricing }) {
           </p>
 
           <p className="hint mt-2">
-            {PRO_GENERATIONS_PER_MONTH} applications every {USAGE_WINDOW_DAYS}{" "}
+            {PRO_GENERATIONS_PER_MONTH} applications in any {USAGE_WINDOW_DAYS}{" "}
             days, with cover letters. Cancel any time.
           </p>
 
@@ -150,7 +153,10 @@ export function PricingCards({ plan }: { plan: PlanPricing }) {
             ))}
           </ul>
 
-          <StartLink className="mt-7 flex h-11 w-full items-center justify-center self-end rounded-md bg-accent px-6 text-body font-medium text-on-accent shadow-sm transition-colors hover:bg-accent/90">
+          <StartLink
+            plan="pro"
+            className="mt-7 flex h-11 w-full items-center justify-center self-end rounded-md bg-accent px-6 text-body font-medium text-on-accent shadow-sm transition-colors hover:bg-accent/90"
+          >
             Start free, upgrade later
           </StartLink>
         </div>

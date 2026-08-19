@@ -18,11 +18,23 @@
  *
  * Focus moves with the viewport. #start is a div, so it cannot take focus on
  * its own — it carries tabIndex={-1} for this.
+ *
+ * `plan` travels with the press. Both pricing buttons used to land on a card
+ * headed "Start free" that named only the free tier, so a reader who had just
+ * decided on Pro was answered with the pitch they had already read and scrolled
+ * past, and had to re-derive the decision after signing in with no price in
+ * front of them. Setting it as a data attribute rather than as React state
+ * keeps SignInCard a server component: the Pro line ships in the static HTML
+ * and CSS decides whether it shows, so nothing here reintroduces the Suspense
+ * boundary that used to cost that card an 89px shift and a skeleton.
  */
 export function StartLink({
+  plan = "free",
   className,
   children,
 }: {
+  /** Which card was pressed, so the sign-in card can acknowledge it. */
+  plan?: "free" | "pro";
   className?: string;
   children: React.ReactNode;
 }) {
@@ -43,6 +55,7 @@ export function StartLink({
     if (!target) return; // Nothing to improve on; let the anchor do its job.
 
     event.preventDefault();
+    target.dataset.plan = plan;
     target.scrollIntoView({
       behavior: "instant" as ScrollBehavior,
       block: "start",

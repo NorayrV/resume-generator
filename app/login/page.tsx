@@ -45,14 +45,6 @@ const STEPS = [
   },
 ];
 
-/** What a single application buys, spelled out so the unit is not abstract. */
-const APPLICATION_INCLUDES = [
-  "A resume tailored to that posting, as Word or PDF",
-  "The keywords from the posting that made it into your resume",
-  "The requirements your profile does not cover",
-  "A cover letter, on Pro",
-];
-
 /** What is explicitly free, because metered products make people cautious. */
 const NEVER_COUNTS = [
   "Editing anything that comes back",
@@ -142,7 +134,7 @@ export default async function LoginPage() {
               {/*
                 Concrete and checkable — no invented counts or testimonials.
                 Hidden on a phone because the card immediately below already
-                says "3 applications every 30 days. No card, no trial timer."
+                says "3 applications in any 30 days. No card, no trial timer."
                 and carries the privacy line; repeating it here only pushed the
                 button past the fold.
               */}
@@ -188,9 +180,9 @@ export default async function LoginPage() {
             <div
               id="start"
               tabIndex={-1}
-              className="rounded-lg focus:outline focus:outline-2 focus:outline-offset-4 focus:outline-accent-text lg:sticky lg:top-24 lg:self-start"
+              className="group rounded-lg focus:outline focus:outline-2 focus:outline-offset-4 focus:outline-accent-text lg:sticky lg:top-24 lg:self-start"
             >
-              <SignInCard />
+              <SignInCard plan={plan} />
             </div>
           </div>
 
@@ -315,11 +307,10 @@ export default async function LoginPage() {
           <div className="section">
             <h2 className="h-section">One application is one job posting</h2>
             <p className="lead mt-4 max-w-2xl">
-              Paste a posting and you get the resume, the matched keywords
-              and the missing requirements — all counted as one, on either
-              plan. Pro adds a tailored cover letter to the same application. Editing
-              what comes back and downloading it again are free and never
-              count.
+              An application is what comes back from one posting: a resume
+              rewritten for it, the keywords that made it in, and the
+              requirements your profile does not cover. It counts as one
+              whichever plan you are on.
             </p>
 
             <div className="mt-10">
@@ -327,36 +318,21 @@ export default async function LoginPage() {
             </div>
 
             {/*
-              What the unit contains, and what is outside it. Metered pricing
-              makes people cautious about touching anything, so the second
-              list matters as much as the first.
+              One list, where there were two. The other was headed "What one
+              application gives you" and restated the cards almost row for
+              row — with the lead paragraph above reciting the same payload a
+              third time, and the FAQ a fourth. The lead now defines the unit
+              and nothing else, and this list stays because it is the only one
+              that says something the cards do not: metered pricing makes
+              people ration themselves, and almost nobody publishes what the
+              meter ignores.
             */}
-            <div className="mt-12 grid gap-10 border-t border-line pt-10 md:grid-cols-2 md:gap-16">
-              <div>
-                <h3 className="text-[1.0625rem] font-semibold tracking-[-0.015em]">
-                  What one application gives you
-                </h3>
-                <ul className="mt-5 space-y-2.5">
-                  {APPLICATION_INCLUDES.map((line) => (
-                    <li
-                      key={line}
-                      className="flex gap-2.5 text-small text-muted"
-                    >
-                      <Check
-                        className="mt-[0.2rem] h-3.5 w-3.5 shrink-0 text-accent-text"
-                        aria-hidden
-                      />
-                      <span>{line}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
+            <div className="mt-12 border-t border-line pt-10">
               <div>
                 <h3 className="text-[1.0625rem] font-semibold tracking-[-0.015em]">
                   What never counts
                 </h3>
-                <ul className="mt-5 space-y-2.5">
+                <ul className="mt-5 grid gap-2.5 sm:grid-cols-2 sm:gap-x-10">
                   {NEVER_COUNTS.map((line) => (
                     <li
                       key={line}
@@ -374,9 +350,10 @@ export default async function LoginPage() {
             </div>
 
             <p className="mt-8 text-small text-faint">
-              Free applications renew every {USAGE_WINDOW_DAYS} days. Paid plans are
-              billed by Polar as merchant of record; cancel any time from your
-              account.
+              Each application frees up again {USAGE_WINDOW_DAYS} days after
+              you use it, on either plan — nothing resets on a fixed date. Paid
+              plans are billed by Polar as merchant of record; cancel any time
+              from your account.
             </p>
           </div>
         </section>
