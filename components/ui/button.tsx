@@ -9,7 +9,16 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        primary: "bg-accent text-on-accent shadow-sm hover:bg-accent/90",
+        /*
+         * The disabled state steps out of the shared opacity rather than
+         * fading with it. At 45% the white label over a washed-out blue
+         * measured 2.22:1, and this is the one button that ships disabled by
+         * default — on the generate page it holds the only sentence saying
+         * what the page does while the posting box is still empty. Grey on
+         * grey reads as "not yet" just as clearly and stays legible at 6.1:1.
+         */
+        primary:
+          "bg-accent text-on-accent shadow-sm hover:bg-accent/90 disabled:opacity-100 disabled:bg-line-soft disabled:text-muted disabled:shadow-none",
         secondary:
           "border border-line bg-paper text-ink hover:border-faint hover:bg-surface",
         ghost: "text-muted hover:bg-surface hover:text-ink",

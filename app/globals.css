@@ -31,11 +31,18 @@
     --line: 0 0% 89%;
 
     /*
-     * Placeholders only, and deliberately lighter than --faint. Placeholder
-     * text is not content — making it as dark as a real value is how people
-     * end up submitting a form they think they filled in.
+     * Placeholders only. This was 58%, chosen to sit clearly lighter than
+     * --faint because placeholder text is not content — but measured against
+     * --paper it came out at 3.03:1, and WCAG 1.4.3 does not exempt
+     * placeholders from the 4.5:1 it asks of any text below 24px. 46% is the
+     * lightest grey that clears it, which leaves almost nothing between this
+     * and --faint.
+     *
+     * The distinction that actually matters survives anyway: a filled field
+     * renders at --ink, which is 9%. Nobody mistakes 46% grey for a value
+     * they typed. The dark palette already passed at 4.83:1 and is untouched.
      */
-    --placeholder: 0 0% 58%;
+    --placeholder: 0 0% 46%;
 
     /*
      * A second, quieter line for dividers inside a card, where the main
@@ -280,5 +287,18 @@
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+
+  /*
+   * One exception, because the rule above is a blunt instrument: a spinner is
+   * not decoration, it is the only thing on screen saying the work is still
+   * running. Freezing it leaves a generation that takes up to a minute
+   * looking like a page that has crashed. Slowed rather than stopped — a
+   * small, steady rotation is not the kind of motion the preference is
+   * asking to be spared.
+   */
+  .animate-spin {
+    animation-duration: 1.6s !important;
+    animation-iteration-count: infinite !important;
   }
 }

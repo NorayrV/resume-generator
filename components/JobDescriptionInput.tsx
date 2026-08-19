@@ -1,5 +1,6 @@
 "use client";
 
+import { useId, useRef } from "react";
 import Link from "next/link";
 import { ArrowRight, Loader2, Lock } from "lucide-react";
 import { Textarea } from "./ui/textarea";
@@ -52,6 +53,26 @@ interface Props {
 
 const MIN_CHARS = 120;
 
+/**
+ * The option pills.
+ *
+ * 44px tall, which is both the platform touch-target guideline and the exact
+ * height of the submit button they share a form with — measured at 34px
+ * before, which cleared WCAG 2.5.8's 24px floor but not the size a thumb
+ * actually wants on the phone this product is mostly used from.
+ *
+ * The dimming lives here rather than on the surrounding fieldset. Dimming the
+ * fieldset also dimmed its legend and its explanatory sentence to 2.77:1 for
+ * the twenty to sixty seconds a generation runs — prose nobody can read is
+ * worse than prose that stays put while the controls beside it grey out.
+ */
+const CHIP =
+  "inline-flex min-h-[2.75rem] items-center gap-2 rounded-full border px-4 text-small font-medium transition-colors disabled:opacity-60";
+
+const CHIP_ON = "border-accent bg-accent text-on-accent";
+const CHIP_OFF = "border-line bg-paper text-muted";
+const CHIP_OFF_HOVER = "hover:border-faint hover:text-ink";
+
 export function JobDescriptionInput({
   value,
   onChange,
@@ -70,6 +91,17 @@ export function JobDescriptionInput({
      subscriber every time the page opens. */
   const locked = canUseCoverLetter === false;
 
+  /*
+   * Unique per instance, so the textarea can point at its own counter rather
+   * than at whichever one happened to render first.
+   */
+  const uid = useId();
+  const countId = `${uid}-count`;
+  const langLegendId = `${uid}-lang`;
+
+  /** Focus targets for the language group's arrow keys. */
+  const langRefs = useRef<(HTMLButtonElement | null)[]>([]);
+
   /** Toggle a document, but never let the last one be turned off. */
   function toggleOutput(kind: OutputKind) {
     const next = outputs.includes(kind)
@@ -80,10 +112,82 @@ export function JobDescriptionInput({
     onOutputsChange(ALL_OUTPUTS.filter((o) => next.includes(o)));
   }
 
+  /*
+   * Arrow keys move through a radio group; Tab moves past it. Without this the
+   * three languages were three separate tab stops that announced themselves as
+   * radios and then ignored every arrow key, which is the one interaction a
+   * screen reader user is told to expect from that role.
+   */
+  function onLangKeys(event: React.KeyboardEvent<HTMLDivElement>) {
+    const at = ALL_LANGS.indexOf(lang);
+    const last = ALL_LANGS.length - 1;
+
+    let to: number;
+    switch (event.key) {
+      case "ArrowRight":
+      case "ArrowDown":
+        to = at === last ? 0 : at + 1;
+        break;
+      case "ArrowLeft":
+      case "ArrowUp":
+        to = at === 0 ? last : at - 1;
+        break;
+      case "Home":
+        to = 0;
+        break;
+      case "End":
+        to = last;
+        break;
+      default:
+        return;
+    }
+
+    event.preventDefault();
+    onLangChange(ALL_LANGS[to]);
+    langRefs.current[to]?.focus();
+  }
+
   const count = value.trim().length;
   const tooLong = count > MAX_JOB_DESCRIPTION_CHARS;
   // The server enforces both bounds; this only saves the round trip.
   const ready = count >= MIN_CHARS && !tooLong;
+
+  const counter =
+    count === 0
+      ? "Paste a posting to get started"
+      : tooLong
+        ? `${count.toLocaleString()} characters — ${(count - MAX_JOB_DESCRIPTION_CHARS).toLocaleString()} over the limit`
+        : ready
+          ? `${count.toLocaleString()} characters`
+          : `${MIN_CHARS - count} more characters needed`;
+
+  /*
+   * The same information, coarsened for announcement.
+   *
+   * The visible counter changes on every keystroke, and a live region tied to
+   * it would read a new number each time. This has four possible values, so it
+   * speaks when the state actually changes and stays quiet otherwise — which
+   * matters because the submit button is disabled until `ready`, and nothing
+   * else on the surface says why.
+   */
+  const spoken = tooLong
+    ? `Too long. The limit is ${MAX_JOB_DESCRIPTION_CHARS.toLocaleString()} characters.`
+    : ready
+      ? "Long enough to tailor."
+      : count === 0
+        ? ""
+        : `Not enough of the posting yet. At least ${MIN_CHARS} characters.`;
+
+  /** The locked chip's insides, shared by its live and its inert form. */
+  const lockedChip = (
+    <>
+      <Lock className="h-3.5 w-3.5 text-faint" aria-hidden />
+      {OUTPUT_LABELS.cover_letter}
+      <span className="rounded-full bg-accent-soft px-1.5 py-0.5 text-[0.6875rem] font-semibold uppercase tracking-[0.04em] text-accent-text">
+        Pro
+      </span>
+    </>
+  );
 
   return (
     <div className="space-y-4">
@@ -92,14 +196,16 @@ export function JobDescriptionInput({
         value={value}
         disabled={busy}
         onChange={(e) => onChange(e.target.value)}
-        placeholder={"Paste the job posting here.\n\nThe more of it you include \u2014 responsibilities, requirements, the company \u2014 the closer the tailoring gets."}
-        aria-label="Job description"
+        placeholder={"Paste the job posting here.\n\nThe more of it you include — responsibilities, requirements, the company — the closer the tailoring gets."}
+        aria-label="Job posting"
+        aria-describedby={countId}
+        aria-invalid={tooLong || undefined}
         className="min-h-[13rem] leading-[1.7]"
       />
 
       {/* Producing a document nobody asked for is the bulk of a wasted
           generation, so this is an explicit choice. */}
-      <fieldset disabled={busy} className="disabled:opacity-60">
+      <fieldset disabled={busy}>
         <legend className="label">What to generate</legend>
         <div className="flex flex-wrap gap-2">
           {ALL_OUTPUTS.map((kind) => {
@@ -111,19 +217,31 @@ export function JobDescriptionInput({
              * dead control. Pressing it does something useful — it goes where
              * the feature is unlocked — instead of refusing silently, and it
              * carries the badge that says why.
+             *
+             * While a generation is running it becomes inert, because a
+             * fieldset only disables form controls and a link is not one. It
+             * sat there dimmed to 60% and fully clickable, and the click was
+             * expensive: the server takes the application off the allowance
+             * before the model is called and nothing keeps a history, so
+             * leaving mid-run spent one of three free applications and
+             * delivered nothing.
              */
             if (kind === "cover_letter" && locked) {
-              return (
+              return busy ? (
+                <span
+                  key={kind}
+                  aria-disabled
+                  className={`${CHIP} ${CHIP_OFF} pr-2.5 opacity-60`}
+                >
+                  {lockedChip}
+                </span>
+              ) : (
                 <Link
                   key={kind}
                   href="/account"
-                  className="inline-flex items-center gap-2 rounded-full border border-line bg-paper py-1.5 pl-3.5 pr-2 text-small font-medium text-muted transition-colors hover:border-accent-line hover:text-ink"
+                  className={`${CHIP} ${CHIP_OFF} pr-2.5 hover:border-accent-line hover:text-ink`}
                 >
-                  <Lock className="h-3.5 w-3.5 text-faint" aria-hidden />
-                  {OUTPUT_LABELS[kind]}
-                  <span className="rounded-full bg-accent-soft px-1.5 py-0.5 text-[0.6875rem] font-semibold uppercase tracking-[0.04em] text-accent-text">
-                    Pro
-                  </span>
+                  {lockedChip}
                 </Link>
               );
             }
@@ -134,12 +252,14 @@ export function JobDescriptionInput({
                 type="button"
                 role="checkbox"
                 aria-checked={on}
+                /* Checked and alone: still announced, no longer silently
+                   ignoring the press that a title tooltip alone never
+                   explained on a touch screen. */
+                aria-disabled={only || undefined}
                 onClick={() => toggleOutput(kind)}
                 title={only ? "Keep at least one" : undefined}
-                className={`rounded-full border px-3.5 py-1.5 text-small font-medium transition-colors ${
-                  on
-                    ? "border-accent bg-accent text-on-accent"
-                    : "border-line bg-paper text-muted hover:border-faint hover:text-ink"
+                className={`${CHIP} ${
+                  on ? CHIP_ON : `${CHIP_OFF} ${CHIP_OFF_HOVER}`
                 } ${only ? "cursor-default" : ""}`}
               >
                 {OUTPUT_LABELS[kind]}
@@ -153,17 +273,26 @@ export function JobDescriptionInput({
            * Says what the feature is and what unlocks it, in that order.
            * Someone reading this has not been refused anything yet — they are
            * being told the shape of the product before they press anything.
+           *
+           * The upgrade link drops out while a generation runs, for the same
+           * reason the chip above does: following it costs the application
+           * that is already being paid for.
            */
           <p className="hint mt-2">
             Tailored cover letters are included with Pro
             {planPrice ? ` (${planPrice} a month)` : ""}. Your resume is free,
-            with no limit on how you edit or download it.{" "}
-            <Link
-              href="/account"
-              className="font-medium text-accent-text underline-offset-2 hover:underline"
-            >
-              Upgrade to Pro
-            </Link>
+            with no limit on how you edit or download it.
+            {!busy && (
+              <>
+                {" "}
+                <Link
+                  href="/account"
+                  className="font-medium text-accent-text underline-offset-2 hover:underline"
+                >
+                  Upgrade to Pro
+                </Link>
+              </>
+            )}
           </p>
         ) : (
           <p className="hint mt-2">
@@ -180,22 +309,32 @@ export function JobDescriptionInput({
           greyed-out control still asks to be read and reasoned about, and
           this one has nothing to say when there is no letter. */}
       {wantsCoverLetter && (
-        <fieldset disabled={busy} className="disabled:opacity-60">
-          <legend className="label">Cover letter language</legend>
-          <div role="radiogroup" className="flex flex-wrap gap-2">
-            {ALL_LANGS.map((option) => {
+        <fieldset disabled={busy}>
+          <legend className="label" id={langLegendId}>
+            Cover letter language
+          </legend>
+          <div
+            role="radiogroup"
+            aria-labelledby={langLegendId}
+            onKeyDown={onLangKeys}
+            className="flex flex-wrap gap-2"
+          >
+            {ALL_LANGS.map((option, i) => {
               const on = lang === option;
               return (
                 <button
                   key={option}
+                  ref={(el) => {
+                    langRefs.current[i] = el;
+                  }}
                   type="button"
                   role="radio"
                   aria-checked={on}
+                  /* One tab stop for the group, as a radio group should be. */
+                  tabIndex={on ? 0 : -1}
                   onClick={() => onLangChange(option)}
-                  className={`rounded-full border px-3.5 py-1.5 text-small font-medium transition-colors ${
-                    on
-                      ? "border-accent bg-accent text-on-accent"
-                      : "border-line bg-paper text-muted hover:border-faint hover:text-ink"
+                  className={`${CHIP} ${
+                    on ? CHIP_ON : `${CHIP_OFF} ${CHIP_OFF_HOVER}`
                   }`}
                 >
                   {LANGUAGES[option].label}
@@ -203,9 +342,7 @@ export function JobDescriptionInput({
               );
             })}
           </div>
-          <p className="hint mt-2">
-            Written in {LANGUAGES[lang].label}.
-          </p>
+          <p className="hint mt-2">Written in {LANGUAGES[lang].label}.</p>
         </fieldset>
       )}
 
@@ -213,15 +350,10 @@ export function JobDescriptionInput({
         {/* Always says why the button is disabled, rather than leaving you guessing. */}
         <div>
           <p
+            id={countId}
             className={`text-small tnum ${tooLong ? "text-flag" : "text-muted"}`}
           >
-          {count === 0
-            ? "Paste a posting to get started"
-            : tooLong
-              ? `${count.toLocaleString()} characters — ${(count - MAX_JOB_DESCRIPTION_CHARS).toLocaleString()} over the limit`
-              : ready
-                ? `${count.toLocaleString()} characters`
-                : `${MIN_CHARS - count} more characters needed`}
+            {counter}
           </p>
 
           {/*
@@ -240,6 +372,10 @@ export function JobDescriptionInput({
                 : `${allowance.remaining} of ${allowance.limit} applications left`}
             </p>
           )}
+
+          <p role="status" aria-live="polite" className="sr-only">
+            {spoken}
+          </p>
         </div>
 
         <Button size="lg" onClick={onGenerate} disabled={busy || !ready}>
