@@ -238,10 +238,6 @@
   }
 
   /* The eyebrow above a section heading: small, spaced, quiet. */
-  .eyebrow {
-    @apply text-[0.75rem] font-semibold uppercase tracking-[0.08em] text-accent-text;
-  }
-
   /*
    * Section headline. Fluid rather than stepped, so it never lands at an
    * awkward size between the sm and lg breakpoints.

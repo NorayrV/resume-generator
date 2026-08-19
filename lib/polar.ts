@@ -69,6 +69,13 @@ function formatAmount(amount: number, currency: string): string {
  * Never throws: an unconfigured or unreachable Polar falls back to a sensible
  * figure, because a pricing page that fails to render is worse than one
  * showing a slightly stale number.
+ *
+ * It does say so, twice. `live: false` travels with the figure so the pricing
+ * card can stop asserting it as the amount Polar will charge, and every
+ * fallback is logged with its reason — a wrong price on the one page whose
+ * job is stating the price should never be something only the customer finds
+ * out, and before this the failure path was a bare `catch` that returned the
+ * constant in silence.
  */
 export async function getPlanPricing(): Promise<PlanPricing> {
   if (priceCache && Date.now() - priceCache.at < TTL_MS) {
@@ -76,7 +83,12 @@ export async function getPlanPricing(): Promise<PlanPricing> {
   }
 
   const id = process.env.POLAR_PRODUCT_ID;
-  if (!polarEnabled() || !id) return FALLBACK;
+  if (!polarEnabled() || !id) {
+    console.warn(
+      "[polar/price] Polar is not configured; showing the fallback price from lib/plan.ts.",
+    );
+    return FALLBACK;
+  }
 
   try {
     const product = await polar().products.get({ id });
@@ -86,7 +98,12 @@ export async function getPlanPricing(): Promise<PlanPricing> {
       (p) => "priceAmount" in p && typeof p.priceAmount === "number",
     ) as { priceAmount?: number; priceCurrency?: string } | undefined;
 
-    if (!price?.priceAmount) return FALLBACK;
+    if (!price?.priceAmount) {
+      console.warn(
+        `[polar/price] Product ${id} has no recurring price; showing the fallback.`,
+      );
+      return FALLBACK;
+    }
 
     const interval =
       product.recurringInterval === "year" ? "year" : "month";
@@ -99,7 +116,8 @@ export async function getPlanPricing(): Promise<PlanPricing> {
 
     priceCache = { value, at: Date.now() };
     return value;
-  } catch {
+  } catch (err) {
+    console.error("[polar/price] Could not read the price; showing the fallback.", err);
     return FALLBACK;
   }
 }

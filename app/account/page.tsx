@@ -229,7 +229,7 @@ function AccountBody() {
               2099" would just look broken.
             */}
             <p className="hint mt-3">
-              You have unlimited access. Generate as many packs as you need —
+              You have unlimited access. Generate as many applications as you need —
               there is nothing to pay and nothing to renew.
             </p>
 
@@ -400,7 +400,7 @@ function AccountBody() {
                 Upgrade
               </Button>
               <Alert tone="info" className="mt-3">
-                Payments are not switched on yet. Your free packs still
+                Payments are not switched on yet. Your free applications still
                 work, and upgrading will be available shortly.
               </Alert>
             </div>

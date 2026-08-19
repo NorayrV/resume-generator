@@ -7,27 +7,32 @@
  */
 
 /**
- * One generation is one **application pack** in everything the user reads:
- * a job description analysed, a resume tailored to it, a cover letter, the
- * keyword and gap report, and the exports. The code keeps saying
- * "generation" because that is what the `generations` table counts, and
- * renaming a live table buys nothing.
+ * One generation is one **application** in everything the user reads: a job
+ * description analysed, a resume tailored to it, a cover letter, the keyword
+ * and gap report, and the exports. The code keeps saying "generation" because
+ * that is what the `generations` table counts, and renaming a live table buys
+ * nothing.
  *
- * Editing, re-downloading and re-reading an old pack cost nothing.
+ * "Pack" was the earlier word for the same unit and is gone from the UI: the
+ * pricing section used it in three headings while the cards beside them
+ * counted "applications", which left one product with two names for its only
+ * billable thing.
+ *
+ * Editing, re-downloading and re-reading an old application cost nothing.
  */
 
-/** Application packs included free, per rolling 30 days. */
+/** Applications included free, per rolling 30 days. */
 export const FREE_GENERATIONS_PER_MONTH = 3;
 
 /**
- * Application packs included with a paid plan, per rolling 30 days.
+ * Applications included with a paid plan, per rolling 30 days.
  *
- * Not advertised as unlimited, deliberately. A hundred packs is far more
+ * Not advertised as unlimited, deliberately. A hundred is far more
  * than a real job search consumes — a month of applying to three roles a
  * day would not reach it — while still being a number, which keeps the
  * plan honest and makes reselling access pointless.
  *
- * It is not a cost control. Measured on the live model, a pack costs about
+ * It is not a cost control. Measured on the live model, one costs about
  * $0.00035, so honouring all hundred of them costs three and a half cents.
  */
 export const PRO_GENERATIONS_PER_MONTH = 100;

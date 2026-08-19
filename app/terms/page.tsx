@@ -69,12 +69,12 @@ export default function TermsPage() {
 
       <Section heading="Plans and payment">
         <p>
-          The free plan includes {FREE_GENERATIONS_PER_MONTH} application packs
-          every 30 days. Pro includes {PRO_GENERATIONS_PER_MONTH} a month and
-          adds tailored cover letters, which the free plan does not generate.
-          One pack is one generation for one posting; editing, re-downloading
-          and re-reading anything you already generated is free and never
-          counts.
+          The free plan includes {FREE_GENERATIONS_PER_MONTH} applications
+          every 30 days. Pro includes {PRO_GENERATIONS_PER_MONTH} over the same
+          rolling 30 days and adds tailored cover letters, which the free plan
+          does not generate. One application is one generation for one posting;
+          editing, re-downloading and re-reading anything you already generated
+          is free and never counts.
         </p>
         <p>
           Payment is handled by Polar, which acts as merchant of record and

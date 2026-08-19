@@ -7,6 +7,7 @@ import { Faq } from "@/components/marketing/Faq";
 import { HeroVisual } from "@/components/marketing/HeroVisual";
 import { MarketingNav } from "@/components/marketing/MarketingNav";
 import { PricingCards } from "@/components/marketing/PricingCards";
+import { StartLink } from "@/components/marketing/StartLink";
 import { FREE_GENERATIONS_PER_MONTH, USAGE_WINDOW_DAYS } from "@/lib/plan";
 import { getPlanPricing } from "@/lib/polar";
 
@@ -44,8 +45,8 @@ const STEPS = [
   },
 ];
 
-/** What a single pack buys, spelled out so the unit is not abstract. */
-const PACK_INCLUDES = [
+/** What a single application buys, spelled out so the unit is not abstract. */
+const APPLICATION_INCLUDES = [
   "A resume tailored to that posting, as Word or PDF",
   "The keywords from the posting that made it into your resume",
   "The requirements your profile does not cover",
@@ -167,7 +168,11 @@ export default async function LoginPage() {
               that boundary was costing an 89px shift and a CTA that never
               rendered without JavaScript.
             */}
-            <div id="start" className="lg:sticky lg:top-24 lg:self-start">
+            <div
+              id="start"
+              tabIndex={-1}
+              className="lg:sticky lg:top-24 lg:self-start focus:outline-none"
+            >
               <SignInCard />
             </div>
           </div>
@@ -184,8 +189,7 @@ export default async function LoginPage() {
           className="border-t border-line bg-paper py-16 sm:py-20"
         >
           <div className="section">
-            <p className="eyebrow">How it works</p>
-            <h2 className="h-section mt-2 max-w-xl">
+            <h2 className="h-section max-w-xl">
               Three steps, and the first one only happens once
             </h2>
 
@@ -210,8 +214,7 @@ export default async function LoginPage() {
         {/* ================= Accuracy ================= */}
         <section id="accuracy" className="border-t border-line py-16 sm:py-20">
           <div className="section">
-            <p className="eyebrow">Accuracy</p>
-            <h2 className="h-section mt-2 max-w-2xl">
+            <h2 className="h-section max-w-2xl">
               AI that works with your experience, not around it
             </h2>
             <p className="lead mt-4 max-w-2xl">
@@ -293,12 +296,11 @@ export default async function LoginPage() {
           className="border-t border-line bg-paper py-16 sm:py-20"
         >
           <div className="section">
-            <p className="eyebrow">Pricing</p>
-            <h2 className="h-section mt-2">One application pack is one job</h2>
+            <h2 className="h-section">One application is one job posting</h2>
             <p className="lead mt-4 max-w-2xl">
               Paste a posting and you get the resume, the matched keywords
               and the missing requirements — all counted as one, on either
-              plan. Pro adds a tailored cover letter to the same pack. Editing
+              plan. Pro adds a tailored cover letter to the same application. Editing
               what comes back and downloading it again are free and never
               count.
             </p>
@@ -315,10 +317,10 @@ export default async function LoginPage() {
             <div className="mt-12 grid gap-10 border-t border-line pt-10 md:grid-cols-2 md:gap-16">
               <div>
                 <h3 className="text-[1.0625rem] font-semibold tracking-[-0.015em]">
-                  What one pack gives you
+                  What one application gives you
                 </h3>
                 <ul className="mt-5 space-y-2.5">
-                  {PACK_INCLUDES.map((line) => (
+                  {APPLICATION_INCLUDES.map((line) => (
                     <li
                       key={line}
                       className="flex gap-2.5 text-small text-muted"
@@ -355,7 +357,7 @@ export default async function LoginPage() {
             </div>
 
             <p className="mt-8 text-small text-faint">
-              Free packs renew every {USAGE_WINDOW_DAYS} days. Paid plans are
+              Free applications renew every {USAGE_WINDOW_DAYS} days. Paid plans are
               billed by Polar as merchant of record; cancel any time from your
               account.
             </p>
@@ -365,8 +367,7 @@ export default async function LoginPage() {
         {/* ================= FAQ ================= */}
         <section id="faq" className="border-t border-line py-16 sm:py-20">
           <div className="section">
-            <p className="eyebrow">Questions</p>
-            <h2 className="h-section mt-2">Before you hand over your history</h2>
+            <h2 className="h-section">Before you hand over your history</h2>
 
             <div className="mt-10">
               <Faq />
@@ -385,13 +386,10 @@ export default async function LoginPage() {
               a minute.
             </p>
 
-            <a
-              href="#start"
-              className="mt-8 inline-flex h-12 items-center gap-2 rounded-md bg-accent px-7 text-[1rem] font-medium text-on-accent shadow-sm transition-colors hover:bg-accent/90"
-            >
+            <StartLink className="mt-8 inline-flex h-12 items-center gap-2 rounded-md bg-accent px-7 text-[1rem] font-medium text-on-accent shadow-sm transition-colors hover:bg-accent/90">
               Start free
               <ArrowRight className="h-4 w-4" aria-hidden />
-            </a>
+            </StartLink>
 
             <p className="mt-4 flex items-center justify-center gap-1.5 text-small text-faint">
               <ShieldCheck className="h-3.5 w-3.5" aria-hidden />
