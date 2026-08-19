@@ -73,10 +73,17 @@ the same separation between copied facts and generated wording.
 
 ## Capabilities and Constraints
 
-- Sign-in is Google or GitHub only. No passwords are created or held.
-- Free: 3 applications per rolling 30 days, no card. Pro: 100 per month.
-- One "application pack" is one generation for one posting. Editing,
+- Sign-in is Google, GitHub, or an emailed link. No passwords are ever
+  created or held. The email door exists because the audience is not the
+  audience that owns a GitHub account: the worked example on our own
+  landing page is a financial analyst in Berlin.
+- Free: 3 applications per rolling 30 days, no card. Pro: 100 over the same
+  rolling window — not a monthly reset, and the UI says so in those words.
+- One **application** is one generation for one posting. Editing,
   re-downloading and re-reading earlier output are free and never metered.
+  The word is load-bearing: "pack" was the earlier name and is gone from
+  every surface, because the pricing section used it in three headings
+  while the cards beside them counted "applications".
 - Cover letters require an active paid or comped plan, enforced server-side
   before the meter and before any AI call.
 - One cover letter language per generation: English, Russian or Spanish.
@@ -133,9 +140,16 @@ what is copied rather than generated, what is never sold.
 
 ## Accessibility & Inclusion
 
-- WCAG 2.1 AA contrast is met by every rendered text node on the public pages
-  and result components, in both light and dark themes, and was verified by
-  measurement rather than inspection.
+- WCAG 2.1 AA contrast is met, in both themes, by every text node on the
+  surfaces that have actually been measured: the landing page and its
+  pricing section, the job-posting form, and the result components. Measured,
+  not inspected — and the scope is named because stating it as "every
+  rendered text node" was how a placeholder sat at 3.03:1 for weeks. The
+  measurement read `element.color` and never touched the `::placeholder`
+  pseudo-element.
+- Non-text contrast is held to 1.4.11's 3:1 where a border is what identifies
+  a control, which is a separate pass from the text one and was added after a
+  free-plan button shipped with a 1.28:1 outline as its only affordance.
 - Names and documents in non-Latin scripts are first-class: downloads carry
   the real name via RFC 5987 rather than being stripped to ASCII.
 - Second-language applicants are a primary audience; copy stays plain and
