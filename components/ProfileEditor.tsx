@@ -810,7 +810,13 @@ export function ProfileEditor({
 
       {/* The form is long; the primary action follows you down it. */}
       <div className="fixed inset-x-0 bottom-0 z-10 border-t border-line bg-paper/95 backdrop-blur">
-        <div className="mx-auto flex max-w-3xl items-center gap-3 px-4 py-3 sm:px-6">
+        {/*
+          Wraps rather than squeezing. Three items on a 375px screen do not
+          fit one row: the status text was being crushed from 110px to 54px,
+          stacking "Unsaved / changes" against the screen edge. It now either
+          sits beside the buttons or drops below them whole.
+        */}
+        <div className="mx-auto flex max-w-3xl flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3 sm:px-6">
           <Button size="lg" type="submit" disabled={saving}>
             {saving && <Loader2 className="h-4 w-4 animate-spin" aria-hidden />}
             {saved && <Check className="h-4 w-4" aria-hidden />}
@@ -845,7 +851,7 @@ export function ProfileEditor({
             say, permanently, that the work is not saved yet.
           */}
           {dirty && !saving && (
-            <span className="ml-auto text-small text-muted">
+            <span className="ml-auto shrink-0 text-small text-muted">
               Unsaved changes
             </span>
           )}
