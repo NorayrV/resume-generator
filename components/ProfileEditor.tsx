@@ -224,6 +224,17 @@ export function ProfileEditor({ initial, onSaved, onDone }: Props) {
   return (
     <div className="space-y-4">
       {/* ---- Contact ---------------------------------------------------- */}
+      {/*
+        The five fields below carry autocomplete tokens. WCAG 1.3.5 asks for
+        the purpose of a field collecting the user's own details to be
+        programmatically identifiable, and these are the exact fields it names
+        — but the practical reason is better: this is the first form a new
+        account meets, often on a phone, and four of these are things the
+        browser already knows. The repeating employer and school fields
+        deliberately have none: there is no token for "a job I held in 2019",
+        and organization/organization-title would make the browser fill the
+        same employer into every role.
+      */}
       <Card title="Contact details" hint="These print at the top of the resume.">
         <div className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
@@ -231,6 +242,7 @@ export function ProfileEditor({ initial, onSaved, onDone }: Props) {
               <Input
                 value={person.full_name}
                 onChange={(e) => setPerson("full_name", e.target.value)}
+                autoComplete="name"
                 placeholder="Jane Doe"
               />
             </Field>
@@ -238,6 +250,7 @@ export function ProfileEditor({ initial, onSaved, onDone }: Props) {
               <Input
                 value={person.location ?? ""}
                 onChange={(e) => setPerson("location", e.target.value)}
+                autoComplete="address-level2"
                 placeholder="Berlin, Germany"
               />
             </Field>
@@ -245,6 +258,8 @@ export function ProfileEditor({ initial, onSaved, onDone }: Props) {
               <Input
                 value={person.phone ?? ""}
                 onChange={(e) => setPerson("phone", e.target.value)}
+                autoComplete="tel"
+                inputMode="tel"
                 placeholder="+49 30 1234567"
               />
             </Field>
@@ -253,6 +268,8 @@ export function ProfileEditor({ initial, onSaved, onDone }: Props) {
                 type="email"
                 value={person.email ?? ""}
                 onChange={(e) => setPerson("email", e.target.value)}
+                autoComplete="email"
+                inputMode="email"
                 placeholder="you@example.com"
               />
             </Field>
@@ -262,6 +279,8 @@ export function ProfileEditor({ initial, onSaved, onDone }: Props) {
             <Input
               value={person.linkedin ?? ""}
               onChange={(e) => setPerson("linkedin", e.target.value)}
+              autoComplete="url"
+              inputMode="url"
               placeholder="linkedin.com/in/your-handle"
             />
           </Field>

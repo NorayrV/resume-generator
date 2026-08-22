@@ -131,7 +131,23 @@
     --faint: 220 9% 60%;
     --line: 220 10% 20%;
     --line-soft: 220 10% 16%;
-    --placeholder: 220 8% 46%;
+    /*
+     * 54%, not the 46% that mirrored the light theme's number. The light
+     * value was picked against a white page and clears 4.5:1 there; carried
+     * across to an 11% paper it measured 3.58:1 and failed 1.4.3 on every
+     * placeholder in the product, the public login field included.
+     *
+     * The earlier measurement that called this 4.83:1 was taken by toggling
+     * .dark after load. Input and Textarea carry transition-colors, so the
+     * field had not repainted and the reading compared a dark placeholder
+     * against a background that was still white — 4.83 is exactly what those
+     * two colours give. Dark-mode contrast has to be measured on a page
+     * loaded dark, not switched to it.
+     *
+     * 53% is the boundary at 4.60; this is one step past it. Still far dimmer
+     * than entered text, which is --ink at 96%.
+     */
+    --placeholder: 220 8% 54%;
 
     /*
      * The fill stays close to its light-mode value so white still clears AA
