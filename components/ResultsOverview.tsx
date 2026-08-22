@@ -49,7 +49,7 @@ export function ResultsOverview({ matchedKeywords, gaps, outputs }: Props) {
           </h2>
 
           <p className="mt-1.5 flex items-baseline gap-1.5">
-            <span className="text-[2.5rem] font-semibold leading-none tracking-[-0.03em] tnum">
+            <span className="text-figure font-semibold leading-none tracking-[-0.03em] tnum">
               {pct}%
             </span>
             <span className="text-small text-muted tnum">

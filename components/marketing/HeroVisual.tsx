@@ -1,3 +1,9 @@
+/*
+ * impeccable-disable design-system-font-size -- A miniature of the finished
+ * resume, drawn at roughly a third of document scale. Its type sizes are
+ * proportions of that drawing, not steps on the app's ramp. See DESIGN.md,
+ * Typography.
+ */
 import { ArrowRight, Check, X } from "lucide-react";
 
 /**

@@ -318,7 +318,7 @@ export default function GeneratePage() {
           <div className="space-y-6">
             {/* ---- Step 1: the posting ---- */}
             <section className="card p-5 sm:p-6">
-              <h1 className="text-[1.0625rem] font-semibold tracking-[-0.015em]">
+              <h1 className="text-subhead font-semibold tracking-[-0.015em]">
                 Paste a job posting
               </h1>
               <p className="hint mt-1">
@@ -528,7 +528,7 @@ export default function GeneratePage() {
 function FirstRun() {
   return (
     <div className="mx-auto max-w-lg py-6 text-center">
-      <h1 className="text-[1.375rem] font-semibold tracking-[-0.02em]">
+      <h1 className="h-section">
         Set up your profile first
       </h1>
       <p className="lead mx-auto mt-3 max-w-sm text-small">

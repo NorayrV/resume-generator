@@ -96,7 +96,7 @@ export default function ProfilePage() {
             <>
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <h1 className="text-[1.0625rem] font-semibold tracking-[-0.015em]">
+                  <h1 className="text-subhead font-semibold tracking-[-0.015em]">
                     Your profile
                   </h1>
                   <p className="hint mt-1">
@@ -166,7 +166,7 @@ export default function ProfilePage() {
                       <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-lg bg-accent-soft">
                         <FileUp className="h-5 w-5 text-accent-text" aria-hidden />
                       </div>
-                      <h2 className="mt-4 text-[1.0625rem] font-semibold tracking-[-0.015em]">
+                      <h2 className="mt-4 text-subhead font-semibold tracking-[-0.015em]">
                         Start from your existing resume
                       </h2>
                       <p className="hint mx-auto mt-1.5 max-w-sm">

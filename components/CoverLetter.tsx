@@ -85,7 +85,7 @@ export function CoverLetter({ letters, order }: Props) {
                     setCopied(false);
                   }}
                   className={cn(
-                    "rounded px-2.5 py-1 text-[0.75rem] font-medium transition-colors",
+                    "rounded px-2.5 py-1 text-micro font-medium transition-colors",
                     active === lang
                       ? "bg-accent text-on-accent"
                       : "text-muted hover:text-ink",

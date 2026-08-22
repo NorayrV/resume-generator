@@ -104,10 +104,22 @@ the same separation between copied facts and generated wording.
 - The mark ships in two tones (`public/logo-mark.png` and
   `-dark.png`), derived from `public/logo.png` by
   `scripts/build-logo-assets.py`.
+- Personality: professional, modern, simple, trustworthy, and slightly
+  playful. Internet-native, never childish. The governing principle is that
+  Gatecrash should feel like a **serious career product with a small amount of
+  personality** — the seriousness is the default and the personality is the
+  exception, not a tone applied evenly across the product.
 - Voice: plain, concrete, and willing to say what the product will not do. No
   AI buzzwords, no "unlock your potential", no guaranteed-interview claims.
   Where a competitor would make a promise, Gatecrash states a limit — the ATS
   answer names what no tool can honestly promise.
+- The personality budget is spent as **ATSMAXXING**, in exactly two places:
+  the heading over a running generation, and the FAQ answer about ATS. Both
+  were chosen because comprehension does not rest on the word there — four
+  plain stage labels sit under the first, and the next sentence punctures the
+  claim in the second. Second-language applicants are a primary audience, so
+  invented English never carries meaning on its own.
+- Visual anti-reference and the design system live in `DESIGN.md`.
 - The resume preview is a picture of the file being sent, so it stays black on
   white in both light and dark themes.
 

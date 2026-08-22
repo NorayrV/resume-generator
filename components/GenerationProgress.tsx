@@ -68,8 +68,21 @@ export function GenerationProgress({ outputs }: Props) {
       aria-label="Generating your application"
     >
       <div className="flex items-center justify-between gap-3">
-        <p className="text-body font-medium">Tailoring your application</p>
-        <span className="text-small text-faint tnum">
+        {/*
+          The one place the product lets itself sound like the internet it
+          came from. It costs nothing here: the four stages below say exactly
+          what is happening, and the section's aria-label names it plainly for
+          anyone who is not reading the heading.
+        */}
+        <p className="text-body font-medium">ATSMAXXING your application</p>
+        {/*
+          Hidden from the live region, not from the page. This counter changes
+          twice a second inside role="status" aria-live="polite", so a screen
+          reader was queueing an announcement per tick for the whole minute —
+          the elapsed time is glanceable information, never something to read
+          aloud sixty times.
+        */}
+        <span className="text-small text-faint tnum" aria-hidden>
           {Math.floor(elapsed)}s
         </span>
       </div>

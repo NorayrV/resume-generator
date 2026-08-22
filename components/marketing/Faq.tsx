@@ -37,12 +37,13 @@ const ITEMS: { q: string; a: React.ReactNode }[] = [
     q: "Is the result ATS-friendly?",
     a: (
       <>
-        The files are plain, single-column Word and PDF documents with standard
-        headings and no tables, columns or graphics — the formatting that
-        parsers read reliably. Keywords come from the posting itself. What no
-        tool can honestly promise is a particular score in a particular system:
-        there are dozens of them, they are private, and they change without
-        notice.
+        The internet calls this ATSMAXXING, and most of what gets promised
+        under that name is not real. What is real: the files are plain,
+        single-column Word and PDF documents with standard headings and no
+        tables, columns or graphics — the formatting that parsers read
+        reliably. Keywords come from the posting itself. What no tool can
+        honestly promise is a particular score in a particular system: there
+        are dozens of them, they are private, and they change without notice.
       </>
     ),
   },
@@ -113,7 +114,9 @@ export function Faq() {
               aria-hidden
             />
           </summary>
-          <p className="pb-5 pr-8 text-small leading-[1.7] text-muted">{a}</p>
+          <p className="max-w-prose pb-5 pr-8 text-small leading-[1.7] text-muted">
+            {a}
+          </p>
         </details>
       ))}
     </div>

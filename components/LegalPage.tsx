@@ -48,7 +48,7 @@ export function LegalPage({
         <div className="mt-10 space-y-9">{children}</div>
 
         <footer className="mt-16 border-t border-line pt-8">
-          <p className="text-[0.75rem] leading-relaxed text-faint">
+          <p className="text-micro leading-relaxed text-faint">
             Questions about anything here? Write to{" "}
             <a
               href={`mailto:${CONTACT_EMAIL}`}
@@ -58,7 +58,7 @@ export function LegalPage({
             </a>
             .
           </p>
-          <p className="mt-3 flex gap-4 text-[0.75rem] text-faint">
+          <p className="mt-3 flex gap-4 text-micro text-faint">
             <Link href="/login" className="hover:text-ink">
               Home
             </Link>

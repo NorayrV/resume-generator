@@ -186,7 +186,9 @@
   :focus-visible {
     outline: 2px solid hsl(var(--accent-text));
     outline-offset: 2px;
-    border-radius: 4px;
+    /* 6px, matching the default radius: the ring traced a corner the shapes
+       underneath it do not have. */
+    border-radius: 6px;
   }
 
   /* Headings set tighter than body text, which is 1.6 and too airy for them. */

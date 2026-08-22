@@ -183,7 +183,7 @@ export function JobDescriptionInput({
     <>
       <Lock className="h-3.5 w-3.5 text-faint" aria-hidden />
       {OUTPUT_LABELS.cover_letter}
-      <span className="rounded-full bg-accent-soft px-1.5 py-0.5 text-[0.6875rem] font-semibold uppercase tracking-[0.04em] text-accent-text">
+      <span className="rounded-full bg-accent-soft px-1.5 py-0.5 text-micro font-semibold uppercase tracking-[0.04em] text-accent-text">
         Pro
       </span>
     </>

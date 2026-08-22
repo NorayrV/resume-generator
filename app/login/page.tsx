@@ -208,7 +208,7 @@ export default async function LoginPage() {
                   <p className="text-small font-semibold text-accent-text tnum">
                     {String(i + 1).padStart(2, "0")}
                   </p>
-                  <h3 className="mt-2.5 text-[1.0625rem] font-semibold tracking-[-0.015em]">
+                  <h3 className="mt-2.5 text-subhead font-semibold tracking-[-0.015em]">
                     {title}
                   </h3>
                   <p className="mt-2 text-small leading-[1.7] text-muted">
@@ -287,7 +287,7 @@ export default async function LoginPage() {
                 <h3 className="text-body font-semibold tracking-[-0.01em]">
                   It tells you what you are missing
                 </h3>
-                <p className="hint mt-1.5">
+                <p className="hint mt-1.5 max-w-prose">
                   Every application comes with the requirements your profile
                   does not evidence — the certification you do not hold, the
                   tool you have not used. They are left off the resume rather
@@ -329,7 +329,7 @@ export default async function LoginPage() {
             */}
             <div className="mt-12 border-t border-line pt-10">
               <div>
-                <h3 className="text-[1.0625rem] font-semibold tracking-[-0.015em]">
+                <h3 className="text-subhead font-semibold tracking-[-0.015em]">
                   What never counts
                 </h3>
                 <ul className="mt-5 grid gap-2.5 sm:grid-cols-2 sm:gap-x-10">
@@ -349,7 +349,7 @@ export default async function LoginPage() {
               </div>
             </div>
 
-            <p className="mt-8 text-small text-faint">
+            <p className="mt-8 max-w-prose text-small text-faint">
               Each application frees up again {USAGE_WINDOW_DAYS} days after
               you use it, on either plan — nothing resets on a fixed date. Paid
               plans are billed by Polar as merchant of record; cancel any time

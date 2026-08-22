@@ -24,6 +24,13 @@ import { ThemeToggle } from "@/components/ThemeToggle";
  *
  * `onHome` decides whether they are same-page anchors or full links back to
  * the landing page: a bare "#accuracy" elsewhere would scroll to nothing.
+ *
+ * The bar wraps rather than holding a fixed height. Tailwind's spacing is in
+ * rem, so at 200% text — WCAG 1.4.4, which asks for no loss of content at that
+ * size — the three links and the 4.5rem toggle stopped fitting across 768px
+ * and pushed the toggle to x=839 on a 768px viewport, taking the whole page
+ * into horizontal scroll. Nothing moves at normal text size: the row is 40px
+ * tall inside a 64px minimum.
  */
 
 export function MarketingNav({ onHome = false }: { onHome?: boolean }) {
@@ -37,12 +44,12 @@ export function MarketingNav({ onHome = false }: { onHome?: boolean }) {
 
   return (
     <header className="sticky top-0 z-30 border-b border-line bg-paper/85 backdrop-blur-md">
-      <div className="section flex h-16 items-center gap-6">
+      <div className="section flex min-h-[4rem] flex-wrap items-center gap-x-6 gap-y-2 py-2">
         <Link href="/login" aria-label="Gatecrash" className="shrink-0">
           <Logo size={22} />
         </Link>
 
-        <nav aria-label="Sections" className="hidden gap-1 sm:flex">
+        <nav aria-label="Sections" className="hidden flex-wrap gap-1 sm:flex">
           {links.map(({ href, label }) => {
             const style =
               "rounded-md px-3 py-2 text-small font-medium text-muted transition-colors hover:bg-surface hover:text-ink";

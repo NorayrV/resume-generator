@@ -101,8 +101,8 @@ export function PricingCards({ plan }: { plan: PlanPricing }) {
             <p className="text-small font-semibold text-muted">Free</p>
           </div>
 
-          <p className="mt-2 flex items-baseline gap-1.5">
-            <span className="text-[2.25rem] font-semibold tracking-[-0.03em]">
+          <p className="mt-2 flex flex-wrap items-baseline gap-x-1.5">
+            <span className="text-figure font-semibold tracking-[-0.03em]">
               $0
             </span>
             <span className="text-small text-muted">forever</span>
@@ -133,8 +133,8 @@ export function PricingCards({ plan }: { plan: PlanPricing }) {
             <Badge tone="accent">For an active search</Badge>
           </div>
 
-          <p className="mt-2 flex items-baseline gap-1.5">
-            <span className="text-[2.25rem] font-semibold tracking-[-0.03em]">
+          <p className="mt-2 flex flex-wrap items-baseline gap-x-1.5">
+            <span className="text-figure font-semibold tracking-[-0.03em]">
               {plan.price}
             </span>
             <span className="text-small text-muted">per {plan.period}</span>

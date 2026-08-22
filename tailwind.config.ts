@@ -54,6 +54,15 @@ const config: Config = {
         sans: ["var(--font-inter)", "system-ui", "sans-serif"],
       },
       fontSize: {
+        /*
+         * Two steps the product had been writing as arbitrary values in eight
+         * places before DESIGN.md made the ramp explicit enough to notice.
+         * Both are bare sizes on purpose: the subheads are h1/h2/h3 and take
+         * their line-height from the global heading rule, and the price sits
+         * on the body's, so naming them here changes nothing on screen.
+         */
+        figure: "2.25rem",
+        subhead: "1.0625rem",
         body: ["0.9375rem", { lineHeight: "1.6" }],
         small: ["0.8125rem", { lineHeight: "1.55" }],
         micro: ["0.75rem", { lineHeight: "1.5" }],

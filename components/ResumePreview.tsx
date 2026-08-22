@@ -1,5 +1,12 @@
 "use client";
 
+/*
+ * impeccable-disable design-system-font-size -- This component draws a
+ * reduced-scale picture of the Word/PDF file the user is about to send, so its
+ * type is set in the proportions of a printed résumé rather than on the app's
+ * ramp. Same exception the --doc-* palette makes: see DESIGN.md, Typography.
+ */
+
 import { formatDateRange } from "@/lib/utils";
 import type { PersonalInformation, TailoredResume } from "@/lib/types";
 

@@ -248,7 +248,7 @@ function AccountBody() {
                   )}
                   Manage subscription
                 </Button>
-                <p className="mt-2 text-[0.75rem] text-faint">
+                <p className="mt-2 text-micro text-faint">
                   Cancel, update your card or download invoices.
                 </p>
               </>
@@ -325,7 +325,7 @@ function AccountBody() {
                   )}
                   Manage subscription
                 </Button>
-                <p className="mt-2 text-[0.75rem] text-faint">
+                <p className="mt-2 text-micro text-faint">
                   Cancel, update your card or download invoices.
                   {access?.until && ` Renews on ${formatDate(access.until)}.`}
                 </p>
@@ -386,7 +386,7 @@ function AccountBody() {
                 )}
               </div>
 
-              <p className="mt-3 text-[0.75rem] leading-relaxed text-faint">
+              <p className="mt-3 text-micro leading-relaxed text-faint">
                 Renews monthly. Cancel any time. One application is one job
                 posting: the tailored resume, the cover letter, the matched
                 keywords and the requirements you do not cover. Editing and

@@ -34,7 +34,7 @@ import {
 export function SignInCard({ plan }: { plan?: PlanPricing }) {
   return (
     <div className="card-raised p-6 sm:p-7">
-      <h2 className="text-[1.0625rem] font-semibold tracking-[-0.015em]">
+      <h2 className="text-subhead font-semibold tracking-[-0.015em]">
         Start free
       </h2>
       <p className="hint mt-1">
