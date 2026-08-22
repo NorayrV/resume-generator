@@ -41,9 +41,16 @@ export interface ButtonProps
     VariantProps<typeof buttonVariants> {}
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, ...props }, ref) => (
+  /*
+   * type defaults to "button", not the platform's "submit". Inside a <form>
+   * an untyped button submits it, so the moment the profile editor became a
+   * real form its "Copy JSON" and "Back to generating" buttons would both
+   * have started saving the profile. A submit button should have to say so.
+   */
+  ({ className, variant, size, type = "button", ...props }, ref) => (
     <button
       ref={ref}
+      type={type}
       className={cn(buttonVariants({ variant, size }), className)}
       {...props}
     />

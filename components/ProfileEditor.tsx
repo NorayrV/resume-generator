@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Plus, X, Loader2, Check } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -33,7 +33,10 @@ interface Props {
 }
 
 const linesToArray = (value: string) =>
-  value.split("\n").map((l) => l.trim()).filter(Boolean);
+  value
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean);
 const arrayToLines = (value: string[]) => value.join("\n");
 
 /* ------------------------------------------------------------------ */
@@ -73,28 +76,69 @@ function Field({
   );
 }
 
-/** One entry in a repeating list, with its own remove control. */
+/**
+ * One entry in a repeating list, with its own remove control.
+ *
+ * The remove used to be a 28px icon that deleted a whole job — title,
+ * employer, both dates and every bullet — on one click, with no confirm and
+ * no undo. It was simultaneously the smallest target in the form and the most
+ * destructive thing in it, sitting a thumb's width from the fields you were
+ * just typing into.
+ *
+ * It is 44px now and it asks first, except when the entry is empty and there
+ * is nothing to lose. Two taps rather than a dialog: this needs a moment's
+ * pause, not an interruption and a trapped focus. Focus moves to the
+ * confirmation so a keyboard reader hears what the second press will do, and
+ * it disarms on blur or after five seconds so a half-pressed remove never
+ * sits there waiting to catch the next click.
+ */
 function Entry({
   title,
   onRemove,
+  empty = false,
   children,
 }: {
   title: string;
   onRemove: () => void;
+  /** Nothing typed in here yet, so skip the confirm. */
+  empty?: boolean;
   children: React.ReactNode;
 }) {
+  const [arming, setArming] = useState(false);
+
+  useEffect(() => {
+    if (!arming) return;
+    const id = setTimeout(() => setArming(false), 5000);
+    return () => clearTimeout(id);
+  }, [arming]);
+
   return (
     <div className="rounded-md border border-line bg-surface p-4">
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-4 flex items-center justify-between gap-3">
         <span className="text-small font-medium text-muted">{title}</span>
-        <button
-          type="button"
-          onClick={onRemove}
-          className="flex h-7 w-7 items-center justify-center rounded text-faint transition-colors hover:bg-flag-soft hover:text-flag"
-          aria-label={`Remove ${title}`}
-        >
-          <X className="h-4 w-4" aria-hidden />
-        </button>
+
+        {arming ? (
+          <button
+            type="button"
+            autoFocus
+            onClick={onRemove}
+            onBlur={() => setArming(false)}
+            className="inline-flex h-11 shrink-0 items-center gap-1.5 rounded-md px-3 text-small font-medium text-flag transition-colors hover:bg-flag-soft"
+            aria-label={`Confirm removing ${title}`}
+          >
+            <X className="h-4 w-4" aria-hidden />
+            Remove?
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => (empty ? onRemove() : setArming(true))}
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-faint transition-colors hover:bg-flag-soft hover:text-flag"
+            aria-label={`Remove ${title}`}
+          >
+            <X className="h-4 w-4" aria-hidden />
+          </button>
+        )}
       </div>
       <div className="space-y-4">{children}</div>
     </div>
@@ -215,14 +259,26 @@ export function ProfileEditor({ initial, onSaved, onDone }: Props) {
 
       onSaved(data.summary);
     } catch {
-      setError("Could not reach the server. Check your connection and try again.");
+      setError(
+        "Could not reach the server. Check your connection and try again.",
+      );
     } finally {
       setSaving(false);
     }
   }
 
+  /*
+   * A real form, which it was not before: 32 inputs in loose divs, so Enter
+   * did nothing, the browser could not validate, and nothing marked the one
+   * field the resume cannot be built without.
+   */
+  function submit(event: React.FormEvent) {
+    event.preventDefault();
+    save();
+  }
+
   return (
-    <div className="space-y-4">
+    <form className="space-y-4" onSubmit={submit}>
       {/* ---- Contact ---------------------------------------------------- */}
       {/*
         The five fields below carry autocomplete tokens. WCAG 1.3.5 asks for
@@ -235,13 +291,17 @@ export function ProfileEditor({ initial, onSaved, onDone }: Props) {
         and organization/organization-title would make the browser fill the
         same employer into every role.
       */}
-      <Card title="Contact details" hint="These print at the top of the resume.">
+      <Card
+        title="Contact details"
+        hint="These print at the top of the resume. Only your name is required."
+      >
         <div className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Full name">
               <Input
                 value={person.full_name}
                 onChange={(e) => setPerson("full_name", e.target.value)}
+                required
                 autoComplete="name"
                 placeholder="Jane Doe"
               />
@@ -289,20 +349,31 @@ export function ProfileEditor({ initial, onSaved, onDone }: Props) {
             <div className="space-y-2">
               <span className="label">Other links</span>
               {contacts.map((contact, i) => (
-                <div key={i} className="flex gap-2">
-                  <Input
-                    className="w-36 shrink-0"
-                    value={contact.label}
-                    onChange={(e) => updateContact(i, { label: e.target.value })}
-                    placeholder="Telegram"
-                    aria-label={`Link ${i + 1} label`}
-                  />
-                  <Input
-                    value={contact.value}
-                    onChange={(e) => updateContact(i, { value: e.target.value })}
-                    placeholder="@your_handle"
-                    aria-label={`Link ${i + 1} value`}
-                  />
+                /*
+                  Stacked below sm. Side by side on a 375px screen the fixed
+                  144px label left the value 101px — eight characters, for a
+                  field holding a handle or a URL.
+                */
+                <div key={i} className="flex items-start gap-2">
+                  <div className="flex flex-1 flex-col gap-2 sm:flex-row">
+                    <Input
+                      className="sm:w-36 sm:shrink-0"
+                      value={contact.label}
+                      onChange={(e) =>
+                        updateContact(i, { label: e.target.value })
+                      }
+                      placeholder="Telegram"
+                      aria-label={`Link ${i + 1} label`}
+                    />
+                    <Input
+                      value={contact.value}
+                      onChange={(e) =>
+                        updateContact(i, { value: e.target.value })
+                      }
+                      placeholder="@your_handle"
+                      aria-label={`Link ${i + 1} value`}
+                    />
+                  </div>
                   <button
                     type="button"
                     onClick={() =>
@@ -311,7 +382,7 @@ export function ProfileEditor({ initial, onSaved, onDone }: Props) {
                         contacts.filter((_, j) => j !== i),
                       )
                     }
-                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-faint transition-colors hover:bg-flag-soft hover:text-flag"
+                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-faint transition-colors hover:bg-flag-soft hover:text-flag"
                     aria-label={`Remove link ${i + 1}`}
                   >
                     <X className="h-4 w-4" aria-hidden />
@@ -356,6 +427,14 @@ export function ProfileEditor({ initial, onSaved, onDone }: Props) {
           {profile.experience.map((role, i) => (
             <Entry
               key={i}
+              empty={
+                !role.title &&
+                !role.company &&
+                !role.location &&
+                !role.start_date &&
+                !role.end_date &&
+                role.bullets.length === 0
+              }
               title={role.title || role.company || `Role ${i + 1}`}
               onRemove={() =>
                 setList(
@@ -385,7 +464,9 @@ export function ProfileEditor({ initial, onSaved, onDone }: Props) {
                 <Field label="Location">
                   <Input
                     value={role.location ?? ""}
-                    onChange={(e) => updateRole(i, { location: e.target.value })}
+                    onChange={(e) =>
+                      updateRole(i, { location: e.target.value })
+                    }
                     placeholder="Remote"
                   />
                 </Field>
@@ -401,7 +482,9 @@ export function ProfileEditor({ initial, onSaved, onDone }: Props) {
                 <Field label="To">
                   <Input
                     value={role.end_date}
-                    onChange={(e) => updateRole(i, { end_date: e.target.value })}
+                    onChange={(e) =>
+                      updateRole(i, { end_date: e.target.value })
+                    }
                     placeholder="Present"
                   />
                 </Field>
@@ -452,6 +535,14 @@ export function ProfileEditor({ initial, onSaved, onDone }: Props) {
           {profile.education.map((school, i) => (
             <Entry
               key={i}
+              empty={
+                !school.institution &&
+                !school.degree &&
+                !school.field_of_study &&
+                !school.location &&
+                !school.start_date &&
+                !school.end_date
+              }
               title={school.institution || `Education ${i + 1}`}
               onRemove={() =>
                 setList(
@@ -473,7 +564,9 @@ export function ProfileEditor({ initial, onSaved, onDone }: Props) {
                 <Field label="Degree">
                   <Input
                     value={school.degree}
-                    onChange={(e) => updateSchool(i, { degree: e.target.value })}
+                    onChange={(e) =>
+                      updateSchool(i, { degree: e.target.value })
+                    }
                     placeholder="BSc"
                   />
                 </Field>
@@ -551,24 +644,27 @@ export function ProfileEditor({ initial, onSaved, onDone }: Props) {
             <span className="label">Languages</span>
             <div className="space-y-2">
               {profile.languages.map((lang, i) => (
-                <div key={i} className="flex gap-2">
-                  <Input
-                    value={lang.language}
-                    onChange={(e) =>
-                      updateLanguage(i, { language: e.target.value })
-                    }
-                    placeholder="English"
-                    aria-label={`Language ${i + 1}`}
-                  />
-                  <Input
-                    className="w-40 shrink-0"
-                    value={lang.proficiency ?? ""}
-                    onChange={(e) =>
-                      updateLanguage(i, { proficiency: e.target.value })
-                    }
-                    placeholder="Native"
-                    aria-label={`Language ${i + 1} level`}
-                  />
+                /* Same squeeze: the language name had 85px, six characters. */
+                <div key={i} className="flex items-start gap-2">
+                  <div className="flex flex-1 flex-col gap-2 sm:flex-row">
+                    <Input
+                      value={lang.language}
+                      onChange={(e) =>
+                        updateLanguage(i, { language: e.target.value })
+                      }
+                      placeholder="English"
+                      aria-label={`Language ${i + 1}`}
+                    />
+                    <Input
+                      className="sm:w-40 sm:shrink-0"
+                      value={lang.proficiency ?? ""}
+                      onChange={(e) =>
+                        updateLanguage(i, { proficiency: e.target.value })
+                      }
+                      placeholder="Native"
+                      aria-label={`Language ${i + 1} level`}
+                    />
+                  </div>
                   <button
                     type="button"
                     onClick={() =>
@@ -577,7 +673,7 @@ export function ProfileEditor({ initial, onSaved, onDone }: Props) {
                         profile.languages.filter((_, j) => j !== i),
                       )
                     }
-                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-faint transition-colors hover:bg-flag-soft hover:text-flag"
+                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-faint transition-colors hover:bg-flag-soft hover:text-flag"
                     aria-label={`Remove language ${i + 1}`}
                   >
                     <X className="h-4 w-4" aria-hidden />
@@ -618,6 +714,21 @@ export function ProfileEditor({ initial, onSaved, onDone }: Props) {
         </div>
       </Card>
 
+      {/*
+        The outcome of a save, for anyone not watching the button change from
+        "Save profile" to "Saved". Nothing else here is a live region: the
+        Alert below is ordinary markup, so a failure was announced to nobody.
+      */}
+      <p role="status" aria-live="polite" className="sr-only">
+        {saving
+          ? "Saving your profile."
+          : saved
+            ? "Profile saved."
+            : error
+              ? `Could not save your profile. ${error}`
+              : ""}
+      </p>
+
       {error && <Alert tone="error">{error}</Alert>}
 
       {manual && (
@@ -630,7 +741,9 @@ export function ProfileEditor({ initial, onSaved, onDone }: Props) {
             variant="secondary"
             size="sm"
             onClick={() =>
-              navigator.clipboard.writeText(JSON.stringify(manual.profile, null, 2))
+              navigator.clipboard.writeText(
+                JSON.stringify(manual.profile, null, 2),
+              )
             }
           >
             Copy JSON
@@ -641,7 +754,7 @@ export function ProfileEditor({ initial, onSaved, onDone }: Props) {
       {/* The form is long; the primary action follows you down it. */}
       <div className="fixed inset-x-0 bottom-0 z-10 border-t border-line bg-paper/95 backdrop-blur">
         <div className="mx-auto flex max-w-3xl items-center gap-3 px-4 py-3 sm:px-6">
-          <Button size="lg" onClick={save} disabled={saving}>
+          <Button size="lg" type="submit" disabled={saving}>
             {saving && <Loader2 className="h-4 w-4 animate-spin" aria-hidden />}
             {saved && <Check className="h-4 w-4" aria-hidden />}
             {saved ? "Saved" : "Save profile"}
@@ -654,6 +767,6 @@ export function ProfileEditor({ initial, onSaved, onDone }: Props) {
           )}
         </div>
       </div>
-    </div>
+    </form>
   );
 }
