@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Check, ChevronDown, FileUp, PenLine } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
@@ -55,6 +55,19 @@ export default function ProfilePage() {
       })
       .catch(() => {})
       .finally(() => setLoading(false));
+  }, []);
+
+  /*
+   * The saved panel below claims "Profile saved. You are ready to apply." and
+   * lives for four seconds. Editing inside that window made the claim false
+   * while it was still on screen, with a button that would have navigated
+   * away from the edit. It retracts the moment the form is touched instead.
+   *
+   * Stable identity on purpose: the editor fires this from an effect keyed on
+   * the callback, so an inline arrow would re-run it on every render.
+   */
+  const onDirtyChange = useCallback((dirty: boolean) => {
+    if (dirty) setJustSaved(false);
   }, []);
 
   function onSaved(next: ProfileSummary) {
@@ -234,6 +247,7 @@ export default function ProfilePage() {
                       key={editorKey}
                       initial={draft}
                       onSaved={onSaved}
+                      onDirtyChange={onDirtyChange}
                       onDone={hasProfile ? () => router.push("/") : undefined}
                     />
                   )}

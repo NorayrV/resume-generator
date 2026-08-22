@@ -30,6 +30,8 @@ interface Props {
   onSaved: (summary: ProfileSummary) => void;
   /** Shown as "Done" when there is somewhere to go back to. */
   onDone?: () => void;
+  /** Fires when the form gains or loses unsaved edits. Must be stable. */
+  onDirtyChange?: (dirty: boolean) => void;
 }
 
 const linesToArray = (value: string) =>
@@ -160,7 +162,12 @@ function AddButton({ label, onClick }: { label: string; onClick: () => void }) {
 
 /* ------------------------------------------------------------------ */
 
-export function ProfileEditor({ initial, onSaved, onDone }: Props) {
+export function ProfileEditor({
+  initial,
+  onSaved,
+  onDone,
+  onDirtyChange,
+}: Props) {
   const [profile, setProfile] = useState<MasterProfile>(initial);
   const [skillsText, setSkillsText] = useState(arrayToLines(initial.skills));
   const [interestsText, setInterestsText] = useState(
@@ -170,6 +177,45 @@ export function ProfileEditor({ initial, onSaved, onDone }: Props) {
     arrayToLines(initial.certifications.map((c) => c.name)),
   );
 
+  /*
+   * What a save would send. Comparing this against the last saved version is
+   * how the form knows it is dirty — exact by construction, because it is the
+   * same object the PUT body is built from rather than a parallel guess at
+   * which fields count.
+   */
+  const payload: MasterProfile = {
+    ...profile,
+    raw_text: initial.raw_text,
+    skills: linesToArray(skillsText),
+    interests: linesToArray(interestsText),
+    certifications: linesToArray(certsText).map((name) => ({ name })),
+  };
+
+  /* The baseline runs through the same transformation, so a profile that
+     round-trips unchanged does not read as edited the moment it loads. */
+  const [savedSnapshot, setSavedSnapshot] = useState(() =>
+    JSON.stringify({
+      ...initial,
+      raw_text: initial.raw_text,
+      skills: linesToArray(arrayToLines(initial.skills)),
+      interests: linesToArray(arrayToLines(initial.interests)),
+      certifications: linesToArray(
+        arrayToLines(initial.certifications.map((c) => c.name)),
+      ).map((name) => ({ name })),
+    }),
+  );
+
+  const dirty = JSON.stringify(payload) !== savedSnapshot;
+
+  /** Armed when "Back to generating" is pressed with edits outstanding. */
+  const [leaving, setLeaving] = useState(false);
+
+  useEffect(() => {
+    if (!leaving) return;
+    const id = setTimeout(() => setLeaving(false), 5000);
+    return () => clearTimeout(id);
+  }, [leaving]);
+
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -177,6 +223,23 @@ export function ProfileEditor({ initial, onSaved, onDone }: Props) {
     message: string;
     profile: MasterProfile;
   } | null>(null);
+
+  useEffect(() => {
+    onDirtyChange?.(dirty);
+  }, [dirty, onDirtyChange]);
+
+  /*
+   * The only exit this can actually catch. Closing the tab, reloading, or
+   * typing a new address all fire beforeunload; an in-app link does not, which
+   * is why the save bar states the unsaved count permanently rather than
+   * relying on being asked.
+   */
+  useEffect(() => {
+    if (!dirty) return;
+    const warn = (event: BeforeUnloadEvent) => event.preventDefault();
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [dirty]);
 
   const person = profile.personal_information;
 
@@ -228,14 +291,6 @@ export function ProfileEditor({ initial, onSaved, onDone }: Props) {
     setSaved(false);
     setManual(null);
 
-    const payload: MasterProfile = {
-      ...profile,
-      raw_text: initial.raw_text,
-      skills: linesToArray(skillsText),
-      interests: linesToArray(interestsText),
-      certifications: linesToArray(certsText).map((name) => ({ name })),
-    };
-
     try {
       const response = await fetch("/api/profile", {
         method: "PUT",
@@ -254,6 +309,8 @@ export function ProfileEditor({ initial, onSaved, onDone }: Props) {
         setManual({ message: data.message, profile: data.profile });
       } else {
         setSaved(true);
+        // This is the clean state now, so the form stops reading as edited.
+        setSavedSnapshot(JSON.stringify(payload));
         setTimeout(() => setSaved(false), 2500);
       }
 
@@ -760,10 +817,37 @@ export function ProfileEditor({ initial, onSaved, onDone }: Props) {
             {saved ? "Saved" : "Save profile"}
           </Button>
 
-          {onDone && (
-            <Button variant="ghost" onClick={onDone} disabled={saving}>
-              Back to generating
-            </Button>
+          {onDone &&
+            (leaving ? (
+              <Button
+                variant="danger"
+                autoFocus
+                onClick={onDone}
+                onBlur={() => setLeaving(false)}
+              >
+                Leave without saving?
+              </Button>
+            ) : (
+              <Button
+                variant="ghost"
+                onClick={() => (dirty ? setLeaving(true) : onDone())}
+                disabled={saving}
+              >
+                Back to generating
+              </Button>
+            ))}
+
+          {/*
+            Stated, not asked. Every other way out of this page is an in-app
+            link — the header's Generate and Account tabs, the logo, sign out —
+            and the App Router gives no navigation event to intercept, so the
+            only honest guard is for the bar that follows you down the form to
+            say, permanently, that the work is not saved yet.
+          */}
+          {dirty && !saving && (
+            <span className="ml-auto text-small text-muted">
+              Unsaved changes
+            </span>
           )}
         </div>
       </div>
