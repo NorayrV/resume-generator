@@ -145,7 +145,8 @@ components:
     backgroundColor: "{colors.paper}"
     textColor: "{colors.ink}"
     rounded: "{rounded.md}"
-    padding: "12px"
+    padding: "0 12px"
+    height: "44px"
 ---
 
 ## Overview
@@ -291,9 +292,11 @@ one stroke weight. No emoji standing in for icons.
   single choice (`role="radio"`, with roving tabindex and arrow keys).
 - **Badge** — four tones, none of them clickable. If it can be clicked it is a
   Button.
-- **Input / Textarea** — 1px `line` border, `accent` on focus with a 2px
-  ring. Placeholders are 46% grey: light enough to read as a prompt, dark
-  enough to clear 4.5:1.
+- **Input / Textarea** — 44px tall, 1px `line` border, `accent` on focus with
+  a 2px ring. Placeholders clear 4.5:1 in both themes and no more: 46% on
+  white, 54% on the dark paper. Light enough to read as a prompt, dark enough
+  to read at all — and measured on a page loaded dark, never one toggled into
+  it.
 - **Alert** — four tones, used for a state the user must act on, never for
   decoration.
 

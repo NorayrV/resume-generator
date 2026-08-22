@@ -152,7 +152,7 @@ function AddButton({ label, onClick }: { label: string; onClick: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center justify-center gap-1.5 rounded-md border border-dashed border-line py-2.5 text-small font-medium text-muted transition-colors hover:border-accent hover:bg-accent-soft hover:text-accent-text"
+      className="flex min-h-[2.75rem] w-full items-center justify-center gap-1.5 rounded-md border border-dashed border-line py-2.5 text-small font-medium text-muted transition-colors hover:border-accent hover:bg-accent-soft hover:text-accent-text"
     >
       <Plus className="h-4 w-4" aria-hidden />
       {label}
@@ -791,7 +791,7 @@ export function ProfileEditor({
       {manual && (
         <div className="space-y-3">
           <Alert tone="info">{manual.message}</Alert>
-          <pre className="max-h-72 overflow-auto rounded-md border border-line bg-surface p-4 text-[0.75rem] leading-relaxed">
+          <pre className="max-h-72 overflow-auto rounded-md border border-line bg-surface p-4 text-micro leading-relaxed">
             {JSON.stringify(manual.profile, null, 2)}
           </pre>
           <Button
@@ -827,6 +827,7 @@ export function ProfileEditor({
             (leaving ? (
               <Button
                 variant="danger"
+                size="lg"
                 autoFocus
                 onClick={onDone}
                 onBlur={() => setLeaving(false)}
@@ -836,6 +837,7 @@ export function ProfileEditor({
             ) : (
               <Button
                 variant="ghost"
+                size="lg"
                 onClick={() => (dirty ? setLeaving(true) : onDone())}
                 disabled={saving}
               >

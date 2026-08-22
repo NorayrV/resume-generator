@@ -107,7 +107,7 @@ export function ProfileInput({ initialText, onSaved }: Props) {
       {manual && (
         <div className="space-y-3">
           <Alert tone="info">{manual.message}</Alert>
-          <pre className="max-h-72 overflow-auto rounded-md border border-line bg-surface p-4 text-[0.75rem] leading-relaxed">
+          <pre className="max-h-72 overflow-auto rounded-md border border-line bg-surface p-4 text-micro leading-relaxed">
             {JSON.stringify(manual.profile, null, 2)}
           </pre>
           <Button
