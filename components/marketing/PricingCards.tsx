@@ -21,7 +21,7 @@ import {
  * `plan.live` is false and the card says the figure is confirmed at checkout
  * instead of asserting a number nothing has verified.
  *
- * Both cards list the same four rows in the same order, and the free card
+ * Both cards list the same five rows in the same order, and the free card
  * marks what it does not include rather than quietly leaving the row out.
  * A reader comparing two lists of different lengths has to read both in full;
  * a reader comparing two identical lists only has to find the row that
@@ -74,7 +74,34 @@ function rows(plan: "free" | "pro"): Row[] {
       included: true,
     },
     { label: "Tailored resume, as Word or PDF", included: true },
-    { label: "Matched keywords and missing requirements", included: true },
+    { label: "The keywords from the posting that made it in", included: true },
+    {
+      /*
+       * The one line here a competitor cannot write without rebuilding the
+       * same separation between copied facts and generated wording — and it
+       * used to be half of "Matched keywords and missing requirements": two
+       * deliverables crammed into one row, third of four, in the same muted
+       * grey as "Tailored resume, as Word or PDF", which every résumé tool on
+       * the internet also offers.
+       *
+       * It gets its own row and the emphasis the count above it already had.
+       * Weight rather than position: it reads better as the second half of
+       * the in/out pair than above it, and a bold line among muted ones wins
+       * a scan regardless of where it sits.
+       *
+       * Present on both plans, deliberately. It is what the product is, not
+       * what the paid tier buys, and pretending otherwise to sell Pro would
+       * be exactly the kind of claim this row exists to avoid.
+       */
+      label: (
+        <>
+          <strong className="font-medium text-ink">
+            The requirements your profile does not cover
+          </strong>
+        </>
+      ),
+      included: true,
+    },
     {
       label: "Cover letters, in English, Russian or Spanish",
       included: pro,

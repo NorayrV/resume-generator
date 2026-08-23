@@ -306,11 +306,15 @@ export default async function LoginPage() {
         >
           <div className="section">
             <h2 className="h-section">One application is one job posting</h2>
+            {/*
+              The unit, and nothing else. This used to recite the payload —
+              resume, keywords, gaps — because the cards below compressed the
+              last of those into a grey half-row. They state it properly now,
+              so repeating it here is just the third telling again.
+            */}
             <p className="lead mt-4 max-w-2xl">
-              An application is what comes back from one posting: a resume
-              rewritten for it, the keywords that made it in, and the
-              requirements your profile does not cover. It counts as one
-              whichever plan you are on.
+              An application is everything that comes back from one posting.
+              It counts as one whichever plan you are on.
             </p>
 
             <div className="mt-10">
