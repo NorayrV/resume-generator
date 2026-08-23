@@ -206,6 +206,25 @@ export default async function LoginPage() {
                 </li>
               ))}
             </ol>
+
+            {/*
+              The second of two repeat actions, and the one mobile actually
+              needs. On a phone the hero runs 1,806px on its own — the demo
+              stacks — so a single call to action at the end of Accuracy still
+              left a 3,004px stretch, three and a half viewports, between the
+              sign-in card and anything pressable. This splits it.
+
+              Same label and same treatment as the other two on purpose. One
+              action, one appearance, wherever it turns up; varying the styling
+              of a repeated CTA is how a reader starts wondering whether they
+              do different things.
+            */}
+            <div className="mt-10">
+              <StartLink className="inline-flex h-11 items-center gap-2 rounded-md bg-accent px-6 text-body font-medium text-on-accent shadow-sm transition-colors hover:bg-accent/90">
+                Start free
+                <ArrowRight className="h-4 w-4" aria-hidden />
+              </StartLink>
+            </div>
           </div>
         </section>
 
@@ -284,6 +303,25 @@ export default async function LoginPage() {
                   exactly where the questions are coming from.
                 </p>
               </div>
+            </div>
+
+            {/*
+              The only way to act between the hero and the pricing cards.
+              Measured before this: the last sign-in button sat at y=336 and
+              the next call to action at y=2862 — roughly three viewports of
+              the two sections that do the actual persuading, with nothing to
+              press at the end of either. A reader convinced by the paragraph
+              directly above had to scroll back to the top or past pricing.
+
+              A row, not a band. The page is already 4.4k tall and the
+              argument does not need another section wrapped around one
+              button; it needs the button where the argument finishes.
+            */}
+            <div className="mt-10">
+              <StartLink className="inline-flex h-11 items-center gap-2 rounded-md bg-accent px-6 text-body font-medium text-on-accent shadow-sm transition-colors hover:bg-accent/90">
+                Start free
+                <ArrowRight className="h-4 w-4" aria-hidden />
+              </StartLink>
             </div>
           </div>
         </section>
