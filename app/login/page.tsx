@@ -223,7 +223,7 @@ export default async function LoginPage() {
 
             <div className="mt-10 grid gap-4 md:grid-cols-2">
               <div className="card p-6 sm:p-7">
-                <h3 className="flex items-center gap-2 text-body font-semibold tracking-[-0.01em]">
+                <h3 className="flex items-center gap-2 text-subhead font-semibold tracking-[-0.015em]">
                   <Lock className="h-4 w-4 text-ink" aria-hidden />
                   Copied from your profile
                 </h3>
@@ -245,7 +245,7 @@ export default async function LoginPage() {
               </div>
 
               <div className="card p-6 sm:p-7">
-                <h3 className="flex items-center gap-2 text-body font-semibold tracking-[-0.01em]">
+                <h3 className="flex items-center gap-2 text-subhead font-semibold tracking-[-0.015em]">
                   <ArrowRight className="h-4 w-4 text-accent-text" aria-hidden />
                   Rewritten for the role
                 </h3>
@@ -273,7 +273,7 @@ export default async function LoginPage() {
                 <X className="h-5 w-5 text-flag" aria-hidden />
               </div>
               <div>
-                <h3 className="text-body font-semibold tracking-[-0.01em]">
+                <h3 className="text-subhead font-semibold tracking-[-0.015em]">
                   It tells you what you are missing
                 </h3>
                 <p className="hint mt-1.5 max-w-prose">
