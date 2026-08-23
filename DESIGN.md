@@ -43,7 +43,7 @@ colors:
 typography:
   display:
     fontFamily: "Inter, system-ui, sans-serif"
-    fontSize: "clamp(2rem, 1.35rem + 3.1vw, 3.25rem)"
+    fontSize: "clamp(2rem, 1.35rem + 3.1vw, 2.75rem)"
     fontWeight: 600
     lineHeight: 1.08
     letterSpacing: "-0.03em"
@@ -213,7 +213,10 @@ in `lib/utils.ts` or tailwind-merge files it as a text colour and silently
 drops it.
 
 The two headline sizes are fluid (`clamp`) rather than stepped, so they never
-land at an awkward size between breakpoints. Everything below them is fixed:
+land at an awkward size between breakpoints. `display` tops out at 2.75rem
+(44px), not 3.25rem: at 52px the eleven-word hero headline wrapped to three
+lines on a 1440px screen. The lower bound is unchanged, so phones still get
+33-34px and three lines there, which is normal for a phone. Everything below them is fixed:
 `body` 15px, `small` 13px, `micro` 12px. Hierarchy comes from size and weight
 before it comes from color.
 

@@ -29,7 +29,7 @@ type Mode = "choose" | "email" | "sent";
 
 function GoogleMark() {
   return (
-    <svg className="h-[1.125rem] w-[1.125rem]" viewBox="0 0 24 24" aria-hidden>
+    <svg className="h-4 w-4" viewBox="0 0 24 24" aria-hidden>
       <path
         fill="#4285F4"
         d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5a5.6 5.6 0 0 1-2.4 3.6v3h3.9c2.3-2.1 3.5-5.2 3.5-8.8Z"
@@ -120,6 +120,23 @@ function describeAuthError(error: { message?: string; status?: number }): string
 
 const BUTTON =
   "flex h-11 w-full items-center justify-center gap-2.5 rounded-md border border-line bg-paper text-body font-medium text-ink transition-colors hover:border-faint hover:bg-surface disabled:pointer-events-none disabled:opacity-50";
+
+/*
+ * One of the three doors is filled, and it is Google.
+ *
+ * All three used to be identical white outlines, which meant the page had no
+ * filled button anywhere above the fold — measured, the accent colour appeared
+ * as a fill exactly twice on a 4,493px page, first at y=2926. The sign-in card
+ * is the whole point of this page and nothing in it said so, or said which way
+ * in is fastest.
+ *
+ * The Google mark keeps its four colours and sits on a white tile rather than
+ * being recoloured onto the blue. Google's brand terms want that mark on a
+ * light surface; a filled button and a compliant mark are not in conflict, they
+ * just need the tile.
+ */
+const BUTTON_PRIMARY =
+  "flex h-11 w-full items-center justify-center gap-2.5 rounded-md bg-accent text-body font-medium text-on-accent shadow-sm transition-colors hover:bg-accent/90 disabled:pointer-events-none disabled:opacity-50";
 
 export function SignInButtons() {
   const [mode, setMode] = useState<Mode>("choose");
@@ -282,12 +299,14 @@ export function SignInButtons() {
       <button
         onClick={() => signIn("google")}
         disabled={busy !== null}
-        className={BUTTON}
+        className={BUTTON_PRIMARY}
       >
         {busy === "google" ? (
           <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
         ) : (
-          <GoogleMark />
+          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white">
+            <GoogleMark />
+          </span>
         )}
         Continue with Google
       </button>

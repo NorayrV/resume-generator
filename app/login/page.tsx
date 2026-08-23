@@ -132,26 +132,15 @@ export default async function LoginPage() {
               </ul>
 
               {/*
-                Concrete and checkable — no invented counts or testimonials.
-                Hidden on a phone because the card immediately below already
-                says "3 applications in any 30 days. No card, no trial timer."
-                and carries the privacy line; repeating it here only pushed the
-                button past the fold.
+                The trust strip that used to sit here is gone. It listed
+                "3 free applications · No card required · Your data is never
+                sold" beside a card that already says "3 applications in any
+                30 days. No card, no trial timer." and carries the privacy
+                line — a third statement of the same facts inside one
+                viewport, and the fourth text block in a hero that should
+                hold three. Its own comment had already noticed it was
+                duplication; this acts on it.
               */}
-              <p className="mt-7 hidden flex-wrap items-center gap-x-4 gap-y-1.5 text-small text-faint sm:flex">
-                <span className="flex items-center gap-1.5">
-                  <Check className="h-3.5 w-3.5" aria-hidden />
-                  {FREE_GENERATIONS_PER_MONTH} free applications
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <Check className="h-3.5 w-3.5" aria-hidden />
-                  No card required
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <Lock className="h-3.5 w-3.5" aria-hidden />
-                  Your data is never sold
-                </span>
-              </p>
             </div>
 
             {/*
