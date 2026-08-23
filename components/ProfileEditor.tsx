@@ -360,7 +360,7 @@ export function ProfileEditor({
                 onChange={(e) => setPerson("full_name", e.target.value)}
                 required
                 autoComplete="name"
-                placeholder="Jane Doe"
+                placeholder="Marina Kovach"
               />
             </Field>
             <Field label="Location">

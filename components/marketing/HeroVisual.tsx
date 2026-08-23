@@ -114,8 +114,18 @@ export function HeroVisual() {
               preview does, because that is what the exported file looks like.
             */}
             <div className="bg-doc-paper px-5 py-4">
+              {/*
+                Not "Jane Doe". This is the first name a visitor reads, in the
+                one element that shows what the product actually makes, and
+                PRODUCT.md puts people applying abroad with names that
+                Latin-only tooling handles badly at the top of the audience
+                list. A Cyrillic name renders in Inter here because the font
+                already loads the cyrillic subset for the Russian cover
+                letters, so the demo proves a capability rather than just
+                avoiding a cliché.
+              */}
               <p className="text-center text-[0.8125rem] font-bold uppercase tracking-[0.02em] text-doc-ink">
-                Jane Doe
+                Марина Ковач
               </p>
               {/* The headline is rewritten per posting — the visible tailoring. */}
               <p className="mt-0.5 text-center text-micro font-bold text-doc-accent">
@@ -130,7 +140,7 @@ export function HeroVisual() {
                 />
                 <Block
                   heading="Work Experience"
-                  role="Data Analyst · Acme"
+                  role="Data Analyst · Halvard Bank"
                   lines={["100%", "94%", "70%"]}
                 />
               </div>
