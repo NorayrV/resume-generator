@@ -100,11 +100,216 @@ function tidy(raw: string): string {
   );
 }
 
+/**
+ * A gap this wide, as a fraction of page width, is never a word space.
+ *
+ * Measured on a two-column resume at US Letter (612pt): the gutter between
+ * the experience column and the skills sidebar came back as a single
+ * whitespace item 232pt wide — 38% of the page. Ordinary word spacing at 10pt
+ * is under 4pt. Anything past 10% is structural.
+ */
+const COLUMN_GAP_FRACTION = 0.1;
+
+/** …and at least this many times the line's own height, so it scales with type. */
+const COLUMN_GAP_LINES = 3;
+
+/** Two items closer than this share a word boundary rather than a space. */
+const WORD_GAP_RATIO = 0.2;
+
+interface Placed {
+  str: string;
+  x: number;
+  y: number;
+  right: number;
+  height: number;
+}
+
+/**
+ * Rebuild a page's text from where the glyphs actually sit.
+ *
+ * PDF.js hands back text items in content-stream order and joins them with
+ * whatever whitespace item the producer emitted. On a single-column document
+ * that is fine. On anything with a sidebar it is actively wrong: a row-based
+ * layout engine writes the left cell, then the right cell, then moves down, so
+ * the flat join produced lines like
+ *
+ *   "Financial Analyst, Ameriabank SQL"
+ *   "Mar 2022 - Present Python"
+ *
+ * — the job title welded to a skill, the date range welded to another. That is
+ * worse than ugly here. Employers, titles and dates are the facts this product
+ * copies rather than writes, and anchorExperience will faithfully re-anchor a
+ * title that was already corrupted before the model ever saw it.
+ *
+ * So: group items into visual lines by their baseline, walk each line left to
+ * right, and break the line wherever the horizontal gap is too wide to be a
+ * space. A break rather than a column-detection pass is deliberate. Detecting
+ * columns means guessing whether a wide gap is a skills sidebar or a
+ * right-aligned date, and guessing wrong either scatters the skills or strips
+ * the dates off the roles. Breaking is right for both:
+ *
+ *   sidebar   →  "Financial Analyst, Ameriabank" / "SQL"
+ *   date rail →  "Financial Analyst" / "Mar 2022 - Present"
+ *
+ * Neither loses a fact, and the second is exactly the shape the paste box's
+ * own example uses.
+ */
+async function readByPosition(document: {
+  numPages: number;
+  getPage: (n: number) => Promise<unknown>;
+}): Promise<string> {
+  const pages: string[] = [];
+
+  for (let n = 1; n <= document.numPages; n++) {
+    const page = (await document.getPage(n)) as {
+      getViewport: (o: { scale: number }) => { width: number };
+      getTextContent: () => Promise<{ items: unknown[] }>;
+    };
+
+    const pageWidth = page.getViewport({ scale: 1 }).width;
+    const { items } = await page.getTextContent();
+
+    const placed: Placed[] = [];
+    for (const raw of items) {
+      const item = raw as {
+        str?: unknown;
+        width?: unknown;
+        height?: unknown;
+        transform?: unknown;
+      };
+      const str = typeof item.str === "string" ? item.str : "";
+      // Whitespace-only items are dropped and the gap is measured from the
+      // real glyphs instead — that spacer is the thing lying to us.
+      if (!str.trim()) continue;
+      if (!Array.isArray(item.transform) || item.transform.length < 6) continue;
+
+      const x = Number(item.transform[4]);
+      const y = Number(item.transform[5]);
+      if (!Number.isFinite(x) || !Number.isFinite(y)) continue;
+
+      const width = Number(item.width);
+      const height = Number(item.height);
+      placed.push({
+        str,
+        x,
+        y,
+        right: x + (Number.isFinite(width) ? width : 0),
+        height: Number.isFinite(height) && height > 0 ? height : 10,
+      });
+    }
+
+    if (placed.length === 0) continue;
+
+    const medianHeight =
+      [...placed].sort((a, b) => a.height - b.height)[
+        Math.floor(placed.length / 2)
+      ]?.height ?? 10;
+
+    /* Same baseline, within half a line — PDF y grows upward. */
+    const tolerance = Math.max(medianHeight * 0.5, 1);
+    const lines: Placed[][] = [];
+    for (const item of [...placed].sort((a, b) => b.y - a.y || a.x - b.x)) {
+      const line = lines[lines.length - 1];
+      if (line && Math.abs(line[0].y - item.y) <= tolerance) line.push(item);
+      else lines.push([item]);
+    }
+
+    const breakAt = Math.max(
+      pageWidth * COLUMN_GAP_FRACTION,
+      medianHeight * COLUMN_GAP_LINES,
+    );
+    const ordered = lines.map((line) => [...line].sort((a, b) => a.x - b.x));
+
+    /*
+     * Find the gutters, then apply them everywhere.
+     *
+     * A width threshold alone only catches the rows where the left column
+     * happens to be short. On a row whose text runs most of the way to the
+     * gutter the remaining gap is small, and that row welds back together —
+     * measured on a sidebar layout, the two longest bullets kept their trailing
+     * skill while the four short ones separated cleanly.
+     *
+     * So: the first pass records the x of every item that a wide gap already
+     * proved to start a column, and the second pass breaks before anything that
+     * begins at one of those x positions. A column start is evidence about the
+     * whole page, not about the line it was noticed on. Two sightings are
+     * required, so a single right-aligned page number does not invent a column.
+     */
+    const sightings: number[] = [];
+    for (const line of ordered) {
+      for (let i = 1; i < line.length; i++) {
+        if (line[i].x - line[i - 1].right >= breakAt) sightings.push(line[i].x);
+      }
+    }
+
+    const columnTolerance = pageWidth * 0.02;
+    const columnStarts: number[] = [];
+    for (const x of sightings.sort((a, b) => a - b)) {
+      const last = columnStarts[columnStarts.length - 1];
+      if (last !== undefined && Math.abs(last - x) <= columnTolerance) continue;
+      if (sightings.filter((s) => Math.abs(s - x) <= columnTolerance).length >= 2) {
+        columnStarts.push(x);
+      }
+    }
+
+    const startsColumn = (x: number) =>
+      columnStarts.some((start) => Math.abs(start - x) <= columnTolerance);
+
+    const rendered: string[] = [];
+    for (const line of ordered) {
+      let text = line[0].str;
+
+      for (let i = 1; i < line.length; i++) {
+        const previous = line[i - 1];
+        const current = line[i];
+        const gap = current.x - previous.right;
+
+        // A known column start still needs daylight in front of it, so text
+        // that merely flows past that x keeps running.
+        const atColumn =
+          startsColumn(current.x) && gap > current.height * COLUMN_GAP_LINES;
+
+        if (gap >= breakAt || atColumn) text += "\n";
+        else if (gap > current.height * WORD_GAP_RATIO) text += " ";
+        text += current.str;
+      }
+      rendered.push(text);
+    }
+
+    pages.push(rendered.join("\n"));
+  }
+
+  return pages.join("\n\n");
+}
+
 async function fromPdf(bytes: Uint8Array): Promise<string> {
   const { extractText, getDocumentProxy } = await import("unpdf");
 
+  let document;
   try {
-    const document = await getDocumentProxy(bytes);
+    document = await getDocumentProxy(bytes);
+  } catch {
+    throw new ResumeFileError(
+      "That PDF could not be opened. It may be password protected or damaged. Try exporting it again, or paste the text instead.",
+    );
+  }
+
+  /*
+   * Position-aware first, PDF.js's own flat join as the net. The reader above
+   * touches more of the API surface than extractText does, so a PDF that
+   * confuses it should still come back through the path that has been in
+   * production, rather than failing the upload outright.
+   */
+  try {
+    const laidOut = await readByPosition(
+      document as unknown as Parameters<typeof readByPosition>[0],
+    );
+    if (laidOut.trim().length > 0) return laidOut;
+  } catch {
+    // fall through
+  }
+
+  try {
     const { text } = await extractText(document, { mergePages: true });
     return Array.isArray(text) ? text.join("\n") : String(text ?? "");
   } catch {
