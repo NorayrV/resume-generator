@@ -25,6 +25,22 @@ export const MAX_TEXT_CHARS = 20_000;
 /** Below this there is nothing worth parsing. Matches the paste box's floor. */
 const MIN_TEXT_CHARS = 120;
 
+/**
+ * ...and the same question asked of one page.
+ *
+ * A whole-document floor cannot see a resume whose second page is a scan: page
+ * one alone clears 120 characters, so the upload is accepted and page two is
+ * dropped without a word. That is the worst failure this file can produce.
+ * Everything else here either works or says why, but a half-read resume looks
+ * exactly like a fully-read one, and the product's whole claim is that it
+ * copies facts rather than inventing them.
+ *
+ * A real resume page runs to several hundred characters. A scanned one has
+ * none. A page carrying nothing but a footer has a couple of dozen — and is
+ * worth flagging too, because something was on it.
+ */
+const MIN_PAGE_CHARS = 40;
+
 export type ResumeFileKind = "pdf" | "docx";
 
 /** What the file picker offers, and what the error messages name. */
@@ -116,6 +132,12 @@ const COLUMN_GAP_LINES = 3;
 /** Two items closer than this share a word boundary rather than a space. */
 const WORD_GAP_RATIO = 0.2;
 
+interface ReadPages {
+  text: string;
+  /** 1-based page numbers that came back with no usable text. */
+  unreadable: number[];
+}
+
 interface Placed {
   str: string;
   x: number;
@@ -157,8 +179,9 @@ interface Placed {
 async function readByPosition(document: {
   numPages: number;
   getPage: (n: number) => Promise<unknown>;
-}): Promise<string> {
+}): Promise<ReadPages> {
   const pages: string[] = [];
+  const unreadable: number[] = [];
 
   for (let n = 1; n <= document.numPages; n++) {
     const page = (await document.getPage(n)) as {
@@ -198,7 +221,10 @@ async function readByPosition(document: {
       });
     }
 
-    if (placed.length === 0) continue;
+    if (placed.length === 0) {
+      unreadable.push(n);
+      continue;
+    }
 
     const medianHeight =
       [...placed].sort((a, b) => a.height - b.height)[
@@ -276,13 +302,15 @@ async function readByPosition(document: {
       rendered.push(text);
     }
 
-    pages.push(rendered.join("\n"));
+    const body = rendered.join("\n");
+    if (body.replace(/\s/g, "").length < MIN_PAGE_CHARS) unreadable.push(n);
+    pages.push(body);
   }
 
-  return pages.join("\n\n");
+  return { text: pages.join("\n\n"), unreadable };
 }
 
-async function fromPdf(bytes: Uint8Array): Promise<string> {
+async function fromPdf(bytes: Uint8Array): Promise<ReadPages> {
   const { extractText, getDocumentProxy } = await import("unpdf");
 
   let document;
@@ -304,14 +332,20 @@ async function fromPdf(bytes: Uint8Array): Promise<string> {
     const laidOut = await readByPosition(
       document as unknown as Parameters<typeof readByPosition>[0],
     );
-    if (laidOut.trim().length > 0) return laidOut;
+    if (laidOut.text.trim().length > 0) return laidOut;
   } catch {
     // fall through
   }
 
   try {
     const { text } = await extractText(document, { mergePages: true });
-    return Array.isArray(text) ? text.join("\n") : String(text ?? "");
+    return {
+      text: Array.isArray(text) ? text.join("\n") : String(text ?? ""),
+      // The flat join has no page boundaries in it, so this path reports
+      // nothing rather than guessing. Silence is honest; a wrong page number
+      // is not.
+      unreadable: [],
+    };
   } catch {
     throw new ResumeFileError(
       "That PDF could not be opened. It may be password protected or damaged. Try exporting it again, or paste the text instead.",
@@ -319,14 +353,16 @@ async function fromPdf(bytes: Uint8Array): Promise<string> {
   }
 }
 
-async function fromDocx(bytes: Uint8Array): Promise<string> {
+async function fromDocx(bytes: Uint8Array): Promise<ReadPages> {
   const mammoth = (await import("mammoth")).default;
 
   try {
     const { value } = await mammoth.extractRawText({
       buffer: Buffer.from(bytes),
     });
-    return value ?? "";
+    // A .docx has no fixed pages until something lays it out, so there is no
+    // page to report on.
+    return { text: value ?? "", unreadable: [] };
   } catch {
     throw new ResumeFileError(
       "That Word file could not be read. Open it and re-save it as .docx, then try again.",
@@ -339,6 +375,12 @@ export interface ExtractedResume {
   kind: ResumeFileKind;
   /** True when the resume was longer than MAX_TEXT_CHARS and text was cut. */
   truncated: boolean;
+  /**
+   * 1-based pages that held no readable text while the rest of the file did —
+   * a scan bound into a text PDF. Empty for .docx and for the flat fallback,
+   * neither of which can see pages.
+   */
+  unreadablePages: number[];
 }
 
 /**
@@ -364,7 +406,7 @@ export async function extractResumeText(file: File): Promise<ExtractedResume> {
 
   const extracted =
     kind === "pdf" ? await fromPdf(bytes) : await fromDocx(bytes);
-  const text = tidy(extracted);
+  const text = tidy(extracted.text);
 
   if (text.length < MIN_TEXT_CHARS) {
     // Overwhelmingly this is a scan: a photo of a resume in a PDF wrapper,
@@ -380,5 +422,6 @@ export async function extractResumeText(file: File): Promise<ExtractedResume> {
     text: text.length > MAX_TEXT_CHARS ? text.slice(0, MAX_TEXT_CHARS) : text,
     kind,
     truncated: text.length > MAX_TEXT_CHARS,
+    unreadablePages: extracted.unreadable,
   };
 }

@@ -142,6 +142,20 @@ export async function POST(request: Request) {
     warnings.push("the end of the document, which was too long to read in full");
   }
 
+  /*
+   * A scan bound into a text PDF. Page one parses, so nothing above this line
+   * notices, and the user gets back a profile built from half their resume
+   * that looks exactly like one built from all of it. Naming the page is the
+   * whole fix: they can paste that part in, and they know to look.
+   */
+  const blank = extracted.unreadablePages;
+  if (blank.length === 1) {
+    warnings.push(`anything on page ${blank[0]}, which looks like a scan`);
+  } else if (blank.length > 1) {
+    const list = `${blank.slice(0, -1).join(", ")} and ${blank[blank.length - 1]}`;
+    warnings.push(`anything on pages ${list}, which look like scans`);
+  }
+
   return NextResponse.json({
     ok: true,
     profile,
