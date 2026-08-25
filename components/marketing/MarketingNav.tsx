@@ -45,7 +45,7 @@ export function MarketingNav({ onHome = false }: { onHome?: boolean }) {
   return (
     <header className="sticky top-0 z-30 border-b border-line bg-paper/85 backdrop-blur-md">
       <div className="section flex min-h-[4rem] flex-wrap items-center gap-x-6 gap-y-2 py-2">
-        <Link href="/login" aria-label="Gatecrash" className="shrink-0">
+        <Link href="/login" aria-label="cvmaxxing" className="shrink-0">
           <Logo size={22} />
         </Link>
 

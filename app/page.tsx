@@ -532,7 +532,7 @@ function FirstRun() {
         Set up your profile first
       </h1>
       <p className="lead mx-auto mt-3 max-w-sm text-small">
-        Gatecrash rewrites your own experience for each job, so it needs your
+        cvmaxxing rewrites your own experience for each job, so it needs your
         history once. Upload an existing resume and the fields fill themselves.
       </p>
 

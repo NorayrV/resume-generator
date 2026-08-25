@@ -36,7 +36,7 @@ export function HeroVisual() {
     <div
       className="relative"
       role="img"
-      aria-label="Illustration: a job posting is pasted in, and Gatecrash returns a tailored resume, the requirements it matched, and the one requirement the profile does not cover."
+      aria-label="Illustration: a job posting is pasted in, and cvmaxxing returns a tailored resume, the requirements it matched, and the one requirement the profile does not cover."
     >
       <div className="grid items-center gap-3 lg:grid-cols-[1fr_auto_1.25fr] lg:gap-4">
         {/* ---------- In: the posting ---------- */}

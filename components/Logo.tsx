@@ -1,5 +1,5 @@
 /**
- * The Gatecrash lockup: the mark, optionally beside the wordmark.
+ * The cvmaxxing lockup: the mark, optionally beside the wordmark.
  *
  * Uses plain <img> rather than next/image on purpose. next/image would put
  * this through Vercel's image optimiser — a billed request, and the sharp
@@ -33,7 +33,7 @@ export function Logo({
   className?: string;
 }) {
   const width = Math.round(size * RATIO);
-  const alt = withWordmark ? "" : "Gatecrash";
+  const alt = withWordmark ? "" : "cvmaxxing";
   const hidden = withWordmark || undefined;
 
   return (
@@ -49,7 +49,7 @@ export function Logo({
       {/*
         aria-hidden unconditionally: when the wordmark is off, the light mark
         above already carries the alt text, and both are in the DOM at once.
-        Without this a screen reader would announce "Gatecrash" twice.
+        Without this a screen reader would announce "cvmaxxing" twice.
       */}
       <img
         src="/logo-mark-dark.png"
@@ -61,7 +61,7 @@ export function Logo({
       />
       {withWordmark && (
         <span className="whitespace-nowrap text-[0.9375rem] font-semibold tracking-[-0.01em]">
-          Gatecrash
+          cvmaxxing
         </span>
       )}
     </span>

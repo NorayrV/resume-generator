@@ -90,7 +90,7 @@ export default async function LoginPage() {
               </h1>
 
               <p className="lead mt-5 max-w-xl">
-                Paste a job posting. Gatecrash rewrites your resume and cover
+                Paste a job posting. cvmaxxing rewrites your resume and cover
                 letter around it — using your real experience, never inventing
                 anything.
               </p>
@@ -235,7 +235,7 @@ export default async function LoginPage() {
               AI that works with your experience, not around it
             </h2>
             <p className="lead mt-4 max-w-2xl">
-              Most tools hand your history to a model and hope. Gatecrash
+              Most tools hand your history to a model and hope. cvmaxxing
               splits the job in two: the facts are copied, and only the wording
               is written.
             </p>

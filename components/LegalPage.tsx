@@ -28,7 +28,7 @@ export function LegalPage({
     <div className="min-h-screen bg-surface">
       <header className="border-b border-line bg-paper">
         <div className="mx-auto flex h-14 max-w-3xl items-center px-4 sm:px-6">
-          <Link href="/login" aria-label="Gatecrash">
+          <Link href="/login" aria-label="cvmaxxing">
             <Logo size={22} />
           </Link>
         </div>

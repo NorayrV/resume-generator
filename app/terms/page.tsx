@@ -11,21 +11,21 @@ import {
 } from "@/lib/plan";
 
 export const metadata: Metadata = {
-  title: "Terms — Gatecrash",
+  title: "Terms — cvmaxxing",
   description:
-    "What Gatecrash does, what it does not promise, and the rules for using it.",
+    "What cvmaxxing does, what it does not promise, and the rules for using it.",
 };
 
 export default function TermsPage() {
   return (
     <LegalPage
       title="Terms"
-      intro="The rules for using Gatecrash, and — more usefully — what it does not promise."
+      intro="The rules for using cvmaxxing, and — more usefully — what it does not promise."
     >
-      <Section heading="What Gatecrash does">
+      <Section heading="What cvmaxxing does">
         <p>
           You keep one profile of your real career history. You paste a job
-          posting. Gatecrash rewrites your experience for that posting and gives
+          posting. cvmaxxing rewrites your experience for that posting and gives
           you a resume, the keywords it matched, and an honest list of
           requirements your profile does not cover. On Pro it also writes a
           tailored cover letter.
@@ -119,7 +119,7 @@ export default function TermsPage() {
       <Section heading="Your content stays yours">
         <p>
           Your profile and the documents generated from it belong to you. No
-          claim is made over them, and they are not used to promote Gatecrash or
+          claim is made over them, and they are not used to promote cvmaxxing or
           shown to anyone else. What happens to your data is described on the{" "}
           <a
             href="/privacy"
@@ -133,9 +133,9 @@ export default function TermsPage() {
 
       <Section heading="Ending it">
         <p>
-          You can stop using Gatecrash whenever you like, cancel a subscription
+          You can stop using cvmaxxing whenever you like, cancel a subscription
           from the account page, and ask for your account to be deleted by
-          email. Gatecrash may close an account that breaks the fair use rules
+          email. cvmaxxing may close an account that breaks the fair use rules
           above, or withdraw the service entirely — in which case anyone with
           time left on a paid plan will be told in advance and refunded for the
           remainder.
@@ -144,7 +144,7 @@ export default function TermsPage() {
 
       <Section heading="Liability">
         <p>
-          Gatecrash is provided as it is. It is a writing tool, not a career
+          cvmaxxing is provided as it is. It is a writing tool, not a career
           advisor, an employment agency, or a legal service. To the extent the
           law allows, it is not liable for a job you did not get, an application
           that went badly, or anything else that follows from using documents it

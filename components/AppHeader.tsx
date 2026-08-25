@@ -37,7 +37,7 @@ export function AppHeader({ subtitle }: { subtitle?: string }) {
           The mark stays at every width; the wordmark beside it is the first
           thing to go when the nav needs the room.
         */}
-        <Link href="/" aria-label="Gatecrash" className="flex items-center">
+        <Link href="/" aria-label="cvmaxxing" className="flex items-center">
           <Logo size={20} withWordmark={false} className="sm:hidden" />
           <Logo size={20} className="hidden sm:flex" />
         </Link>

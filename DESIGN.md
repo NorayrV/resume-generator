@@ -1,5 +1,5 @@
 ---
-name: Gatecrash
+name: cvmaxxing
 description: A serious career product with a small amount of personality.
 colors:
   paper: "hsl(0 0% 100%)"
@@ -151,7 +151,7 @@ components:
 
 ## Overview
 
-Gatecrash turns a stored career history plus one job posting into an
+cvmaxxing turns a stored career history plus one job posting into an
 application ready to send. The interface exists to make a repetitive,
 slightly anxious task feel quick and honest.
 

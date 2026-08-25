@@ -65,7 +65,7 @@ the same separation between copied facts and generated wording.
 - Each application starts by pasting a full job posting — responsibilities and
   requirements included — and everything is tailored against that text alone.
 - Output is downloaded as Word or PDF and sent through whatever application
-  form or email the employer uses. Gatecrash does not submit anything.
+  form or email the employer uses. cvmaxxing does not submit anything.
 - Cover letters are pasted into forms or email, so the useful action on them
   is copy rather than download.
 - Roles left blank are drafted from the job title and skills, and are labelled
@@ -99,26 +99,41 @@ the same separation between copied facts and generated wording.
 
 ## Brand Commitments
 
-- The product is **Gatecrash**, at gatecrash.app. The name refers to getting
-  past the gatekeepers; the metaphor stays subtle and is not to be leaned on.
+- The product is **cvmaxxing**. It is still served from gatecrash.app, which
+  is the domain that is registered and paid for; a matching domain has not
+  been bought, so every legal page and contact address still names the old one
+  and that is accurate rather than an oversight.
+- The name is the "-maxxing" internet suffix applied to a CV. That is a
+  deliberate change of register from the previous name, whose gatekeeper
+  metaphor was explicitly kept subtle. This one cannot be subtle: it is the
+  first word on every page. See the note under ATSMAXXING below, which the
+  rename puts in tension.
 - The mark ships in two tones (`public/logo-mark.png` and
   `-dark.png`), derived from `public/logo.png` by
   `scripts/build-logo-assets.py`.
 - Personality: professional, modern, simple, trustworthy, and slightly
   playful. Internet-native, never childish. The governing principle is that
-  Gatecrash should feel like a **serious career product with a small amount of
+  cvmaxxing should feel like a **serious career product with a small amount of
   personality** — the seriousness is the default and the personality is the
   exception, not a tone applied evenly across the product.
 - Voice: plain, concrete, and willing to say what the product will not do. No
   AI buzzwords, no "unlock your potential", no guaranteed-interview claims.
-  Where a competitor would make a promise, Gatecrash states a limit — the ATS
+  Where a competitor would make a promise, cvmaxxing states a limit — the ATS
   answer names what no tool can honestly promise.
-- The personality budget is spent as **ATSMAXXING**, in exactly two places:
-  the heading over a running generation, and the FAQ answer about ATS. Both
-  were chosen because comprehension does not rest on the word there — four
-  plain stage labels sit under the first, and the next sentence punctures the
-  claim in the second. Second-language applicants are a primary audience, so
-  invented English never carries meaning on its own.
+- **ATSMAXXING** appears in exactly two places: the heading over a running
+  generation, and the FAQ answer about ATS. Both were chosen because
+  comprehension does not rest on the word there — four plain stage labels sit
+  under the first, and the next sentence punctures the claim in the second.
+  Second-language applicants are a primary audience, so invented English never
+  carries meaning on its own.
+
+  **Unresolved:** these were sized as the exception when the product was named
+  something plain. With the product itself now called cvmaxxing, the suffix is
+  the default rather than the spice, and "ATSMAXXING your application" inside a
+  product called cvmaxxing repeats a joke rather than landing one. Either the
+  name carries the register and these two revert to plain language, or they
+  stay and the "seriousness is the default" principle above needs rewriting.
+  It should not be left as it is.
 - Visual anti-reference and the design system live in `DESIGN.md`.
 - The resume preview is a picture of the file being sent, so it stays black on
   white in both light and dark themes.
@@ -143,7 +158,7 @@ what is copied rather than generated, what is never sold.
    labelled rather than blended in.
 3. **Claim only what is checkable.** No invented proof, no interview
    promises, no ATS score guarantees.
-4. **One job at a time.** Gatecrash turns real experience into an application
+4. **One job at a time.** cvmaxxing turns real experience into an application
    for a specific posting. It is not a job board, a tracker, a coach, or a
    network.
 5. **The free tier is real.** Three applications every 30 days, no card, no

@@ -7,16 +7,16 @@ import {
 } from "@/components/LegalPage";
 
 export const metadata: Metadata = {
-  title: "Privacy — Gatecrash",
+  title: "Privacy — cvmaxxing",
   description:
-    "What Gatecrash stores, who it is shared with, and how to have it deleted.",
+    "What cvmaxxing stores, who it is shared with, and how to have it deleted.",
 };
 
 export default function PrivacyPage() {
   return (
     <LegalPage
       title="Privacy"
-      intro="Gatecrash holds your career history, which is personal and sometimes sensitive. This page says plainly what is stored, where it goes, and how to get rid of it."
+      intro="cvmaxxing holds your career history, which is personal and sometimes sensitive. This page says plainly what is stored, where it goes, and how to get rid of it."
     >
       <Section heading="What is stored">
         <p>Three things, and nothing else:</p>
@@ -58,7 +58,7 @@ export default function PrivacyPage() {
 
       <Section heading="Who else sees it">
         <p>
-          Gatecrash is run by a small number of services. Each one sees only
+          cvmaxxing is run by a small number of services. Each one sees only
           what it needs to do its job.
         </p>
         <List
@@ -86,14 +86,14 @@ export default function PrivacyPage() {
             <>
               <strong className="font-medium text-ink">Polar</strong> handles
               payment if you subscribe, as merchant of record. Card details go
-              to Polar and never reach Gatecrash — we store only which plan you
+              to Polar and never reach cvmaxxing — we store only which plan you
               are on and the date it runs until.
             </>,
           ]}
         />
         <p>
           Your data is not sold, rented, or shared with anyone else. There is no
-          advertising on Gatecrash and no third-party tracking scripts.
+          advertising on cvmaxxing and no third-party tracking scripts.
         </p>
       </Section>
 
@@ -131,7 +131,7 @@ export default function PrivacyPage() {
           Traffic is encrypted in transit. Access to your rows is enforced by
           the database rather than only by application code, so a mistake in the
           application still cannot expose one account&apos;s data to another.
-          Sign-in is delegated to Google and GitHub, which means Gatecrash never
+          Sign-in is delegated to Google and GitHub, which means cvmaxxing never
           handles a password.
         </p>
         <p>
