@@ -38,13 +38,26 @@ const csp = [
 const nextConfig = {
   // These are heavier Node libraries. Keeping them external stops Next from
   // trying to bundle them into the serverless function.
-  serverExternalPackages: ["docx", "pdfkit"],
+  //
+  // unpdf and pdfjs-dist are here for a second reason: unpdf locates pdf.js's
+  // character maps at runtime with import.meta.resolve, which only answers
+  // truthfully when the package is sitting in node_modules rather than folded
+  // into a bundle. Bundled, the lookup throws, unpdf quietly carries on with no
+  // cMapUrl, and every PDF whose fonts need one extracts as empty strings — a
+  // perfectly good resume, refused, its owner told to export it again.
+  serverExternalPackages: ["docx", "pdfkit", "unpdf", "pdfjs-dist"],
 
   // Make sure the PDF fonts ship with the deployed API routes. Vercel's file
   // tracing cannot see them, because pdfGenerator.ts builds their paths at
   // runtime — without this, PDF download works locally and 500s in production.
   outputFileTracingIncludes: {
-    "/api/**/*": ["./assets/fonts/**/*"],
+    "/api/**/*": [
+      "./assets/fonts/**/*",
+      // Resolved by URL at runtime, so nothing static points at them and
+      // tracing cannot infer them either.
+      "./node_modules/pdfjs-dist/cmaps/**/*",
+      "./node_modules/pdfjs-dist/standard_fonts/**/*",
+    ],
   },
 
   /*

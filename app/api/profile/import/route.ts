@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { currentUser } from "@/lib/supabase/server";
 import { normalise, summarise } from "@/lib/resumeStore";
 import { completeJSON, DeepSeekError } from "@/lib/deepseek";
-import { extractResumeText, ResumeFileError } from "@/lib/resumeFile";
+import { extractResumeText, MAX_TEXT_CHARS, ResumeFileError } from "@/lib/resumeFile";
 import { checkImportLimit, describeRetry, recordImport } from "@/lib/importLimit";
 import { EXTRACT_SYSTEM_PROMPT } from "@/prompts/extractPrompt";
 import type { MasterProfile } from "@/lib/types";
@@ -60,24 +60,57 @@ export async function POST(request: Request) {
 
   const file = form.get("file");
 
-  if (!(file instanceof File)) {
-    return NextResponse.json({ error: "No file was uploaded." }, { status: 400 });
-  }
+  /*
+   * Text recognised in the browser from a PDF that had none of its own.
+   * The upload component posts it back here rather than to the paste
+   * endpoint, so that an OCR'd resume goes through the same model prompt, the
+   * same normalisation and the same review-before-saving as every other
+   * import. See lib/ocr.ts for why the recognising happens over there.
+   */
+  const recognised = form.get("text");
 
-  // ---- File to text -------------------------------------------------------
-  let extracted;
+  let extracted: {
+    text: string;
+    kind: string;
+    truncated: boolean;
+    unreadablePages: number[];
+  };
 
-  try {
-    extracted = await extractResumeText(file);
-  } catch (error) {
-    if (error instanceof ResumeFileError) {
-      return NextResponse.json({ error: error.message }, { status: error.status });
+  if (typeof recognised === "string" && recognised.trim()) {
+    const text = recognised.trim().slice(0, MAX_TEXT_CHARS);
+    if (text.length < 120) {
+      return NextResponse.json(
+        { error: "Too little text came back to build a profile from." },
+        { status: 422 },
+      );
     }
-    console.error("[profile/import] extraction", error);
-    return NextResponse.json(
-      { error: "Could not read that file. Try a different export, or paste the text instead." },
-      { status: 500 },
-    );
+    extracted = {
+      text,
+      kind: "ocr",
+      truncated: recognised.trim().length > MAX_TEXT_CHARS,
+      unreadablePages: [],
+    };
+  } else if (file instanceof File) {
+    // ---- File to text -----------------------------------------------------
+    try {
+      extracted = await extractResumeText(file);
+    } catch (error) {
+      if (error instanceof ResumeFileError) {
+        return NextResponse.json(
+          // The code is what tells the upload component this file is a picture
+          // and worth looking at rather than refusing.
+          { error: error.message, code: error.code },
+          { status: error.status },
+        );
+      }
+      console.error("[profile/import] extraction", error);
+      return NextResponse.json(
+        { error: "Could not read that file. Try a different export, or paste the text instead." },
+        { status: 500 },
+      );
+    }
+  } else {
+    return NextResponse.json({ error: "No file was uploaded." }, { status: 400 });
   }
 
   // ---- Text to profile ----------------------------------------------------
@@ -161,6 +194,10 @@ export async function POST(request: Request) {
     profile,
     summary: summarise(profile),
     kind: extracted.kind,
+    // Recognised text is a reading of a picture, not a copy of a file. The
+    // editor says so, because the difference is exactly the kind of thing this
+    // product asks people to check.
+    source: extracted.kind === "ocr" ? "ocr" : "file",
     warnings,
   });
 }

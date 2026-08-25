@@ -20,3 +20,8 @@ next-env.d.ts
 
 # Per-machine editor/tool settings — contains local filesystem paths
 .claude/settings.local.json
+
+# Copies of the OCR runtime, written by scripts/copy-ocr-assets.mjs from
+# node_modules. public/ocr/lang/ is committed — see that script for why.
+/public/ocr/*
+!/public/ocr/lang/

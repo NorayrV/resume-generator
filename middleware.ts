@@ -91,7 +91,17 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
+  /*
+   * /ocr is the OCR runtime — a worker, a few megabytes of WebAssembly and a
+   * language model, served from our own origin because the CSP will not let
+   * the browser fetch them from a CDN. They are static public files with no
+   * user data in them, and they are requested from inside a Web Worker that
+   * carries no session. Left in the matcher, every one of those requests is
+   * answered with a redirect to /login, and the browser refuses an HTML page
+   * where it asked for a module — which is a long way to say "OCR silently
+   * never works".
+   */
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|ocr/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

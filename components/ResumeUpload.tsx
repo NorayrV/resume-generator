@@ -11,10 +11,19 @@ import type { MasterProfile } from "@/lib/types";
  * The file is read on the server and comes back as a filled-in profile that
  * the editor below shows for checking. Nothing is saved by this component —
  * the user reviews the result and presses Save themselves.
+ *
+ * A PDF with no text in it is not refused. The server says so with a code, and
+ * we read the pages here by looking at them — see lib/ocr.ts. That takes tens
+ * of seconds and several megabytes of WebAssembly, so it happens only when a
+ * file turns out to need it, and it says what it is doing while it works.
  */
 
 interface Props {
-  onImported: (profile: MasterProfile, warnings: string[]) => void;
+  onImported: (
+    profile: MasterProfile,
+    warnings: string[],
+    source: "file" | "ocr",
+  ) => void;
   /** Set while the parent is busy, so two uploads cannot overlap. */
   disabled?: boolean;
 }
@@ -25,12 +34,29 @@ const MAX_BYTES = 5 * 1024 * 1024;
 const ACCEPT =
   ".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 
+interface Reading {
+  label: string;
+  /** 0 to 1, or null while the server has it and there is nothing to measure. */
+  fraction: number | null;
+}
+
 export function ResumeUpload({ onImported, disabled }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
   const [busy, setBusy] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [filename, setFilename] = useState<string | null>(null);
+  const [reading, setReading] = useState<Reading | null>(null);
+
+  /** Posts to the import route and hands the result up. Returns any failure. */
+  async function submit(body: FormData, source: "file" | "ocr") {
+    const response = await fetch("/api/profile/import", { method: "POST", body });
+    const data = await response.json();
+    if (!response.ok) return data as { error?: string; code?: string };
+    onImported(data.profile, data.warnings ?? [], source);
+    return null;
+  }
 
   async function upload(file: File) {
     setError(null);
@@ -52,34 +78,70 @@ export function ResumeUpload({ onImported, disabled }: Props) {
 
     setBusy(true);
     setFilename(file.name);
+    setReading({ label: `Reading ${file.name}`, fraction: null });
+
+    const controller = new AbortController();
+    abortRef.current = controller;
 
     try {
       const body = new FormData();
       body.append("file", file);
 
-      const response = await fetch("/api/profile/import", {
-        method: "POST",
-        body,
-      });
+      const failure = await submit(body, "file");
+      if (!failure) return;
 
-      const data = await response.json();
+      /*
+       * Not a failure so much as a different job. The file is a picture of a
+       * resume, so it gets read the only way a picture can be.
+       */
+      if (failure.code === "needs_ocr") {
+        const { readPdfByOcr, OcrError } = await import("@/lib/ocr");
 
-      if (!response.ok) {
-        setError(data.error ?? "Could not read that file.");
+        let text: string;
+        try {
+          text = await readPdfByOcr(
+            file,
+            (progress) =>
+              setReading({ label: progress.label, fraction: progress.fraction }),
+            controller.signal,
+          );
+        } catch (ocrFailure) {
+          if (controller.signal.aborted) return;
+          // Falling back to the server's own sentence: it names the problem and
+          // the way round it, which is more use than "OCR failed".
+          setError(
+            ocrFailure instanceof OcrError && ocrFailure.message
+              ? ocrFailure.message
+              : (failure.error ?? "Could not read that file."),
+          );
+          return;
+        }
+
+        setReading({ label: "Building your profile", fraction: 1 });
+
+        const ocrBody = new FormData();
+        ocrBody.append("text", text);
+        const ocrFailure = await submit(ocrBody, "ocr");
+        if (ocrFailure) setError(ocrFailure.error ?? "Could not read that file.");
         return;
       }
 
-      onImported(data.profile, data.warnings ?? []);
+      setError(failure.error ?? "Could not read that file.");
     } catch {
+      if (controller.signal.aborted) return;
       setError("Could not reach the server. Check your connection and try again.");
     } finally {
+      abortRef.current = null;
       setBusy(false);
+      setReading(null);
       // Let the same file be picked again after a failure.
       if (inputRef.current) inputRef.current.value = "";
     }
   }
 
   const blocked = busy || disabled;
+  const percent =
+    reading?.fraction != null ? Math.round(reading.fraction * 100) : null;
 
   return (
     <div className="space-y-3">
@@ -123,9 +185,36 @@ export function ResumeUpload({ onImported, disabled }: Props) {
               aria-hidden
             />
             <p className="text-small font-medium text-ink" role="status">
-              Reading {filename}
+              {reading?.label ?? `Reading ${filename}`}
+              {percent != null && percent < 100 ? ` — ${percent}%` : ""}
             </p>
-            <p className="hint">This takes a few seconds.</p>
+
+            {percent == null ? (
+              <p className="hint">This takes a few seconds.</p>
+            ) : (
+              <>
+                {/* Only drawn once there is something real to draw. Reading a
+                    picture takes long enough that a spinner alone reads as a
+                    hang. */}
+                <div
+                  className="mt-1 h-1 w-40 overflow-hidden rounded-full bg-line-soft"
+                  role="progressbar"
+                  aria-valuenow={percent}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-label="Reading your resume"
+                >
+                  <div
+                    className="h-full bg-accent transition-[width] duration-300"
+                    style={{ width: `${Math.max(percent, 3)}%` }}
+                  />
+                </div>
+                <p className="hint">
+                  There is no text in this PDF, so we are reading the pages.
+                  This happens on your device.
+                </p>
+              </>
+            )}
           </div>
         ) : (
           <div className="flex flex-col items-center gap-2">

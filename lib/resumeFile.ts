@@ -47,11 +47,22 @@ export type ResumeFileKind = "pdf" | "docx";
 export const ACCEPT_ATTRIBUTE =
   ".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 
+/**
+ * Something the caller can act on, beyond the sentence shown to the user.
+ *
+ * `needs_ocr` means the file is a picture of a resume — a scan, a phone photo,
+ * a resume-builder site's screenshot of its own preview, or text exported as
+ * vector outlines. All four are unreadable here and all four are readable by
+ * looking at them, which the browser can do; see lib/ocr.ts.
+ */
+export type ResumeFileErrorCode = "needs_ocr";
+
 /** A refusal we are happy to show the user verbatim. */
 export class ResumeFileError extends Error {
   constructor(
     message: string,
     readonly status: number = 422,
+    readonly code?: ResumeFileErrorCode,
   ) {
     super(message);
     this.name = "ResumeFileError";
@@ -499,9 +510,17 @@ export async function extractResumeText(file: File): Promise<ExtractedResume> {
      * problem and leaves the cause open.
      */
     throw new ResumeFileError(
+      /*
+       * Written to stand on its own. The browser normally takes this over and
+       * the user never sees it — but if OCR cannot start, or the caller is not
+       * our own upload component, this sentence is the whole answer, and
+       * "we will handle it" would be a promise nobody kept.
+       */
       extracted.drawsImages
         ? "No text could be read from that PDF — every page in it is a picture rather than text. Scans look like this, and so do the downloads from some resume-builder sites. Paste your resume as text instead, or upload a PDF exported from Word or Google Docs."
         : "No text could be read from that PDF — its words are drawn as shapes rather than stored as text, which is what some design tools do when they export. Paste your resume as text instead, or export it again as a PDF from Word or Google Docs.",
+      422,
+      "needs_ocr",
     );
   }
 

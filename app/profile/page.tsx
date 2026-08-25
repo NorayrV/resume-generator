@@ -37,7 +37,10 @@ export default function ProfilePage() {
   const [editorKey, setEditorKey] = useState(0);
 
   /** Set after an import, until the user saves. Null the rest of the time. */
-  const [review, setReview] = useState<{ warnings: string[] } | null>(null);
+  const [review, setReview] = useState<{
+    warnings: string[];
+    source: "file" | "ocr";
+  } | null>(null);
 
   /** Whether the long form is on screen. See the note at the top. */
   const [editing, setEditing] = useState(false);
@@ -78,10 +81,14 @@ export default function ProfilePage() {
   }
 
   /** Replace the form contents with a parsed resume. Nothing is saved yet. */
-  function applyImport(profile: MasterProfile, warnings: string[]) {
+  function applyImport(
+    profile: MasterProfile,
+    warnings: string[],
+    source: "file" | "ocr" = "file",
+  ) {
     setDraft(profile);
     setEditorKey((k) => k + 1);
-    setReview({ warnings });
+    setReview({ warnings, source });
     setEditing(true);
 
     // The fields are below the fold on most screens; without this the upload
@@ -227,6 +234,17 @@ export default function ProfilePage() {
                         </strong>{" "}
                         We could not find {formatList(review.warnings)} — add
                         that by hand. Nothing has been saved yet.
+                      </>
+                    ) : review.source === "ocr" ? (
+                      <>
+                        <strong className="font-medium">
+                          Read from the pictures in that PDF. Check the fields
+                          below.
+                        </strong>{" "}
+                        There was no text in the file, so the words were worked
+                        out from how they look — spellings and numbers are worth
+                        a closer read than usual. Nothing has been saved until
+                        you press Save profile.
                       </>
                     ) : (
                       <>
