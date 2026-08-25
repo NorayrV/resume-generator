@@ -136,6 +136,12 @@ interface ReadPages {
   text: string;
   /** 1-based page numbers that came back with no usable text. */
   unreadable: number[];
+  /**
+   * Whether any page paints an image. Only meaningful — and only measured —
+   * when there was too little text to use, because it is the difference
+   * between two failures that look identical to the person uploading.
+   */
+  drawsImages: boolean;
 }
 
 interface Placed {
@@ -307,7 +313,52 @@ async function readByPosition(document: {
     pages.push(body);
   }
 
-  return { text: pages.join("\n\n"), unreadable };
+  // Settled by fromPdf, and only when it turns out to matter.
+  return { text: pages.join("\n\n"), unreadable, drawsImages: false };
+}
+
+/**
+ * Does any page paint an image?
+ *
+ * Asked only when a PDF gave up almost no text, because the answer decides
+ * which of two very different things we tell the user. A page carrying an
+ * image and no text is a scan, and re-exporting will not help — the words are
+ * pixels. A page carrying neither is a design-tool export with its text
+ * converted to vector outlines, and telling that person to "export a text PDF
+ * from Word" sends them somewhere they have never been; there is not even
+ * anything for OCR to read.
+ *
+ * Walking the operator list parses every content stream, which is why this
+ * runs only on the failure path, where the request is already lost.
+ */
+async function drawsImages(document: {
+  numPages: number;
+  getPage: (n: number) => Promise<unknown>;
+}): Promise<boolean> {
+  const { getResolvedPDFJS } = await import("unpdf");
+  const { OPS } = await getResolvedPDFJS();
+
+  const imageOps = new Set(
+    [
+      "paintImageXObject",
+      "paintImageXObjectRepeat",
+      "paintInlineImageXObject",
+      "paintJpegXObject",
+      "paintImageMaskXObject",
+    ]
+      .map((name) => (OPS as Record<string, number | undefined>)[name])
+      .filter((op): op is number => op !== undefined),
+  );
+
+  for (let n = 1; n <= document.numPages; n++) {
+    const page = (await document.getPage(n)) as {
+      getOperatorList: () => Promise<{ fnArray: number[] }>;
+    };
+    const { fnArray } = await page.getOperatorList();
+    for (const fn of fnArray) if (imageOps.has(fn)) return true;
+  }
+
+  return false;
 }
 
 async function fromPdf(bytes: Uint8Array): Promise<ReadPages> {
@@ -328,24 +379,44 @@ async function fromPdf(bytes: Uint8Array): Promise<ReadPages> {
    * confuses it should still come back through the path that has been in
    * production, rather than failing the upload outright.
    */
+  /**
+   * Runs before returning either result: a PDF that gave up almost nothing is
+   * about to be refused, and the refusal should say which kind of nothing it
+   * was. On the happy path this costs a comparison.
+   */
+  const explain = async (read: ReadPages): Promise<ReadPages> => {
+    if (read.text.replace(/\s/g, "").length >= MIN_TEXT_CHARS) return read;
+    try {
+      read.drawsImages = await drawsImages(
+        document as unknown as Parameters<typeof drawsImages>[0],
+      );
+    } catch {
+      // Unknowable, so assume the commoner of the two. A wrong guess here
+      // costs the accuracy of one sentence; throwing would cost the upload.
+      read.drawsImages = true;
+    }
+    return read;
+  };
+
   try {
     const laidOut = await readByPosition(
       document as unknown as Parameters<typeof readByPosition>[0],
     );
-    if (laidOut.text.trim().length > 0) return laidOut;
+    if (laidOut.text.trim().length > 0) return await explain(laidOut);
   } catch {
     // fall through
   }
 
   try {
     const { text } = await extractText(document, { mergePages: true });
-    return {
+    return await explain({
       text: Array.isArray(text) ? text.join("\n") : String(text ?? ""),
       // The flat join has no page boundaries in it, so this path reports
       // nothing rather than guessing. Silence is honest; a wrong page number
       // is not.
       unreadable: [],
-    };
+      drawsImages: false,
+    });
   } catch {
     throw new ResumeFileError(
       "That PDF could not be opened. It may be password protected or damaged. Try exporting it again, or paste the text instead.",
@@ -362,7 +433,7 @@ async function fromDocx(bytes: Uint8Array): Promise<ReadPages> {
     });
     // A .docx has no fixed pages until something lays it out, so there is no
     // page to report on.
-    return { text: value ?? "", unreadable: [] };
+    return { text: value ?? "", unreadable: [], drawsImages: false };
   } catch {
     throw new ResumeFileError(
       "That Word file could not be read. Open it and re-save it as .docx, then try again.",
@@ -409,12 +480,28 @@ export async function extractResumeText(file: File): Promise<ExtractedResume> {
   const text = tidy(extracted.text);
 
   if (text.length < MIN_TEXT_CHARS) {
-    // Overwhelmingly this is a scan: a photo of a resume in a PDF wrapper,
-    // which has no text layer at all. Say so, rather than "too short".
+    if (kind !== "pdf") {
+      throw new ResumeFileError(
+        "That document has almost no text in it. Check you uploaded the right file.",
+      );
+    }
+
+    /*
+     * Two failures, one appearance. Both give back a PDF that looks perfectly
+     * readable on screen and yields nothing here, and the fix for one is
+     * useless for the other, so they get separate sentences.
+     *
+     * The image case is not only scanners. A resume-builder site that exports
+     * by screenshotting its own preview — html2canvas into jsPDF, which is the
+     * cheap way to do it — produces a PDF of pictures from a page that never
+     * touched paper. Calling that "a scan" to someone who has never owned a
+     * scanner just reads as broken, so the sentence names the shape of the
+     * problem and leaves the cause open.
+     */
     throw new ResumeFileError(
-      kind === "pdf"
-        ? "No text could be read from that PDF — it looks like a scan or an image. Export a text PDF from Word or Google Docs, or paste your resume as text instead."
-        : "That document has almost no text in it. Check you uploaded the right file.",
+      extracted.drawsImages
+        ? "No text could be read from that PDF — every page in it is a picture rather than text. Scans look like this, and so do the downloads from some resume-builder sites. Paste your resume as text instead, or upload a PDF exported from Word or Google Docs."
+        : "No text could be read from that PDF — its words are drawn as shapes rather than stored as text, which is what some design tools do when they export. Paste your resume as text instead, or export it again as a PDF from Word or Google Docs.",
     );
   }
 
