@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { CreditCard, FileText, LogOut, User } from "lucide-react";
 import { supabaseBrowser } from "@/lib/supabase/client";
+import { clearOwned } from "@/lib/sessionCache";
 import { Logo } from "./Logo";
 import { ThemeToggle } from "./ThemeToggle";
 
@@ -25,6 +26,14 @@ export function AppHeader({ subtitle }: { subtitle?: string }) {
   const router = useRouter();
 
   async function signOut() {
+    /*
+     * Before the session goes, not after: this tab remembers the last
+     * generated resume and the posting it was written against, and both
+     * belong to the person on their way out. The entries are stamped with
+     * their id and would be refused for anyone else anyway — this just means
+     * they are not sitting in the tab waiting to be refused.
+     */
+    clearOwned();
     await supabaseBrowser().auth.signOut();
     router.push("/login");
     router.refresh();

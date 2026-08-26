@@ -12,6 +12,14 @@ import { CoverLetter } from "@/components/CoverLetter";
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
+import { supabaseBrowser } from "@/lib/supabase/client";
+import {
+  CACHE_KEY,
+  DRAFT_KEY,
+  forgetOwned,
+  readOwned,
+  writeOwned,
+} from "@/lib/sessionCache";
 import { sanitiseLang, type Lang } from "@/lib/coverLetter";
 import { DEFAULT_OUTPUTS, type OutputKind } from "@/lib/outputs";
 import { PRO_GENERATIONS_PER_MONTH, type PlanPricing } from "@/lib/plan";
@@ -43,18 +51,6 @@ interface Allowance {
   remaining: number | null;
   unlimited: boolean;
 }
-
-/** Kept so a trip to Profile and back does not throw away a generation. */
-const CACHE_KEY = "last-generation";
-
-/**
- * The posting being worked on.
- *
- * Remembered so that leaving to upgrade — or to fix the profile — and coming
- * back does not mean finding and pasting the job advert a second time. Session
- * storage, not local: it belongs to this application, not to the account.
- */
-const DRAFT_KEY = "job-description-draft";
 
 /**
  * Remembered cover letter language.
@@ -105,6 +101,17 @@ export default function GeneratePage() {
   /** Announced to screen readers when a run finishes. */
   const [announcement, setAnnouncement] = useState("");
 
+  /*
+   * Who this tab's remembered state belongs to.
+   *
+   * sessionStorage is scoped to the tab, not to the account, so the previous
+   * signed-in user's generated resume used to reappear for whoever signed in
+   * next. Everything remembered is stamped with this id and discarded on a
+   * mismatch. Null until the session is read, and nothing is restored or
+   * written before then.
+   */
+  const [ownerId, setOwnerId] = useState<string | null>(null);
+
   useEffect(() => {
     fetch("/api/profile")
       .then((r) => r.json())
@@ -133,19 +140,25 @@ export default function GeneratePage() {
       })
       .catch(() => {});
 
-    try {
-      const draft = sessionStorage.getItem(DRAFT_KEY);
-      if (draft) setJobDescription(draft);
-    } catch {
-      // Private browsing — the draft simply will not survive a navigation.
-    }
+    /*
+     * The local session, not a round trip: this decides whether to redisplay
+     * the tab's own state, not whether to grant access to anything. Reading it
+     * first means a mismatched cache is dropped before it can be shown.
+     */
+    supabaseBrowser()
+      .auth.getSession()
+      .then(({ data }) => {
+        const owner = data.session?.user.id ?? null;
+        setOwnerId(owner);
+        if (!owner) return;
 
-    try {
-      const cached = sessionStorage.getItem(CACHE_KEY);
-      if (cached) setResult(JSON.parse(cached));
-    } catch {
-      // A corrupt cache is not worth surfacing — just start clean.
-    }
+        const draft = readOwned<string>(DRAFT_KEY, owner);
+        if (draft) setJobDescription(draft);
+
+        const cached = readOwned<Generation>(CACHE_KEY, owner);
+        if (cached) setResult(cached);
+      })
+      .catch(() => setOwnerId(null));
 
     try {
       const saved = localStorage.getItem(LANGS_KEY);
@@ -158,12 +171,8 @@ export default function GeneratePage() {
   /** Keep the posting for the trip to /account or /profile and back. */
   function changeJobDescription(next: string) {
     setJobDescription(next);
-    try {
-      if (next.trim()) sessionStorage.setItem(DRAFT_KEY, next);
-      else sessionStorage.removeItem(DRAFT_KEY);
-    } catch {
-      // Nothing to do: the box still works, it just will not be remembered.
-    }
+    if (next.trim()) writeOwned(DRAFT_KEY, ownerId, next);
+    else forgetOwned(DRAFT_KEY);
   }
 
   /** Remember the language choice, so it does not reset on every visit. */
@@ -280,11 +289,7 @@ export default function GeneratePage() {
           ? "Your resume and cover letter are ready."
           : "Your resume is ready.",
       );
-      try {
-        sessionStorage.setItem(CACHE_KEY, JSON.stringify(generation));
-      } catch {
-        // Over quota is harmless: the result is already on screen.
-      }
+      writeOwned(CACHE_KEY, ownerId, generation);
 
       requestAnimationFrame(() =>
         document
