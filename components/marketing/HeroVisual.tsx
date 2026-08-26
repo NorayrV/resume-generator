@@ -115,17 +115,19 @@ export function HeroVisual() {
             */}
             <div className="bg-doc-paper px-5 py-4">
               {/*
-                Not "Jane Doe". This is the first name a visitor reads, in the
-                one element that shows what the product actually makes, and
-                PRODUCT.md puts people applying abroad with names that
-                Latin-only tooling handles badly at the top of the audience
-                list. A Cyrillic name renders in Inter here because the font
-                already loads the cyrillic subset for the Russian cover
-                letters, so the demo proves a capability rather than just
-                avoiding a cliché.
+                Still not "Jane Doe" — this is the first name a visitor reads,
+                in the one element showing what the product actually makes, and
+                a placeholder there reads as a placeholder product.
+
+                It was a Cyrillic name, to demonstrate that non-Latin names are
+                handled rather than mangled. That capability is real and stays
+                real — downloads carry the name via RFC 5987 — but a demo has
+                one job, which is to be recognised instantly by whoever is
+                looking. A name most visitors cannot read costs more attention
+                than the point it was making was worth.
               */}
               <p className="text-center text-[0.8125rem] font-bold uppercase tracking-[0.02em] text-doc-ink">
-                Марина Ковач
+                Sarah Mitchell
               </p>
               {/* The headline is rewritten per posting — the visible tailoring. */}
               <p className="mt-0.5 text-center text-micro font-bold text-doc-accent">
