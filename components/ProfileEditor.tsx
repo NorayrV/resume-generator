@@ -170,9 +170,6 @@ export function ProfileEditor({
 }: Props) {
   const [profile, setProfile] = useState<MasterProfile>(initial);
   const [skillsText, setSkillsText] = useState(arrayToLines(initial.skills));
-  const [interestsText, setInterestsText] = useState(
-    arrayToLines(initial.interests),
-  );
   const [certsText, setCertsText] = useState(
     arrayToLines(initial.certifications.map((c) => c.name)),
   );
@@ -187,7 +184,6 @@ export function ProfileEditor({
     ...profile,
     raw_text: initial.raw_text,
     skills: linesToArray(skillsText),
-    interests: linesToArray(interestsText),
     certifications: linesToArray(certsText).map((name) => ({ name })),
   };
 
@@ -198,7 +194,6 @@ export function ProfileEditor({
       ...initial,
       raw_text: initial.raw_text,
       skills: linesToArray(arrayToLines(initial.skills)),
-      interests: linesToArray(arrayToLines(initial.interests)),
       certifications: linesToArray(
         arrayToLines(initial.certifications.map((c) => c.name)),
       ).map((name) => ({ name })),
@@ -693,8 +688,8 @@ export function ProfileEditor({
 
       {/* ---- Extras ------------------------------------------------------ */}
       <Card
-        title="Languages, certifications and interests"
-        hint="These print at the bottom. Interests are filtered per job; the rest always print in full."
+        title="Languages and certifications"
+        hint="These print at the bottom of every resume, in full."
       >
         <div className="space-y-5">
           <div>
@@ -749,25 +744,14 @@ export function ProfileEditor({
             </div>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Certifications — one per line">
-              <Textarea
-                rows={3}
-                value={certsText}
-                onChange={(e) => setCertsText(e.target.value)}
-                placeholder="CFA Level I Candidate"
-              />
-            </Field>
-
-            <Field label="Interests — one per line">
-              <Textarea
-                rows={3}
-                value={interestsText}
-                onChange={(e) => setInterestsText(e.target.value)}
-                placeholder={"Chess\nFinancial markets"}
-              />
-            </Field>
-          </div>
+          <Field label="Certifications — one per line">
+            <Textarea
+              rows={3}
+              value={certsText}
+              onChange={(e) => setCertsText(e.target.value)}
+              placeholder="CFA Level I Candidate"
+            />
+          </Field>
         </div>
       </Card>
 

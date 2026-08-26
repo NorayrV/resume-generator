@@ -138,7 +138,6 @@ const CAP = {
   education: 30,
   languages: 40,
   certifications: 60,
-  interests: 60,
   contacts: 20,
   rawText: 20_000,
 } as const;
@@ -220,10 +219,6 @@ export function normalise(profile: Partial<MasterProfile>): MasterProfile {
         issuer: cutOrNone(c.issuer, CAP.field),
         date: cutOrNone(c.date, CAP.field),
       })),
-    interests: (profile.interests ?? [])
-      .map((i) => cut(i, CAP.field))
-      .filter(Boolean)
-      .slice(0, CAP.interests),
     raw_text: profile.raw_text
       ? profile.raw_text.slice(0, CAP.rawText)
       : undefined,
@@ -304,10 +299,6 @@ export function profileToPrompt(profile: MasterProfile): string {
         .map((l) => `${l.language}${l.proficiency ? ` (${l.proficiency})` : ""}`)
         .join(", ")}`,
     );
-  }
-
-  if (profile.interests.length) {
-    lines.push(`\nINTERESTS\n${profile.interests.join(", ")}`);
   }
 
   return lines.join("\n");

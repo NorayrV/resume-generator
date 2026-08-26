@@ -62,8 +62,6 @@ export interface MasterProfile {
   education: EducationEntry[];
   languages: LanguageEntry[];
   certifications: CertificationEntry[];
-  /** Source list the AI picks from when filling the Interests slot. */
-  interests: string[];
   /** Exactly what you pasted, kept so the simple editor can show it again. */
   raw_text?: string;
   updated_at?: string;
@@ -78,8 +76,8 @@ export interface SkillGroup {
 /**
  * One tailored resume, rewritten for a single job description.
  *
- * Only five things here are written by the AI:
- *   headline, summary, technical_skills, each role's bullets, interests.
+ * Only four things here are written by the AI:
+ *   headline, summary, technical_skills, each role's bullets.
  *
  * Everything else — employers, titles, dates, education, languages — is
  * copied through from the stored profile untouched. The AI is never asked
@@ -91,8 +89,6 @@ export interface TailoredResume {
   summary: string;
   technical_skills: SkillGroup[];
   experience: ExperienceEntry[];
-  /** Short list under Additional Information, chosen to suit the role. */
-  interests: string[];
 
   /** Copied from the profile, not generated. */
   education: EducationEntry[];
@@ -135,5 +131,4 @@ export const EMPTY_PROFILE: MasterProfile = {
   education: [],
   languages: [],
   certifications: [],
-  interests: [],
 };

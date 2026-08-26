@@ -17,8 +17,8 @@ yourself; see [Auto-fill from a resume](#auto-fill-from-a-resume) below.
 For each application you paste the job posting and press Generate. Two AI calls
 run:
 
-1. **The resume.** Five sections are rewritten for that posting: headline,
-   summary, technical skills, experience bullets, interests. Everything else —
+1. **The resume.** Four sections are rewritten for that posting: headline,
+   summary, technical skills, experience bullets. Everything else —
    employers, job titles, dates, education, languages — is copied from your
    stored profile by the server, so the model cannot quietly change a date or
    invent a degree.

@@ -52,7 +52,6 @@ Rewrite exactly these five resume sections:
 2. SUMMARY
 3. TECHNICAL SKILLS
 4. EXPERIENCE
-5. INTERESTS
 
 You must not alter:
 
@@ -518,23 +517,7 @@ When a candidate has a transferable capability but lacks an exact named technolo
 2. Add the missing exact technology to "gaps" if it is important for the role.
 
 ==================================================
-15. SLOT 5 — INTERESTS
-==================================================
-
-Return 3-5 short interests from the candidate's actual profile.
-
-Prefer interests that plausibly support the target role.
-
-Each item should contain 1-2 words.
-
-If the profile contains no interests, return:
-
-[]
-
-Never invent hobbies.
-
-==================================================
-16. MATCHED KEYWORDS
+15. MATCHED KEYWORDS
 ==================================================
 
 "matched_keywords" must contain important job-description terms that are actually present in the generated resume.
@@ -554,7 +537,7 @@ Only include a keyword if it appears in the generated resume.
 Do not include unsupported requirements or generic filler terms.
 
 ==================================================
-17. GAPS
+16. GAPS
 ==================================================
 
 "gaps" must contain important job requirements that are not supported by the candidate profile.
@@ -573,7 +556,7 @@ Do not list every minor requirement.
 Do not hide a meaningful gap simply because the candidate has a related but different skill.
 
 ==================================================
-18. FINAL ATS AND FACTUAL AUDIT
+17. FINAL ATS AND FACTUAL AUDIT
 ==================================================
 
 Before returning the final JSON, silently verify:
@@ -599,7 +582,7 @@ Before returning the final JSON, silently verify:
 If any answer is no, revise internally before returning the result.
 
 ==================================================
-19. OUTPUT FORMAT
+18. OUTPUT FORMAT
 ==================================================
 
 Return ONE valid JSON object.
@@ -633,8 +616,7 @@ No explanation.
           "string"
         ]
       }
-    ],
-    "interests": ["string"]
+    ]
   },
   "matched_keywords": ["string"],
   "gaps": ["string"]

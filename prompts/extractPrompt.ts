@@ -65,13 +65,12 @@ Return one JSON object, nothing else:
   ],
   "certifications": [
     { "name": "string", "issuer": "string", "date": "string" }
-  ],
-  "interests": ["string"]
+  ]
 }
 
 List experience newest first.
 
 If the text contains placeholder markers in quotes - "HEADLINE", "SUMMARY",
-"TECHNICAL SKILLS", "experience", "INTERESTS" - those are empty template slots,
+"TECHNICAL SKILLS" and "experience" - those are empty template slots,
 not content. Skip them, and keep every real value around them.
 `;

@@ -228,10 +228,9 @@ export async function generatePdf(
 
   // ---- Additional information ---------------------------------------------
   const hasLanguages = (resume.languages?.length ?? 0) > 0;
-  const hasInterests = (resume.interests?.length ?? 0) > 0;
   const hasCerts = (resume.certifications?.length ?? 0) > 0;
 
-  if (hasLanguages || hasInterests || hasCerts) {
+  if (hasLanguages || hasCerts) {
     heading("Additional Information");
 
     const labelled = (label: string, value: string) =>
@@ -261,10 +260,6 @@ export async function generatePdf(
           .map((c) => [c.name, c.issuer, c.date].filter(Boolean).join(", "))
           .join("; "),
       );
-    }
-
-    if (hasInterests) {
-      labelled("Interests", resume.interests.join(", "));
     }
   }
 

@@ -62,13 +62,12 @@ const COPIED = [
   "Certifications",
 ];
 
-/** The five it does write, from what is already in your profile. */
+/** The four it does write, from what is already in your profile. */
 const REWRITTEN = [
   "The headline under your name",
   "Your summary",
   "How skills are grouped",
   "How each role is described",
-  "Which interests to show",
 ];
 
 export default async function LoginPage() {

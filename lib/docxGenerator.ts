@@ -202,10 +202,9 @@ export async function generateDocx(
 
   // ---- Additional information ---------------------------------------------
   const hasLanguages = resume.languages?.length > 0;
-  const hasInterests = resume.interests?.length > 0;
   const hasCerts = (resume.certifications?.length ?? 0) > 0;
 
-  if (hasLanguages || hasInterests || hasCerts) {
+  if (hasLanguages || hasCerts) {
     children.push(heading("Additional Information"));
 
     if (hasLanguages) {
@@ -243,23 +242,6 @@ export async function generateDocx(
           children: [
             run("Certifications: ", { bold: true, size: S_EXTRA }),
             run(certs, { size: S_EXTRA }),
-          ],
-        }),
-      );
-    }
-
-    if (hasInterests) {
-      children.push(
-        new Paragraph({
-          bullet: { level: 0 },
-          spacing: { after: 20 },
-          indent: {
-            left: convertInchesToTwip(0.22),
-            hanging: convertInchesToTwip(0.14),
-          },
-          children: [
-            run("Interests: ", { bold: true, size: S_EXTRA }),
-            run(resume.interests.join(", "), { size: S_EXTRA }),
           ],
         }),
       );

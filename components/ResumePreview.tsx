@@ -78,7 +78,6 @@ export function ResumePreview({ resume, person, draftedRoles = [] }: Props) {
 
   const hasAdditional =
     resume.languages?.length > 0 ||
-    resume.interests?.length > 0 ||
     (resume.certifications?.length ?? 0) > 0;
 
   return (
@@ -247,13 +246,6 @@ export function ResumePreview({ resume, person, draftedRoles = [] }: Props) {
                   {(resume.certifications ?? [])
                     .map((c) => [c.name, c.issuer, c.date].filter(Boolean).join(", "))
                     .join("; ")}
-                </Bullet>
-              )}
-
-              {resume.interests?.length > 0 && (
-                <Bullet>
-                  <span className="font-semibold">Interests:</span>{" "}
-                  {resume.interests.join(", ")}
                 </Bullet>
               )}
             </ul>

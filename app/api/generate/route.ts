@@ -308,7 +308,6 @@ async function generateFor({
       summary: result.resume.summary ?? "",
       technical_skills: result.resume.technical_skills ?? [],
       experience: anchored,
-      interests: result.resume.interests ?? [],
       education: profile.education,
       languages: profile.languages,
       certifications: profile.certifications,

@@ -43,9 +43,9 @@ asked of the model.**
 
 Employers, job titles, start and end dates, education and certifications are
 copied from the stored profile and never passed to the model as something to
-write, so they cannot drift. The model rewrites only five things: the
-headline, the summary, how skills are grouped, how each role is described, and
-which interests to show. `lib/anchorExperience.ts` re-anchors returned roles
+write, so they cannot drift. The model rewrites only four things: the
+headline, the summary, how skills are grouped, and how each role is described.
+`lib/anchorExperience.ts` re-anchors returned roles
 against stored ones so a returned document cannot silently change a fact.
 
 The second half of the position is the readout most tools omit: every
@@ -59,7 +59,7 @@ the same separation between copied facts and generated wording.
 ## Operating Context
 
 - The candidate keeps one master profile: contact details, roles with dates,
-  skills, education, languages, certifications, interests.
+  skills, education, languages, certifications.
 - Profiles are usually created by uploading an existing resume (PDF or DOCX,
   read in memory and discarded) rather than typed by hand.
 - Each application starts by pasting a full job posting — responsibilities and

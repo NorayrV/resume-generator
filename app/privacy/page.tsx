@@ -32,7 +32,7 @@ export default function PrivacyPage() {
               <strong className="font-medium text-ink">Your profile.</strong>{" "}
               Everything you enter or upload: contact details, employers, job
               titles, dates, locations, what you did in each role, skills,
-              education, languages, certifications and interests. If you paste
+              education, languages and certifications. If you paste
               or upload a resume, the text extracted from it is kept too, so
               the form can be shown to you again.
             </>,

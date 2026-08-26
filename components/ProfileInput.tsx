@@ -40,10 +40,7 @@ EDUCATION
 University of Example — BSc, Economics and Business, 2020–2024
 
 LANGUAGES
-English (native), German (fluent)
-
-INTERESTS
-Chess, financial markets`;
+English (native), German (fluent)`;
 
 export function ProfileInput({ initialText, onSaved }: Props) {
   const [text, setText] = useState(initialText);
