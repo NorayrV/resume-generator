@@ -56,7 +56,11 @@ export const MAX_RESUME_TEXT_CHARS = 20_000;
 
 /** What to show for the paid plan. Read from Polar, so never typed twice. */
 export interface PlanPricing {
-  /** Formatted for display, e.g. "$9". */
+  /**
+   * Formatted for display, e.g. "$9" — or "about $9" when this is the
+   * fallback. The hedge is inside the string on purpose: the figure is shown
+   * in five places and only one of them had room for a footnote.
+   */
   price: string;
   /** Billing interval, e.g. "month". */
   period: string;
@@ -70,8 +74,26 @@ export interface PlanPricing {
  * The Polar product is the source of truth for what a customer is actually
  * charged; lib/polar.ts reads the real figure. These exist so a pricing page
  * still renders something sensible if that call fails.
+ *
+ * The word "about" is the whole point of this constant.
+ *
+ * It used to read "$12.99" — the same figure Polar returns — which meant a
+ * failed price lookup was invisible. The page showed the correct-looking
+ * number, the only tell was one line of grey text under the pricing cards,
+ * and the four other places that show the price had no tell at all. If the
+ * Polar price ever changed while the lookup was failing, the site would
+ * quietly quote the old one next to a checkout button.
+ *
+ * Hedging the string rather than the components means every place that prints
+ * a price inherits it: the pricing cards, the account page, both upgrade
+ * prompts and the sign-in card. It also means a failure is legible from
+ * outside — "about" appears in the HTML, so it can be checked without a
+ * session and without reading logs.
+ *
+ * Keep the figure accurate anyway. "About $12.99" when the real price is $30
+ * is still a lie, just a hedged one.
  */
-export const FALLBACK_PLAN_PRICE = "$12.99";
+export const FALLBACK_PLAN_PRICE = "about $12.99";
 export const FALLBACK_PLAN_PERIOD = "month";
 
 /** Same figure in minor units, for quoting a crypto invoice. */
