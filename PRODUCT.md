@@ -84,8 +84,12 @@ the same separation between copied facts and generated wording.
   The word is load-bearing: "pack" was the earlier name and is gone from
   every surface, because the pricing section used it in three headings
   while the cards beside them counted "applications".
-- Cover letters require an active paid or comped plan, enforced server-side
-  before the meter and before any AI call.
+- Cover letters are on every plan, free included. A generation produces the
+  resume, the letter, or both, and costs one application either way — so the
+  free three cover whichever documents the posting actually asks for. The
+  paid-only output list in lib/outputs.ts is empty; the mechanism to put an
+  output back behind the plan is one entry there, read by both the API and the
+  browser.
 - One cover letter language per generation: English, Russian or Spanish.
 - Job postings are capped at 20,000 characters; uploads at 5 MB.
 - Generation takes roughly 20–60 seconds and depends on an external AI
@@ -162,7 +166,8 @@ what is copied rather than generated, what is never sold.
    for a specific posting. It is not a job board, a tracker, a coach, or a
    network.
 5. **The free tier is real.** Three applications every 30 days, no card, no
-   countdown — the paid boundary sits at cover letters and volume, never at
+   countdown — and the free plan is the whole product, not a sample of it.
+   The paid boundary is volume alone, never a feature held back and never
    making the free path deliberately unpleasant.
 
 ## Accessibility & Inclusion

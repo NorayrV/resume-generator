@@ -270,6 +270,12 @@ export function JobDescriptionInput({
 
         {locked ? (
           /*
+           * Unreachable while PAID_ONLY_OUTPUTS is empty — cover letters are
+           * on every plan, so nothing locks. Kept working rather than
+           * deleted: it is the other half of that switch, and putting an
+           * output back behind the plan should not also mean rebuilding the
+           * screen that explains it.
+           *
            * Says what the feature is and what unlocks it, in that order.
            * Someone reading this has not been refused anything yet — they are
            * being told the shape of the product before they press anything.

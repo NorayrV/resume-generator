@@ -1,7 +1,12 @@
 import "server-only";
 
 import { getAllowance, type Tier } from "./usage";
-import { OUTPUT_LABELS, type OutputKind } from "./outputs";
+import {
+  needsPaidPlan,
+  OUTPUT_LABELS,
+  PAID_ONLY_OUTPUTS,
+  type OutputKind,
+} from "./outputs";
 
 /**
  * Which outputs a plan is allowed to produce.
@@ -27,17 +32,16 @@ import { OUTPUT_LABELS, type OutputKind } from "./outputs";
  * to synchronise.
  */
 
-/** Outputs that a free account may look at but not generate. */
-export const PAID_ONLY_OUTPUTS: OutputKind[] = ["cover_letter"];
+/*
+ * The list itself lives in lib/outputs.ts, which imports nothing and so can be
+ * read by the browser too. It is currently empty — see the note there. This
+ * file still owns the decision, because only the server can resolve a tier.
+ */
+export { PAID_ONLY_OUTPUTS, needsPaidPlan };
 
 /** True for any tier that has paid or been comped. */
 export function isPaidTier(tier: Tier): boolean {
   return tier !== "free";
-}
-
-/** Does this selection contain anything a free account cannot generate? */
-export function needsPaidPlan(outputs: OutputKind[]): boolean {
-  return outputs.some((kind) => PAID_ONLY_OUTPUTS.includes(kind));
 }
 
 export type AccessDecision =
@@ -67,6 +71,8 @@ export async function checkOutputAccess(
     tier,
     blocked,
     /*
+     * Only built when something is actually gated, which nothing is today.
+     *
      * A product sentence, not an authorisation error. It names what is
      * included with Pro, and says plainly that the resume is unaffected —
      * someone who hits this has usually not realised only one of the two

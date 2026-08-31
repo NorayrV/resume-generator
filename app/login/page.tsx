@@ -41,7 +41,7 @@ const STEPS = [
   },
   {
     title: "Get your application",
-    body: "A tailored resume as Word or PDF, the keywords it matched, and what it could not cover. Cover letters come with Pro.",
+    body: "A tailored resume as Word or PDF, a cover letter when the posting asks for one, the keywords it matched, and what it could not cover.",
   },
 ];
 
@@ -105,7 +105,7 @@ export default async function LoginPage() {
                 {[
                   { line: "Tailored resume, as Word or PDF", onPhone: true },
                   {
-                    line: "Cover letters when the application asks for one, with Pro",
+                    line: "Cover letters when the application asks for one",
                     onPhone: true,
                   },
                   {

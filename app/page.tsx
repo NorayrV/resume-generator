@@ -21,7 +21,11 @@ import {
   writeOwned,
 } from "@/lib/sessionCache";
 import { sanitiseLang, type Lang } from "@/lib/coverLetter";
-import { DEFAULT_OUTPUTS, type OutputKind } from "@/lib/outputs";
+import {
+  DEFAULT_OUTPUTS,
+  PAID_ONLY_OUTPUTS,
+  type OutputKind,
+} from "@/lib/outputs";
 import { PRO_GENERATIONS_PER_MONTH, type PlanPricing } from "@/lib/plan";
 import type {
   CoverLetterVersions,
@@ -341,7 +345,15 @@ export default function GeneratePage() {
                   onLangChange={changeLang}
                   outputs={outputs}
                   onOutputsChange={setOutputs}
-                  canUseCoverLetter={paidPlan}
+                  canUseCoverLetter={
+                    /*
+                     * Locked only if the rule says the output is paid-only
+                     * and this account has not paid. The list is empty today,
+                     * so the control is open to everyone and the free plan's
+                     * three applications cover either document.
+                     */
+                    PAID_ONLY_OUTPUTS.includes("cover_letter") ? paidPlan : true
+                  }
                   planPrice={plan?.price}
                   allowance={allowance}
                 />
@@ -382,6 +394,9 @@ export default function GeneratePage() {
                       <div className="flex items-center gap-2">
                         <Lock className="h-4 w-4 text-accent-text" aria-hidden />
                         <h2 className="text-body font-semibold tracking-[-0.01em]">
+                          {/* Only rendered on a subscription_required
+                              refusal, which the server cannot return while
+                              PAID_ONLY_OUTPUTS is empty. See lib/outputs.ts. */}
                           Cover letters are included with Pro
                         </h2>
                       </div>

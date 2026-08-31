@@ -24,6 +24,29 @@ export const ALL_OUTPUTS: OutputKind[] = ["resume", "cover_letter"];
  */
 export const DEFAULT_OUTPUTS: OutputKind[] = ["resume"];
 
+/**
+ * Outputs a free account may look at but not generate.
+ *
+ * Empty, deliberately. The free plan used to offer the resume alone and sell
+ * the cover letter as the thing Pro bought; it now includes both, and the paid
+ * boundary is volume alone — 3 applications in any 30 days against 100. A free
+ * visitor can therefore try the whole product before deciding, which is what
+ * three applications were always meant to buy them.
+ *
+ * The list stays because the concept does. Putting an output back behind the
+ * plan is one entry here, and both the API and the browser read this file, so
+ * they cannot disagree about it — which the old arrangement only claimed,
+ * since the server asked lib/access.ts and the page asked the account API.
+ *
+ * This file imports nothing on purpose: it is pulled into the client bundle.
+ */
+export const PAID_ONLY_OUTPUTS: OutputKind[] = [];
+
+/** Does this selection contain anything a free account cannot generate? */
+export function needsPaidPlan(outputs: OutputKind[]): boolean {
+  return outputs.some((kind) => PAID_ONLY_OUTPUTS.includes(kind));
+}
+
 export const OUTPUT_LABELS: Record<OutputKind, string> = {
   resume: "Resume",
   cover_letter: "Cover letter",

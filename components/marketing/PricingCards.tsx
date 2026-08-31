@@ -103,8 +103,13 @@ function rows(plan: "free" | "pro"): Row[] {
       included: true,
     },
     {
+      /*
+       * On both plans. The paid boundary is volume alone now — three
+       * applications against a hundred — so a free visitor can try the whole
+       * product rather than being sold the half of it they cannot see.
+       */
       label: "Cover letters, in English, Russian or Spanish",
-      included: pro,
+      included: true,
     },
   ];
 }
@@ -167,9 +172,14 @@ export function PricingCards({ plan }: { plan: PlanPricing }) {
             <span className="text-small text-muted">per {plan.period}</span>
           </p>
 
+          {/*
+            "with cover letters" used to sit here as the thing Pro bought. It
+            is on both plans now, so naming it as a Pro feature would be a
+            claim the card below it contradicts.
+          */}
           <p className="hint mt-2">
             {PRO_GENERATIONS_PER_MONTH} applications in any {USAGE_WINDOW_DAYS}{" "}
-            days, with cover letters. Cancel any time.
+            days. Cancel any time.
           </p>
 
           <ul className="mt-6 space-y-2.5">
