@@ -60,7 +60,17 @@ export function Logo({
         className="hidden shrink-0 dark:block"
       />
       {withWordmark && (
-        <span className="whitespace-nowrap text-[0.9375rem] font-semibold tracking-[-0.01em]">
+        /*
+          Set in caps, but written in lowercase and transformed by CSS. A
+          screen reader given "CVMAXXING" may spell it out a letter at a time;
+          given "cvmaxxing" it reads the word, and the page still shows caps.
+
+          The tracking flips sign with the case. -0.01em is a lowercase
+          setting — caps are wider and squarer, and negative tracking closes
+          the counters until the X pair reads as one shape. 0.02em is the
+          value the résumé facsimile already uses for a name in caps.
+        */
+        <span className="whitespace-nowrap text-[0.9375rem] font-semibold uppercase tracking-[0.02em]">
           cvmaxxing
         </span>
       )}
