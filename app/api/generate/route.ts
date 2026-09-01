@@ -23,6 +23,11 @@ import { checkOutputAccess } from "@/lib/access";
 import { MAX_JOB_DESCRIPTION_CHARS } from "@/lib/plan";
 import { sanitiseOutputs, type OutputKind } from "@/lib/outputs";
 import {
+  findFabrications,
+  flattenBullets,
+  type RawRole,
+} from "@/lib/verifyResume";
+import {
   describeRole,
   draftingInstruction,
   rolesNeedingDraft,
@@ -31,6 +36,7 @@ import type {
   GenerationResult,
   MasterProfile,
   TailoredResume,
+  OpenQuestion,
 } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -238,6 +244,7 @@ async function generateFor({
   let resume: TailoredResume | null = null;
   let matchedKeywords: string[] = [];
   let gaps: string[] = [];
+  let openQuestions: OpenQuestion[] = [];
 
   /*
    * Roles the user left blank, so the finished resume can say which bullets
@@ -254,7 +261,17 @@ async function generateFor({
      *
      * Both system prompts stay on the server; the browser never sees either.
      */
-    const result = await completeJSON<GenerationResult>(
+    const result = await completeJSON<{
+      resume?: {
+        headline?: string;
+        summary?: string;
+        technical_skills?: TailoredResume["technical_skills"];
+        experience?: RawRole[];
+      };
+      matched_keywords?: string[];
+      gaps?: string[];
+      open_questions?: OpenQuestion[];
+    }>(
       RESUME_SYSTEM_PROMPT,
       [
         "Candidate Information:",
@@ -266,7 +283,7 @@ async function generateFor({
         // exactly what it always did.
         draftingInstruction(profile),
       ].join("\n"),
-      { temperature: 0.4 },
+      { temperature: 0.2 },
     );
 
     /*
@@ -290,8 +307,27 @@ async function generateFor({
      * lib/anchorExperience.ts, which also guarantees that two roles at the
      * same employer stay two distinct roles.
      */
+    /*
+     * Provenance and figures, before anything is grafted or rendered.
+     *
+     * Nothing is refused on the strength of it. A generation the user has
+     * already paid a slot for should not be thrown away over one unquotable
+     * bullet, and anchorExperience repairs the facts that actually reach the
+     * page. This is here to be read in the logs when a resume comes out
+     * wrong, and to say so in a warning the user can act on.
+     */
+    const fabrications = findFabrications(result.resume.experience, profile);
+
+    if (fabrications.length) {
+      console.warn("[generate] unsupported content", fabrications);
+    }
+
+    /*
+     * The evidence excerpts have done their job and stop here. Everything
+     * downstream takes a bullet as a string.
+     */
     const { experience: anchored, dropped } = anchorExperience(
-      result.resume.experience,
+      flattenBullets(result.resume.experience),
       profile.experience,
     );
 
@@ -316,6 +352,20 @@ async function generateFor({
     // Both readouts describe the resume, so they only exist when one was made.
     matchedKeywords = result.matched_keywords ?? [];
     gaps = result.gaps ?? [];
+
+    /*
+     * Capped and filtered here rather than trusted. The prompt asks for at
+     * most five; a model that returns twenty would otherwise put twenty into
+     * the response, and one pointing at a role that was dropped as unanchored
+     * would ask about a bullet nobody can see.
+     */
+    const kept = new Set(anchored.map((r) => r.company.toLowerCase()));
+    openQuestions = (result.open_questions ?? [])
+      .filter(
+        (q) =>
+          q?.question?.trim() && kept.has((q.company ?? "").toLowerCase()),
+      )
+      .slice(0, 5);
   }
 
   let letters: ParsedCoverLetter | null = null;
@@ -378,6 +428,10 @@ async function generateFor({
     cover_letter_order: letters?.order ?? [],
     matched_keywords: matchedKeywords,
     gaps,
+    // Questions worth answering before the next generation. Nothing renders
+    // them yet; they are here so the prompt's output is not billed for and
+    // discarded.
+    open_questions: openQuestions,
     person: profile.personal_information,
     usage: {
       used: after.used,

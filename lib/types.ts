@@ -96,6 +96,22 @@ export interface TailoredResume {
   certifications?: CertificationEntry[];
 }
 
+/**
+ * A number the resume would be stronger for, that the profile does not hold.
+ *
+ * The model writes the bullet without the figure rather than inventing one,
+ * and asks here instead. Answering one means editing the profile and
+ * generating again — so these are a prompt to improve the source, not a
+ * placeholder sitting in the finished document.
+ */
+export interface OpenQuestion {
+  /** Which role the question is about, copied from the profile. */
+  company: string;
+  /** Which bullet within that role, 0-based. */
+  bullet_index: number;
+  question: string;
+}
+
 /** The cover letter call returns both language versions. */
 export interface CoverLetterVersions {
   english: string;
@@ -109,6 +125,8 @@ export interface CoverLetterVersions {
  */
 export interface GenerationResult {
   resume: TailoredResume;
+  /** Figures the profile is missing, asked rather than invented. */
+  open_questions?: OpenQuestion[];
   /** Keywords lifted from the job description that made it into the resume. */
   matched_keywords: string[];
   /** Requirements in the job description the profile does not evidence. */
