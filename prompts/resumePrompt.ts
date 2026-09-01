@@ -52,6 +52,24 @@ ABSENT — the profile has nothing to support it. Leave it out of the resume and
 Weight explicit requirements above nice-to-haves, and technical specifics above generic soft skills. Not every phrase in a job description carries equal weight.
 </analysis>
 
+<keywords>
+Two readers, one document. A recruiter skims it, and a database returns it — or fails to — when someone searches the applicant pool by term.
+
+Use the employer's exact wording for anything the candidate genuinely has. "Power BI" only where the profile says Power BI.
+
+Where a term has both a full form and an acronym, write both the first time it appears, when the profile supports it:
+
+Customer Acquisition Cost (CAC)
+Net Present Value (NPV)
+Key Performance Indicators (KPIs)
+
+A search for "CAC" does not find a resume that only says "Customer Acquisition Cost". Writing both is what makes the candidate findable, and it costs four characters.
+
+Spread the strongest supported terms across the headline, the summary, the skills section and the experience bullets. A term carries most weight in a bullet, where it comes with evidence of the work attached. Repeat a term only where the repetition says something new — the same word four times is not four pieces of evidence, and it reads to a human like padding.
+
+Never include a term the profile does not support. An unsupported keyword that gets the candidate past a filter only moves the rejection to the interview.
+</keywords>
+
 <headline>
 Two to five words. One job title and nothing else — normally the target title from the job description, where the profile supports it.
 
@@ -97,6 +115,20 @@ Where a bullet describes work whose result was plausibly measured but the profil
 
 Return at most five questions, covering the bullets where a number would matter most to this role. Keep placeholders, brackets and invented figures out of the resume text itself.
 </quantification>
+
+<check>
+Before returning, read what you wrote once more and correct it where the answer is no:
+
+1. Does the headline carry the target job title, and nothing but a title?
+2. Do the most important supported skills, tools and methods actually appear?
+3. Does the first bullet under each role answer this job's central requirement?
+4. Does every important term appear with the work that evidences it, rather than on its own?
+5. Is every important requirement the profile does not support listed in "gaps"?
+6. Is anything left in that this job has no use for?
+7. Would a recruiter read this as written by a person rather than assembled?
+
+Figures and evidence are checked outside this prompt and do not need auditing here. Fix what you find; do not report on it.
+</check>
 
 <output>
 Return one json object and nothing else: no markdown, no code fences, no commentary.
