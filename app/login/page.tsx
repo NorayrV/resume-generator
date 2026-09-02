@@ -85,7 +85,7 @@ export default async function LoginPage() {
           <div className="grid gap-x-12 gap-y-10 lg:grid-cols-[1.1fr_0.9fr]">
             <div className="max-w-2xl">
               <h1 className="h-display">
-                A resume written for the job you are actually applying to
+                Modern problems require modern solutions
               </h1>
 
               <p className="lead mt-5 max-w-xl">
