@@ -7,6 +7,7 @@ import { AppHeader } from "@/components/AppHeader";
 import { JobDescriptionInput } from "@/components/JobDescriptionInput";
 import { GenerationProgress } from "@/components/GenerationProgress";
 import { ResultsOverview } from "@/components/ResultsOverview";
+import { OpenQuestions } from "@/components/OpenQuestions";
 import { ResumeResult } from "@/components/ResumeResult";
 import { CoverLetter } from "@/components/CoverLetter";
 import { Button } from "@/components/ui/button";
@@ -32,12 +33,15 @@ import type {
   PersonalInformation,
   ProfileSummary,
   TailoredResume,
+  OpenQuestion,
 } from "@/lib/types";
 
 interface Generation {
   /** Absent on a cover-letter-only run. */
   resume: TailoredResume | null;
   cover_letter: CoverLetterVersions | null;
+  /** Figures the profile is missing. Empty when it is already well covered. */
+  open_questions?: OpenQuestion[];
   /** Posting's own language first, so the UI can open on it. */
   cover_letter_order?: Lang[];
   matched_keywords: string[];
@@ -496,6 +500,10 @@ export default function GeneratePage() {
                         />
                       )}
                     </div>
+
+                    {/* After the documents, before the button that would
+                        make the next one — which is the action these lead to. */}
+                    <OpenQuestions questions={result.open_questions ?? []} />
 
                     <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
                       <Button
