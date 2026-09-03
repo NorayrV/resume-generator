@@ -3,6 +3,7 @@ import { ArrowRight, Check, Lock, ShieldCheck, X } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { SignInCard } from "@/components/SignInCard";
 import { HashScroll } from "@/components/HashScroll";
+import { TelegramLink } from "@/components/TelegramLink";
 import { Faq } from "@/components/marketing/Faq";
 import { HeroVisual } from "@/components/marketing/HeroVisual";
 import { MarketingNav } from "@/components/marketing/MarketingNav";
@@ -446,6 +447,10 @@ export default async function LoginPage() {
             <Link href="/terms" className="hover:text-ink">
               Terms
             </Link>
+
+            {/* Last, and the only icon among them: it leaves the site, and
+                the four before it do not. */}
+            <TelegramLink />
           </nav>
         </div>
       </footer>
