@@ -89,11 +89,31 @@ export default async function LoginPage() {
                 Modern problems require modern solutions
               </h1>
 
-              <p className="lead mt-5 max-w-xl">
-                Paste a job posting. cvmaxxing rewrites your resume and cover
-                letter around it — using your real experience, never inventing
-                anything.
-              </p>
+              <div className="mt-5 max-w-xl space-y-4">
+                <p className="lead">
+                  Over 98% of companies use AI-powered systems to screen
+                  resumes before they reach a recruiter.
+                </p>
+                {/*
+                  Hidden on a phone, not deleted — the same trade the feature
+                  list below makes. All three paragraphs put the Google button
+                  at 852px against an 812px fold at 375, so the only call to
+                  action on the page started below the first screen. The hook
+                  and the mission survive; the middle paragraph explains the
+                  mechanism, which is the part a reader can do without until
+                  there is room for it.
+                */}
+                <p className="lead hidden sm:block">
+                  These systems analyze resumes based on keywords, skills,
+                  experience, and how closely they match the job description.
+                  Even a highly qualified candidate can be filtered out if
+                  their resume isn&rsquo;t optimized for ATS.
+                </p>
+                <p className="lead">
+                  Our mission is simple: create a resume that gets past the ATS
+                  screening and puts you in front of the recruiter.
+                </p>
+              </div>
 
               {/*
                 The last two are hidden on a phone, not deleted: both are
