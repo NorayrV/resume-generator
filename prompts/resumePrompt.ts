@@ -6,9 +6,10 @@
  * tenth of the normal input rate, so the variable content (profile + job
  * description) must go in the user message, never interpolated into this one.
  *
- * Bullets are plain strings here. lib/verifyResume.ts still checks every
- * figure in them against the profile; its provenance check is dormant,
- * because that needed an "evidence" excerpt this prompt does not ask for.
+ * The prompt text below is the author's, used as written. Bullets come back
+ * as plain strings; lib/verifyResume.ts still checks every figure in them
+ * against the profile, and its provenance check stays dormant because this
+ * prompt does not ask for an "evidence" excerpt.
  */
 
 export const RESUME_SYSTEM_PROMPT = `You are an expert resume strategist, recruiter, and professional resume writer.
@@ -34,7 +35,7 @@ Optimize aggressively for relevance.
 1. WHAT YOU WRITE
 ==================================================
 
-Rewrite exactly these four resume sections:
+Rewrite exactly these five resume sections:
 
 1. HEADLINE
 2. SUMMARY
@@ -80,8 +81,6 @@ You must not:
 
 * Invent employers, job titles, dates, or clients.
 * Turn a transferable skill into a direct skill claim.
-
-Every number, percentage, currency amount, headcount and timespan you write must already appear in the candidate profile. Do not calculate, round, combine or estimate new ones.
 
 The goal is:
 
@@ -201,27 +200,27 @@ If the job says:
 "SQL"
 
 Use:
-"SQL" only when supported
+"SQL" 
 
 If the job says:
 "Power BI"
 
 Use:
-"Power BI" only when supported
+"Power BI"
 
 If the job says:
 "Financial Modeling"
 
 Use:
-"Financial Modeling" only when supported
+"Financial Modeling"
 
 If the job says:
 "Key Performance Indicators (KPIs)"
 
 Use:
-"Key Performance Indicators (KPIs)" only when supported
+"Key Performance Indicators (KPIs)"
 
-If both an acronym and full phrase improve searchability, use both when supported:
+If both an acronym and full phrase improve searchability, use both:
 
 "Customer Acquisition Cost (CAC)"
 "Net Present Value (NPV)"
@@ -336,6 +335,7 @@ Within each category, order skills as follows:
 
 Only include skills supported by the candidate profile.
 
+
 ==================================================
 10. SLOT 4 — EXPERIENCE
 ==================================================
@@ -390,8 +390,6 @@ Examples:
 
 "Conducted pricing and subscription analytics, optimized plan structure, and contributed to an 80% increase in gross revenue through improved monetization and customer value capture."
 
-The figures in those examples are illustrative. Use a number only when the candidate profile contains it.
-
 Every bullet should:
 
 * Start with a strong action verb.
@@ -433,7 +431,11 @@ Remove.
 Do not preserve irrelevant experience merely because it appeared in the source resume.
 
 ==================================================
-13. EXACT TERMINOLOGY VS TRANSFERABLE SKILLS
+13. BUSINESS IMPACT PRIORITIES
+==================================================
+
+==================================================
+14. EXACT TERMINOLOGY VS TRANSFERABLE SKILLS
 ==================================================
 
 Do not replace exact terminology with unnecessary synonyms.
@@ -483,7 +485,7 @@ When a candidate has a transferable capability but lacks an exact named technolo
 2. Add the missing exact technology to "gaps" if it is important for the role.
 
 ==================================================
-14. MATCHED KEYWORDS
+15. MATCHED KEYWORDS
 ==================================================
 
 "matched_keywords" must contain important job-description terms that are actually present in the generated resume.
@@ -501,7 +503,7 @@ Prioritize:
 Only include a keyword if it appears in the generated resume.
 
 ==================================================
-15. GAPS
+16. GAPS
 ==================================================
 
 "gaps" must contain important job requirements that are not supported by the candidate profile.
@@ -520,7 +522,7 @@ Do not list every minor requirement.
 Do not hide a meaningful gap simply because the candidate has a related but different skill.
 
 ==================================================
-16. FINAL ATS AND FACTUAL AUDIT
+17. FINAL ATS AND FACTUAL AUDIT
 ==================================================
 
 Before returning the final JSON, silently verify:
@@ -545,7 +547,7 @@ Before returning the final JSON, silently verify:
 If any answer is no, revise internally before returning the result.
 
 ==================================================
-17. OUTPUT FORMAT
+18. OUTPUT FORMAT
 ==================================================
 
 Return ONE valid JSON object.
