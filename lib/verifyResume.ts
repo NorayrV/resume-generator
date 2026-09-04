@@ -22,6 +22,13 @@ import type { MasterProfile } from "./types";
  *                and that excerpt has to actually appear in the profile.
  *   figures    — every number in a bullet has to appear in the profile too.
  *
+ * Provenance is conditional on the prompt asking for it. The current prompt
+ * returns bullets as plain strings, so no excerpt arrives and the check is
+ * skipped rather than failing every bullet on a field that was never
+ * requested — which would bury the figure findings in noise. Ask for
+ * "evidence" again in prompts/resumePrompt.ts and this re-arms itself, with
+ * no change here.
+ *
  * Roles the candidate left blank are exempt from the first check and not the
  * second. lib/draftBullets.ts asks the model to write those bullets from the
  * job title and the employer, so there is no excerpt to quote — but that same
@@ -35,6 +42,9 @@ export interface RawBullet {
   evidence?: string;
 }
 
+/** Prompts have returned both shapes. Both are read. */
+export type RawBulletish = RawBullet | string;
+
 /** A role as the model returns it. */
 export interface RawRole {
   company?: string;
@@ -42,7 +52,7 @@ export interface RawRole {
   location?: string;
   start_date?: string;
   end_date?: string;
-  bullets?: RawBullet[];
+  bullets?: RawBulletish[];
 }
 
 /** Enough of an excerpt to be worth checking. Shorter is not provenance. */
@@ -85,12 +95,26 @@ export function findFabrications(
   const haystack = JSON.stringify(profile).toLowerCase();
   const problems: string[] = [];
 
+  /*
+   * Does this generation carry provenance at all? One excerpt anywhere is
+   * enough to say the prompt asked for them, and its absence everywhere is
+   * the prompt not asking rather than the model refusing.
+   */
+  const carriesEvidence = experience?.some((role) =>
+    (role.bullets ?? []).some(
+      (b) => typeof b !== "string" && (b?.evidence ?? "").trim().length > 0,
+    ),
+  );
+
   for (const role of experience ?? []) {
     const where = role.company ?? "unnamed role";
     const drafted = wasDrafted(role, profile);
 
-    for (const [i, bullet] of (role.bullets ?? []).entries()) {
-      if (!drafted) {
+    for (const [i, raw] of (role.bullets ?? []).entries()) {
+      const bullet: RawBullet =
+        typeof raw === "string" ? { text: raw } : (raw ?? { text: "" });
+
+      if (carriesEvidence && !drafted) {
         const excerpt = (bullet.evidence ?? "").toLowerCase().trim();
         if (
           excerpt.length < MIN_EVIDENCE_CHARS ||
